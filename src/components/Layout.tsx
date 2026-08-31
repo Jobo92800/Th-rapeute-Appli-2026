@@ -10,7 +10,7 @@ const LIENS = [
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const { centre, centresAccessibles, choisirCentre, deconnexion, role } = useSession();
+  const { centre, centresAccessibles, choisirCentre, deconnexion, role, therapeute } = useSession();
   const navigate = useNavigate();
   const [menuOuvert, setMenuOuvert] = useState(false);
   const plusieursCentres = centresAccessibles.length > 1;
@@ -48,6 +48,21 @@ export default function Layout({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="relative border-t border-ardoise-200 p-3">
+          {therapeute && (
+            <div className="mb-1 flex items-center gap-2.5 px-3 py-2">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-marine-100 text-xs font-bold text-marine-800">
+                {therapeute.prenom.charAt(0).toUpperCase()}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold text-ardoise-900">
+                  {therapeute.prenom}
+                </span>
+                <span className="block text-2xs uppercase tracking-widest text-ardoise-400">
+                  {therapeute.role === 'direction' ? 'Direction' : 'Thérapeute'}
+                </span>
+              </span>
+            </div>
+          )}
           <button
             type="button"
             onClick={() => plusieursCentres && setMenuOuvert((o) => !o)}
@@ -103,7 +118,10 @@ export default function Layout({ children }: { children: ReactNode }) {
           <span className="text-base font-bold text-marine-800">
             MAbeauty<span className="text-rose-600">plus</span>
           </span>
-          <span className="text-sm font-medium text-ardoise-600">{centre?.nom}</span>
+          <span className="text-sm font-medium text-ardoise-600">
+            {therapeute?.prenom ? `${therapeute.prenom} · ` : ''}
+            {centre?.nom}
+          </span>
         </header>
 
         <nav className="flex gap-1 border-b border-ardoise-200 bg-white px-3 py-2 lg:hidden">

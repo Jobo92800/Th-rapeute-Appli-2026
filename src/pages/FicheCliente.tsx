@@ -5,7 +5,7 @@ import { ArrowLeft, Save, AlertTriangle, Archive, RefreshCw, CheckCircle2 } from
 import toast from 'react-hot-toast';
 import { differenceInYears, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useCentre } from '../lib/session';
+import { useCentre, useSession } from '../lib/session';
 import { supabase } from '../lib/supabase';
 import {
   archiverCliente,
@@ -45,6 +45,7 @@ export default function FicheCliente() {
   const { id } = useParams<{ id: string }>();
   const creation = !id;
   const centre = useCentre();
+  const { therapeute: moi } = useSession();
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -78,6 +79,13 @@ export default function FicheCliente() {
     enabled: !creation,
     refetchInterval: 30_000,
   });
+
+  useEffect(() => {
+    if (!creation || !moi || moi.role === 'direction') return;
+    setSaisie((s) =>
+      s.therapeutes.length === 0 ? { ...s, therapeutes: [moi.prenom] } : s,
+    );
+  }, [creation, moi]);
 
   useEffect(() => {
     if (!cliente) return;

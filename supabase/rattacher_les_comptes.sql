@@ -1,21 +1,26 @@
--- MAbeautyplus V2 — rattacher chaque compte à son centre.
--- À exécuter APRÈS avoir créé les 5 utilisateurs dans Authentication > Users.
+/*
+  MAbeautyplus V2 — relier les comptes de connexion aux thérapeutes.
 
-insert into comptes_centre (user_id, centre_id, role)
-select id, 'grau-du-roi', 'centre' from auth.users where email = 'graududroi@mabeautyplus.fr'
-union all
-select id, 'le-cres',     'centre' from auth.users where email = 'lecres@mabeautyplus.fr'
-union all
-select id, 'serignan',    'centre' from auth.users where email = 'serignan@mabeautyplus.fr'
-union all
-select id, 'cabestany',   'centre' from auth.users where email = 'cabestany@mabeautyplus.fr'
-union all
-select id, 'avignon',     'centre' from auth.users where email = 'avignon@mabeautyplus.fr'
-on conflict (user_id) do update set centre_id = excluded.centre_id, role = excluded.role;
+  À exécuter après avoir créé des utilisateurs dans Authentication > Users.
+  Le lien se fait sur l'adresse email.
 
--- Contrôle : doit afficher 5 lignes, une par centre.
-select c.nom as centre, u.email, cc.role
-from comptes_centre cc
-join centres c on c.id = cc.centre_id
-join auth.users u on u.id = cc.user_id
-order by c.nom;
+  Ce script est rejouable autant de fois que nécessaire : lance-le à chaque
+  fois que tu ajoutes un compte, il ne rattachera que les nouveaux.
+*/
+
+UPDATE therapeutes t
+SET user_id = u.id
+FROM auth.users u
+WHERE lower(u.email) = lower(t.email)
+  AND t.user_id IS DISTINCT FROM u.id;
+
+-- État de chaque personne : qui peut se connecter, qui ne peut pas encore.
+SELECT
+  COALESCE(c.nom, '— tous les centres') AS centre,
+  t.prenom,
+  t.email,
+  t.role,
+  CASE WHEN t.user_id IS NULL THEN 'compte à créer' ELSE 'peut se connecter' END AS statut
+FROM therapeutes t
+LEFT JOIN centres c ON c.id = t.centre_id
+ORDER BY c.nom NULLS FIRST, t.ordre;

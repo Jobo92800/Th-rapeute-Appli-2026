@@ -33,34 +33,28 @@ Dans l'éditeur SQL de Supabase, exécuter les trois migrations **dans l'ordre**
 | `supabase/migrations/001_referentiel.sql` | centres, comptes, thérapeutes, tarifs, table des jeux |
 | `supabase/migrations/002_clientes_et_sync.sql` | fiches clientes et file d'attente Airtable |
 | `supabase/migrations/003_jeux.sql` | les 60 jeux de la méthode |
+| `supabase/migrations/004_comptes_par_therapeute.sql` | un compte de connexion par thérapeute |
 
 Le projet est neuf : ces migrations créent l'intégralité du schéma et
 n'entrent en conflit avec rien.
 
-### 3. Comptes de centre
+### 3. Comptes de connexion
 
-Un compte par centre. Dans Supabase → Authentication → Users → **Add user**,
-créer les cinq comptes avec un mot de passe solide, puis les rattacher :
+**Une adresse par thérapeute**, pas une par centre : on sait ainsi qui a créé
+chaque fiche et réalisé chaque séance.
 
-```sql
--- À adapter avec les adresses réellement créées.
-insert into comptes_centre (user_id, centre_id, role)
-select id, 'grau-du-roi', 'centre' from auth.users where email = 'graududroi@mabeautyplus.fr'
-union all
-select id, 'le-cres',     'centre' from auth.users where email = 'lecres@mabeautyplus.fr'
-union all
-select id, 'serignan',    'centre' from auth.users where email = 'serignan@mabeautyplus.fr'
-union all
-select id, 'cabestany',   'centre' from auth.users where email = 'cabestany@mabeautyplus.fr'
-union all
-select id, 'avignon',     'centre' from auth.users where email = 'avignon@mabeautyplus.fr'
-on conflict (user_id) do update set centre_id = excluded.centre_id;
+Les adresses proposées sont déjà inscrites dans la table `therapeutes`
+(colonne `email`) — modifiables si tu préfères d'autres.
 
--- Compte direction : accès à tous les centres.
-insert into comptes_centre (user_id, centre_id, role)
-select id, null, 'direction' from auth.users where email = 'contact@mabeautyplus.fr'
-on conflict (user_id) do update set role = 'direction', centre_id = null;
-```
+Dans Supabase → Authentication → Users → **Add user**, créer le compte avec
+l'adresse voulue, en cochant **Auto Confirm User**. Puis exécuter
+`supabase/rattacher_les_comptes.sql` dans l'éditeur SQL : il relie les comptes
+aux thérapeutes par leur email et affiche qui peut se connecter.
+
+Ce script est rejouable : relance-le à chaque compte ajouté.
+
+Une thérapeute sans compte reste sélectionnable sur les fiches, elle ne peut
+simplement pas se connecter. Inutile donc de tout créer d'un coup.
 
 ### 4. Lancer
 
@@ -73,9 +67,11 @@ npm run dev
 
 ## Ce qui est en place
 
-- **Connexion par centre.** Le centre découle du compte : plus de choix libre
-  dans l'URL comme dans la V1. Un compte direction voit les cinq centres et
-  bascule de l'un à l'autre.
+- **Connexion par thérapeute.** Le centre découle du compte : plus de choix
+  libre dans l'URL comme dans la V1. Un compte direction voit les cinq centres
+  et bascule de l'un à l'autre.
+- **Traçabilité.** Chaque fiche retient qui l'a créée. À la création d'une
+  cliente, la thérapeute connectée est cochée d'office.
 - **Cloisonnement réel.** Les politiques d'accès Postgres filtrent par centre.
   Une session d'un centre ne peut ni lire ni écrire les fiches d'un autre.
 - **Fiches clientes.** Création, modification, archivage. L'âge se déduit de la

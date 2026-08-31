@@ -1,14 +1,16 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
-import type { Centre, RoleCompte } from '../types/db';
+import type { Centre, RoleCompte, Therapeute } from '../types/db';
 
 interface EtatSession {
   chargement: boolean;
   session: Session | null;
+  /** La personne connectée. Null si son compte n'est rattaché à aucune fiche. */
+  therapeute: Therapeute | null;
   centre: Centre | null;
   role: RoleCompte | null;
-  /** Direction : liste complète. Compte de centre : uniquement le sien. */
+  /** Direction : tous les centres. Thérapeute : uniquement le sien. */
   centresAccessibles: Centre[];
   choisirCentre: (centreId: string) => void;
   deconnexion: () => Promise<void>;
@@ -19,7 +21,7 @@ const Contexte = createContext<EtatSession | null>(null);
 export function FournisseurSession({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [chargement, setChargement] = useState(true);
-  const [role, setRole] = useState<RoleCompte | null>(null);
+  const [therapeute, setTherapeute] = useState<Therapeute | null>(null);
   const [centres, setCentres] = useState<Centre[]>([]);
   const [centreId, setCentreId] = useState<string | null>(null);
 
@@ -31,7 +33,7 @@ export function FournisseurSession({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!session) {
-      setRole(null);
+      setTherapeute(null);
       setCentres([]);
       setCentreId(null);
       setChargement(false);
@@ -43,13 +45,13 @@ export function FournisseurSession({ children }: { children: ReactNode }) {
     (async () => {
       setChargement(true);
 
-      const { data: compte } = await supabase
-        .from('comptes_centre')
-        .select('centre_id, role')
+      const { data: personne } = await supabase
+        .from('therapeutes')
+        .select('*')
         .eq('user_id', session.user.id)
         .maybeSingle();
 
-      // Les policies filtrent déjà : un compte de centre ne verra que le sien.
+      // Les policies filtrent déjà : une thérapeute ne verra que son centre.
       const { data: liste } = await supabase
         .from('centres')
         .select('*')
@@ -58,17 +60,17 @@ export function FournisseurSession({ children }: { children: ReactNode }) {
 
       if (annule) return;
 
+      const moi = (personne as Therapeute | null) ?? null;
       const tous = (liste ?? []) as Centre[];
-      const roleCompte = (compte?.role ?? null) as RoleCompte | null;
       const accessibles =
-        roleCompte === 'direction' ? tous : tous.filter((c) => c.id === compte?.centre_id);
+        moi?.role === 'direction' ? tous : tous.filter((c) => c.id === moi?.centre_id);
 
-      setRole(roleCompte);
+      setTherapeute(moi);
       setCentres(accessibles);
 
       const memorise = localStorage.getItem('centre_actif');
       const valide = accessibles.find((c) => c.id === memorise);
-      setCentreId(valide?.id ?? compte?.centre_id ?? accessibles[0]?.id ?? null);
+      setCentreId(valide?.id ?? moi?.centre_id ?? accessibles[0]?.id ?? null);
       setChargement(false);
     })();
 
@@ -87,7 +89,8 @@ export function FournisseurSession({ children }: { children: ReactNode }) {
     return {
       chargement,
       session,
-      role,
+      therapeute,
+      role: therapeute?.role ?? null,
       centre: centres.find((c) => c.id === centreId) ?? null,
       centresAccessibles: centres,
       choisirCentre,
@@ -96,7 +99,7 @@ export function FournisseurSession({ children }: { children: ReactNode }) {
         await supabase.auth.signOut();
       },
     };
-  }, [chargement, session, role, centres, centreId]);
+  }, [chargement, session, therapeute, centres, centreId]);
 
   return <Contexte.Provider value={valeur}>{children}</Contexte.Provider>;
 }

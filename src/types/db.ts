@@ -17,18 +17,21 @@ export interface Centre {
   actif: boolean;
 }
 
-export type RoleCompte = 'centre' | 'direction';
+export type RoleCompte = 'therapeute' | 'direction';
 
-export interface CompteCentre {
-  user_id: string;
-  centre_id: string | null;
-  role: RoleCompte;
-}
-
+/**
+ * Une personne. Elle a un compte de connexion si `user_id` est renseigné ;
+ * sinon elle reste sélectionnable sur les fiches sans pouvoir se connecter.
+ * La direction n'est rattachée à aucun centre : `centre_id` est vide.
+ */
 export interface Therapeute {
   id: string;
-  centre_id: string;
+  centre_id: string | null;
   prenom: string;
+  nom: string | null;
+  email: string | null;
+  user_id: string | null;
+  role: RoleCompte;
   actif: boolean;
   ordre: number;
 }
