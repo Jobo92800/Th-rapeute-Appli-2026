@@ -1,0 +1,190 @@
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Download, FileSignature, FileText, ShieldCheck } from 'lucide-react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import toast from 'react-hot-toast';
+import { useCentre } from '../../lib/session';
+import {
+  consentementsDuContrat,
+  contratsDeLaCliente,
+  lirePdfContrat,
+  programmesDeLaCliente,
+} from '../../services/metier';
+import ModaleContrat from '../contrat/ModaleContrat';
+import type { Cliente } from '../../types/db';
+
+/** Déclenche le téléchargement d'un PDF encodé en base64. */
+function telecharger(base64: string, nom: string) {
+  const binaire = atob(base64);
+  const octets = new Uint8Array(binaire.length);
+  for (let i = 0; i < binaire.length; i++) octets[i] = binaire.charCodeAt(i);
+  const url = URL.createObjectURL(new Blob([octets], { type: 'application/pdf' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nom;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
+  const centre = useCentre();
+  const qc = useQueryClient();
+  const [signature, setSignature] = useState(false);
+  const [consentsOuverts, setConsentsOuverts] = useState<string | null>(null);
+
+  const { data: programmes = [] } = useQuery({
+    queryKey: ['programmes', cliente.id],
+    queryFn: () => programmesDeLaCliente(cliente.id),
+  });
+
+  const { data: contrats = [], isLoading } = useQuery({
+    queryKey: ['contrats', cliente.id],
+    queryFn: () => contratsDeLaCliente(cliente.id),
+  });
+
+  const { data: consentements = [] } = useQuery({
+    queryKey: ['consentements', consentsOuverts],
+    queryFn: () => consentementsDuContrat(consentsOuverts!),
+    enabled: Boolean(consentsOuverts),
+  });
+
+  const actif = programmes.filter((p) => p.programme.statut !== 'abandonne').at(-1) ?? null;
+
+  async function telechargerContrat(id: string, nom: string) {
+    try {
+      const pdf = await lirePdfContrat(id);
+      if (!pdf) {
+        toast.error('PDF introuvable.');
+        return;
+      }
+      telecharger(pdf, nom);
+    } catch {
+      toast.error('Le téléchargement a échoué.');
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <section className="carte">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ardoise-100 px-5 py-3.5">
+          <div>
+            <h2 className="text-sm font-semibold text-ardoise-900">Contrat de prestation</h2>
+            <p className="text-xs text-ardoise-500">
+              Le contrat et les consentements sont signés au doigt, puis conservés ici.
+            </p>
+          </div>
+          <button
+            onClick={() => setSignature(true)}
+            disabled={!actif}
+            title={actif ? undefined : "Il faut d'abord valider une cure"}
+            className="bouton-fort"
+          >
+            <FileSignature className="h-4 w-4" />
+            Établir le contrat
+          </button>
+        </div>
+
+        {!actif && (
+          <p className="px-5 py-8 text-center text-sm text-ardoise-500">
+            Aucune cure enregistrée : le contrat reprend les prestations et l'échéancier d'une
+            cure, il faut donc en valider une d'abord.
+          </p>
+        )}
+
+        {actif && (
+          <>
+            {isLoading ? (
+              <p className="px-5 py-8 text-center text-sm text-ardoise-400">Chargement…</p>
+            ) : contrats.length === 0 ? (
+              <p className="px-5 py-8 text-center text-sm text-ardoise-500">
+                Aucun contrat signé pour l'instant.
+              </p>
+            ) : (
+              <ul className="divide-y divide-ardoise-100">
+                {contrats.map((c) => (
+                  <li key={c.id} className="px-5 py-3.5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-2 text-sm font-semibold text-ardoise-900">
+                          <FileText className="h-4 w-4 shrink-0 text-ardoise-400" />
+                          Contrat du{' '}
+                          {format(new Date(c.signe_le), 'd MMMM yyyy', { locale: fr })}
+                        </p>
+                        <p className="mt-0.5 text-xs text-ardoise-500">
+                          {c.montant && <>{c.montant} · </>}
+                          {c.therapeute && <>signé avec {c.therapeute} · </>}
+                          {c.nb_consentements} consentement{c.nb_consentements > 1 ? 's' : ''}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {c.nb_consentements > 0 && (
+                          <button
+                            onClick={() =>
+                              setConsentsOuverts(consentsOuverts === c.id ? null : c.id)
+                            }
+                            className="bouton-discret"
+                          >
+                            <ShieldCheck className="h-4 w-4" />
+                            Consentements
+                          </button>
+                        )}
+                        <button
+                          onClick={() =>
+                            telechargerContrat(
+                              c.id,
+                              `Contrat_${cliente.nom}_${cliente.prenom}.pdf`,
+                            )
+                          }
+                          className="bouton-principal"
+                        >
+                          <Download className="h-4 w-4" />
+                          Contrat
+                        </button>
+                      </div>
+                    </div>
+
+                    {consentsOuverts === c.id && (
+                      <div className="mt-3 flex flex-wrap gap-2 rounded-lg bg-ardoise-50 p-3">
+                        {consentements.length === 0 ? (
+                          <span className="text-xs text-ardoise-400">Chargement…</span>
+                        ) : (
+                          consentements.map((cs) => (
+                            <button
+                              key={cs.id}
+                              onClick={() => telecharger(cs.pdf_base64, cs.nom_fichier)}
+                              className="bouton-discret text-xs"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                              {cs.nom_fichier.replace(/\.pdf$/, '').replace(/_/g, ' ')}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+      </section>
+
+      {signature && actif && (
+        <ModaleContrat
+          cliente={cliente}
+          centre={centre}
+          programme={actif.programme}
+          lignes={actif.lignes}
+          echeances={actif.echeances}
+          onFerme={() => setSignature(false)}
+          onSigne={() => {
+            setSignature(false);
+            qc.invalidateQueries({ queryKey: ['contrats', cliente.id] });
+          }}
+        />
+      )}
+    </div>
+  );
+}

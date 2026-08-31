@@ -291,3 +291,29 @@ export interface ResumeNotes {
   derniere_le: string;
   a_epinglee: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Contrats et consentements
+// ---------------------------------------------------------------------------
+
+export interface ResumeContrat {
+  id: string;
+  cliente_id: string;
+  programme_id: string | null;
+  centre_id: string;
+  nom_cliente: string;
+  signe_le: string;
+  envoye_le: string | null;
+  envoye_a: string | null;
+  therapeute: string | null;
+  montant: string | null;
+  nb_consentements: number;
+}
+
+export interface Consentement {
+  id: string;
+  contrat_id: string;
+  service_id: string;
+  nom_fichier: string;
+  pdf_base64: string;
+}

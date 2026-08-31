@@ -2,12 +2,14 @@ import { supabase } from '../lib/supabase';
 import type { Bareme } from '../domain/empreinte';
 import type {
   Bilan,
+  Consentement,
   Echeance,
   Jeu,
   LigneProgramme,
   Mensuration,
   NoteCliente,
   Programme,
+  ResumeContrat,
   ResumeNotes,
   Seance,
   SuiviSeances,
@@ -362,4 +364,81 @@ export async function resumeNotesDuCentre(centreId: string): Promise<ResumeNotes
 
   if (error) throw error;
   return (data ?? []) as ResumeNotes[];
+}
+
+// ---------------------------------------------------------------------------
+// Contrats et consentements
+// ---------------------------------------------------------------------------
+
+export async function contratsDeLaCliente(clienteId: string): Promise<ResumeContrat[]> {
+  const { data, error } = await supabase
+    .from('contrats_resume')
+    .select('*')
+    .eq('cliente_id', clienteId)
+    .order('signe_le', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as ResumeContrat[];
+}
+
+export async function enregistrerContrat(c: {
+  clienteId: string;
+  programmeId: string | null;
+  centreId: string;
+  nomCliente: string;
+  pdfBase64: string;
+  donnees: unknown;
+  consentements: Array<{ serviceId: string; filename: string; pdfBase64: string }>;
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from('contrats')
+    .insert({
+      cliente_id: c.clienteId,
+      programme_id: c.programmeId,
+      centre_id: c.centreId,
+      nom_cliente: c.nomCliente,
+      pdf_base64: c.pdfBase64,
+      donnees: c.donnees,
+    })
+    .select('id')
+    .single();
+
+  if (error) throw error;
+
+  if (c.consentements.length > 0) {
+    const { error: e } = await supabase.from('consentements').insert(
+      c.consentements.map((x) => ({
+        contrat_id: data.id,
+        service_id: x.serviceId,
+        nom_fichier: x.filename,
+        pdf_base64: x.pdfBase64,
+      })),
+    );
+    if (e) throw e;
+  }
+
+  return data.id as string;
+}
+
+/** Le PDF n'est chargé qu'au moment du téléchargement. */
+export async function lirePdfContrat(contratId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('contrats')
+    .select('pdf_base64')
+    .eq('id', contratId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data?.pdf_base64 ?? null;
+}
+
+export async function consentementsDuContrat(contratId: string): Promise<Consentement[]> {
+  const { data, error } = await supabase
+    .from('consentements')
+    .select('*')
+    .eq('contrat_id', contratId)
+    .order('nom_fichier');
+
+  if (error) throw error;
+  return (data ?? []) as Consentement[];
 }
