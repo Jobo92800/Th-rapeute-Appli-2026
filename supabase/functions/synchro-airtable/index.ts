@@ -29,7 +29,6 @@ const enTetesCors = {
 
 /** Nombre de tâches traitées par appel : Airtable limite à 5 requêtes/seconde. */
 const LOT = 15;
-const TENTATIVES_MAX = 5;
 
 const LIBELLE_TECHNO: Record<string, string> = {
   luxo: 'Luxothérapie',
@@ -264,6 +263,19 @@ Deno.serve(async (req: Request) => {
       return;
     }
 
+    // Aucune fiche Airtable encore : il faut la créer. Mais plusieurs tâches
+    // d'une même cliente peuvent arriver en parallèle (cliente, bilan, cure).
+    // Un verrou en base garantit qu'une seule crée réellement l'enregistrement.
+    const { data: reserve } = await db.rpc('reserver_creation_airtable', {
+      p_cliente: clienteId,
+    });
+
+    if (!reserve) {
+      // Un autre appel s'en occupe. On laisse la tâche revenir plus tard,
+      // elle trouvera alors l'identifiant et fera une simple mise à jour.
+      throw new Error('Création déjà en cours pour cette cliente, nouvelle tentative plus tard.');
+    }
+
     // Première synchro : on complète avec l'identité, même si l'événement
     // portait sur un bilan ou un programme.
     if (tache.entite !== 'cliente') {
@@ -271,36 +283,46 @@ Deno.serve(async (req: Request) => {
       if (base) champs = { ...base.champs, ...champs };
     }
 
-    const cree = await airtable('', {
-      method: 'POST',
-      body: JSON.stringify({ records: [{ fields: champs }], typecast: true }),
-    });
+    try {
+      const cree = await airtable('', {
+        method: 'POST',
+        body: JSON.stringify({ records: [{ fields: champs }], typecast: true }),
+      });
 
-    const recordId = cree?.records?.[0]?.id;
-    if (!recordId) throw new Error("Airtable n'a pas renvoyé d'identifiant.");
+      const recordId = cree?.records?.[0]?.id;
+      if (!recordId) throw new Error("Airtable n'a pas renvoyé d'identifiant.");
 
-    await db.from('clientes').update({ airtable_record_id: recordId }).eq('id', clienteId);
+      await db
+        .from('clientes')
+        .update({ airtable_record_id: recordId, airtable_verrou: null })
+        .eq('id', clienteId);
+    } catch (err) {
+      // La création a échoué : on rend la main pour que la prochaine
+      // tentative puisse réessayer sans attendre l'expiration du verrou.
+      await db.from('clientes').update({ airtable_verrou: null }).eq('id', clienteId);
+      throw err;
+    }
   }
 
   // ---------------------------------------------------------------------------
 
   try {
-    const { data: taches } = await db
-      .from('airtable_sync')
-      .select('id, entite, entite_id, tentatives')
-      .in('statut', ['en_attente', 'erreur'])
-      .lt('tentatives', TENTATIVES_MAX)
-      .order('cree_le', { ascending: true })
-      .limit(LOT);
+    // Remet en file les tâches d'une exécution interrompue.
+    await db.rpc('debloquer_taches_airtable');
 
+    // Réclamation atomique : deux appels simultanés ne peuvent pas prendre
+    // la même tâche, ce qui évitait jusqu'ici les créations en double.
+    const { data: taches, error: erreurLot } = await db.rpc('reclamer_taches_airtable', {
+      p_lot: LOT,
+    });
+
+    if (erreurLot) return json({ error: erreurLot.message }, 500);
     if (!taches?.length) return json({ traitees: 0, echecs: 0 });
 
     let traitees = 0;
     let echecs = 0;
 
-    for (const t of taches) {
-      await db.from('airtable_sync').update({ statut: 'en_cours' }).eq('id', t.id);
-
+    for (const t of taches as Array<{ id: string; entite: string; entite_id: string; tentatives: number }>) {
       try {
         await traiter(t);
         await db

@@ -450,15 +450,24 @@ export async function consentementsDuContrat(contratId: string): Promise<Consent
 // Synchronisation Airtable
 // ---------------------------------------------------------------------------
 
+let minuterieSynchro: ReturnType<typeof setTimeout> | null = null;
+
 /**
  * Demande au serveur de vider la file d'attente.
  *
+ * Le parcours du bilan enchaîne trois écritures en une seconde (cliente,
+ * bilan, cure). On attend donc un court instant et on ne lance qu'un seul
+ * appel : la file sera de toute façon complète à ce moment-là.
+ *
  * Volontairement silencieuse : l'écriture en base a déjà réussi, et la file
- * garde la trace de ce qui reste à envoyer. Si l'appel échoue, la prochaine
- * tentative repartira de la file.
+ * garde la trace de ce qui reste à envoyer.
  */
 export function declencherSynchro(): void {
-  supabase.functions.invoke('synchro-airtable').catch(() => undefined);
+  if (minuterieSynchro) clearTimeout(minuterieSynchro);
+  minuterieSynchro = setTimeout(() => {
+    minuterieSynchro = null;
+    supabase.functions.invoke('synchro-airtable').catch(() => undefined);
+  }, 1200);
 }
 
 export interface EtatSynchro {
