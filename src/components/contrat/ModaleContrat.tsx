@@ -29,6 +29,20 @@ function urlDepuisBase64(base64: string): string {
   return URL.createObjectURL(new Blob([octets], { type: 'application/pdf' }));
 }
 
+/**
+ * Un module chargé à la demande peut disparaître sous les pieds de la page :
+ * l'application vient d'être redéployée, les fichiers ont changé de nom, et
+ * l'onglet resté ouvert cherche encore les anciens. Recharger suffit — mais
+ * encore faut-il le dire.
+ */
+function messageErreur(e: unknown, defaut: string): string {
+  const texte = e instanceof Error ? e.message : String(e);
+  if (/dynamically imported module|Importing a module script failed|Failed to fetch/i.test(texte)) {
+    return "L'application a été mise à jour depuis l'ouverture de cette page. Rechargez-la (Cmd + R) et recommencez.";
+  }
+  return `${defaut} ${texte}`.slice(0, 220);
+}
+
 const TITRE_CONSENTEMENT: Record<string, string> = {
   'luxo-pdp': 'Consentement Luxothérapie',
   ishape: 'Consentement Électrostimulation',
@@ -101,7 +115,9 @@ export default function ModaleContrat({
         setVus(new Set(liste.length > 0 ? [liste[0].cle] : []));
       } catch (e) {
         console.error(e);
-        toast.error("Les documents n'ont pas pu être préparés.");
+        toast.error(messageErreur(e, "Les documents n'ont pas pu être préparés."), {
+          duration: 8000,
+        });
       } finally {
         if (!annule) setPreparation(false);
       }
@@ -202,7 +218,7 @@ export default function ModaleContrat({
       onSigne();
     } catch (e) {
       console.error(e);
-      toast.error("Le contrat n'a pas pu être enregistré. Réessayez.");
+      toast.error(messageErreur(e, "Le contrat n'a pas pu être enregistré."), { duration: 8000 });
       setEnCours(false);
     }
   }
