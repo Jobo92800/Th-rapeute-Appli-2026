@@ -6,6 +6,11 @@ et de la grille à 59 € la séance.
 L'ancienne application reste en service pendant la transition. Les deux
 cohabitent sans se gêner : **une cliente est créée dans une seule des deux**.
 
+Les données de l'ancienne application vivent ailleurs et ne sont pas touchées :
+les fiches clientes sur **Firebase** (projet « MAbeautyplus CRM »), le stock et
+les contrats signés sur le **Supabase géré par Bolt**. La V2 part sur un projet
+Supabase neuf qui n'appartient qu'à elle.
+
 ---
 
 ## Mise en route
@@ -16,9 +21,8 @@ cohabitent sans se gêner : **une cliente est créée dans une seule des deux**.
 cp .env.example .env
 ```
 
-Renseigner `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` — ce sont celles du
-projet Supabase **déjà utilisé** par l'application actuelle (Supabase →
-Project Settings → API).
+Renseigner `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` — celles du projet
+Supabase **créé pour la V2** (Supabase → Project Settings → API).
 
 ### 2. Base de données
 
@@ -30,9 +34,8 @@ Dans l'éditeur SQL de Supabase, exécuter les trois migrations **dans l'ordre**
 | `supabase/migrations/002_clientes_et_sync.sql` | fiches clientes et file d'attente Airtable |
 | `supabase/migrations/003_jeux.sql` | les 60 jeux de la méthode |
 
-Ces migrations sont **purement additives** : elles ne touchent à aucune table
-utilisée par l'application actuelle (`stock_*`, `signed_contracts`,
-`client_empreinte_bilans` restent intactes).
+Le projet est neuf : ces migrations créent l'intégralité du schéma et
+n'entrent en conflit avec rien.
 
 ### 3. Comptes de centre
 

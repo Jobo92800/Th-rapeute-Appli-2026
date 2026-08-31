@@ -1,10 +1,12 @@
 /*
   MAbeautyplus V2 — Migration 001 : référentiel et contrôle d'accès
 
-  À exécuter dans l'éditeur SQL du projet Supabase EXISTANT.
-  Cette migration est purement additive : elle ne touche à aucune table
-  utilisée par l'application actuelle (stock_*, signed_contracts,
-  client_empreinte_bilans restent intacts).
+  À exécuter dans l'éditeur SQL du projet Supabase DÉDIÉ À LA V2.
+
+  La base de l'application actuelle est gérée par Bolt et les fiches clientes
+  vivent sur Firebase : rien n'est partagé, rien n'est modifié. La V2 démarre
+  sur une base neuve, et l'ancienne application continue de tourner
+  exactement comme avant.
 
   Contenu
     1. Table centres            — les 5 centres, reprise de la config V1

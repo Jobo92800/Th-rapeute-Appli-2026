@@ -1,6 +1,8 @@
 /*
   MAbeautyplus V2 — Migration 002 : fiches clientes et miroir Airtable
 
+  À exécuter après la migration 001, dans le même projet.
+
   Contenu
     1. Table clientes           — la fiche, avec l'id Airtable stocké
     2. Table airtable_sync      — la file d'attente de synchronisation
