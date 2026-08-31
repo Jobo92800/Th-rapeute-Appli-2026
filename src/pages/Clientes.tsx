@@ -36,9 +36,10 @@ export default function Clientes() {
     queryFn: () => listerTherapeutes(centre.id),
   });
 
-  const { data: situations = [] } = useQuery({
+  const { data: situations = [], error: erreurSituations } = useQuery({
     queryKey: ['situations', centre.id],
     queryFn: () => situationsDuCentre(centre.id),
+    retry: false,
   });
 
   const parCliente = useMemo(
@@ -181,6 +182,22 @@ export default function Clientes() {
           </button>
         )}
       </div>
+
+      {erreurSituations && (
+        <div className="flex gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+          <div className="text-sm text-amber-900">
+            <p className="font-semibold">Les règlements ne peuvent pas être affichés.</p>
+            <p className="mt-1">
+              La vue <code className="rounded bg-amber-100 px-1">situation_reglement</code> est
+              absente de la base : exécutez la migration{' '}
+              <code className="rounded bg-amber-100 px-1">006_echeances_datees.sql</code> dans
+              l'éditeur SQL de Supabase, puis rechargez cette page. La colonne Règlement reste
+              vide en attendant.
+            </p>
+          </div>
+        </div>
+      )}
 
       {error ? (
         <p className="carte px-5 py-8 text-center text-sm text-rose-700">
