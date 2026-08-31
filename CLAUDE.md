@@ -96,7 +96,13 @@ Champs créés pour la V2 : `Source appli`, `Profil Empreinte`,
 `Terrain Empreinte`, `Date bilan`, `Nb séances`, `Détail prescription`,
 `Électrostimulation`, `Mode de règlement`, `Statut programme`,
 `Date validation`, `Reste à encaisser`, `Échéances en retard`,
-`Montant en retard`.
+`Montant en retard`, `Parrain`, `Filleules`, `Filleules engagées`,
+`Séances offertes restantes`.
+
+Le parrainage a un piège : quand une filleule signe, c'est la fiche de **sa
+marraine** qui change de valeur, pas la sienne. Un déclencheur sur `contrats`
+remet donc la marraine dans la file (migration 019). Sans lui, le CRM
+annoncerait toujours zéro filleule engagée.
 
 Les contrats et consentements partent en pièces jointes via l'API de contenu
 d'Airtable (base64), sans URL publique.
@@ -140,11 +146,6 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
 - **Vente des cosmétiques KOS** : ils sont au stock, mais aucune interface ne
   les vend. Une vente se note en sortie manuelle (« Ça sort »). Seuls les
   compléments se vendent depuis la fiche cliente.
-- **Le parrainage sur le contrat** : les séances offertes s'ajoutent au suivi,
-  mais le PDF du contrat n'en parle pas — il n'annonce que les séances
-  facturées. À trancher : faut-il les y mentionner ?
-- **Le parrainage dans Airtable** : ni le parrain ni les filleules ne
-  remontent (champs à créer côté Airtable, puis fonction Edge à compléter).
 - **Tableau de bord d'accueil** : aujourd'hui il ne montre que le nombre de
   fiches et l'état de la synchro. Il devrait montrer les échéances du jour,
   les retards, les séances à faire, les alertes de stock.
@@ -185,8 +186,11 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
 - **Diagnostiquer la synchro.** La fonction renvoie ses messages d'erreur
   dans sa réponse. Un simple appel suffit à savoir ce qui bloque :
   `curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $ANON"`.
-  Trois causes déjà vues : migration non passée, fonction pas redéployée,
-  secrets absents.
+  Elle nomme la cliente concernée, pas seulement l'entité. Causes déjà vues :
+  migration non passée, fonction pas redéployée, secrets absents, et le
+  **403 trompeur** — il tombe aussi quand la fiche Airtable visée a été
+  supprimée à la main. Dans ce cas, vider `airtable_record_id` sur la fiche
+  la fait recréer.
 - **Code admin du podcast.** `ADMIN_CODE` de l'application Mon Parcours vaut
   `0000` : quatre chiffres, devinables en quelques secondes, et il ouvre la
   création de comptes, le déblocage d'étapes et le dépôt de fichiers. À
@@ -240,9 +244,8 @@ curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
-Migrations passées jusqu'à **016** incluse. Les **017** (parrainage) et
-**018** (pastille de crédits sur la liste) sont écrites et attendent d'être
-collées dans l'éditeur SQL, dans cet ordre.
+Migrations passées jusqu'à **018** incluse. La **019** (parrainage dans
+Airtable) est écrite et attend d'être collée.
 
 Les migrations SQL se collent dans l'éditeur SQL de Supabase, dans l'ordre
 des numéros. Elles sont rejouables sans risque.

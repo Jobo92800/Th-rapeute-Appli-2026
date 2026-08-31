@@ -53,6 +53,13 @@ export interface ContractData {
   signatureCity: string;
 
   careItems: ContractCareItem[];
+  /**
+   * Séances gagnées par parrainage, ajoutées à la cure sans supplément.
+   * Elles figurent au contrat pour que la cliente en ait la trace écrite,
+   * mais elles n'entrent dans aucun montant.
+   */
+  offeredSessions: number;
+  offeredLabel: string;
   /** Technologies réellement prescrites : elles pilotent les consentements. */
   activeServiceIds: string[];
   totalAmount: string;
@@ -115,6 +122,14 @@ export function construireContrat(args: {
     return { label: ligne.label, sessions: seances, checked: seances > 0 };
   });
 
+  // Les séances offertes, et le soin sur lequel elles ont été posées.
+  const offertes = lignes.filter((l) => (l.seances_offertes ?? 0) > 0);
+  const offeredSessions = offertes.reduce((n, l) => n + (l.seances_offertes ?? 0), 0);
+  const offeredLabel = offertes
+    .map((l) => LIGNES_CONTRAT.find((c) => c.technologies.includes(l.technologie))?.label ?? '')
+    .filter(Boolean)
+    .join(', ');
+
   const activeServiceIds = lignes
     .filter((l) => l.seances_prevues > 0)
     .map((l) => CONSENTEMENT_PAR_TECHNOLOGIE[l.technologie])
@@ -153,6 +168,8 @@ export function construireContrat(args: {
     signatureCity: centre.ville,
 
     careItems,
+    offeredSessions,
+    offeredLabel,
     activeServiceIds: [...new Set(activeServiceIds)],
     totalAmount: euros(Number(programme.montant_total) + Number(programme.frais_financement)),
     installmentCount: (acompte ? 1 : 0) + suite.length,

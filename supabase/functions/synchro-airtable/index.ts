@@ -149,8 +149,17 @@ Deno.serve(async (req: Request) => {
     });
     const corps = await r.json();
     if (!r.ok) {
+      /*
+        Le 403 d'Airtable est trompeur : il tombe aussi quand le record visé
+        n'existe plus — une fiche supprimée à la main dans le CRM, par
+        exemple. Le dire évite de partir chercher un problème de droits.
+      */
+      const indice =
+        r.status === 403 || r.status === 404
+          ? ' — soit le jeton n\'a pas les droits, soit la fiche visée n\'existe plus dans Airtable (supprimée ?). Dans ce second cas, videz airtable_record_id sur la fiche pour qu\'elle soit recréée.'
+          : '';
       throw new Error(
-        `Airtable ${r.status} : ${corps?.error?.message ?? JSON.stringify(corps).slice(0, 300)}`,
+        `Airtable ${r.status} : ${corps?.error?.message ?? JSON.stringify(corps).slice(0, 300)}${indice}`,
       );
     }
     return corps;
@@ -293,7 +302,87 @@ Deno.serve(async (req: Request) => {
     if (c.parcours_audio) champs['Parcours audio'] = c.parcours_audio;
     if (c.acces_audio_le) champs['Accès audio'] = String(c.acces_audio_le).slice(0, 10);
 
+    Object.assign(champs, await champsParrainage(c));
+
     return { cliente: c, champs };
+  }
+
+  /*
+    Le parrainage : qui l'a parrainée, qui elle a parrainé, et ce qui lui
+    reste à faire valoir sur sa prochaine cure.
+
+    Les deux règles — 2 séances par filleule, plafond à 10 — sont celles de
+    src/domain/parrainage.ts. Si elles changent là-bas, elles changent ici.
+  */
+  async function champsParrainage(c: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const SEANCES_PAR_FILLEULE = 2;
+    const PLAFOND_SEANCES = 10;
+
+    const champs: Record<string, unknown> = {};
+
+    // Qui l'a parrainée : sa fiche, ou le nom saisi à la main.
+    if (c.parrain_id) {
+      const { data: m } = await db
+        .from('clientes')
+        .select('prenom, nom')
+        .eq('id', c.parrain_id)
+        .maybeSingle();
+      champs['Parrain'] = m ? `${m.prenom} ${m.nom}` : '';
+    } else {
+      champs['Parrain'] = (c.parrain_libre as string) ?? '';
+    }
+
+    // Qui elle a parrainé, et laquelle a signé.
+    const { data: filleules } = await db
+      .from('clientes')
+      .select('id, prenom, nom')
+      .eq('parrain_id', c.id)
+      .is('archivee_le', null)
+      .order('cree_le');
+
+    const liste = filleules ?? [];
+
+    // La première signature de chacune : c'est elle qui vaut engagement.
+    const signatures = new Map<string, string>();
+
+    if (liste.length > 0) {
+      const { data: contrats } = await db
+        .from('contrats')
+        .select('cliente_id, signe_le')
+        .in('cliente_id', liste.map((f) => f.id));
+
+      for (const k of contrats ?? []) {
+        const connue = signatures.get(k.cliente_id);
+        if (!connue || k.signe_le < connue) signatures.set(k.cliente_id, k.signe_le);
+      }
+    }
+
+    champs['Filleules'] = liste
+      .map((f) => {
+        const signe = signatures.get(f.id);
+        return `${f.prenom} ${f.nom} — ${signe ? `cure signée le ${String(signe).slice(0, 10)}` : 'pas encore de cure'}`;
+      })
+      .join('\n');
+
+    const engagees = liste.filter((f) => signatures.has(f.id)).length;
+    champs['Filleules engagées'] = engagees;
+
+    // Ce qu'elle a déjà posé sur ses cures.
+    const { data: programmes } = await db.from('programmes').select('id').eq('cliente_id', c.id);
+    let utilisees = 0;
+
+    if (programmes?.length) {
+      const { data: lignes } = await db
+        .from('programme_lignes')
+        .select('seances_offertes')
+        .in('programme_id', programmes.map((p) => p.id));
+      utilisees = (lignes ?? []).reduce((n, l) => n + (Number(l.seances_offertes) || 0), 0);
+    }
+
+    const gagnees = Math.min(engagees * SEANCES_PAR_FILLEULE, PLAFOND_SEANCES);
+    champs['Séances offertes restantes'] = Math.max(0, gagnees - utilisees);
+
+    return champs;
   }
 
   async function champsBilan(bilanId: string) {
@@ -458,7 +547,32 @@ Deno.serve(async (req: Request) => {
     let echecs = 0;
     // Les messages sont renvoyés dans la réponse : sans ça, diagnostiquer un
     // échec oblige à aller fouiller la base ou les journaux.
-    const erreurs: Array<{ entite: string; message: string }> = [];
+    const erreurs: Array<{ entite: string; qui: string; message: string }> = [];
+
+    /* De quelle cliente parle-t-on ? Une erreur sans nom est inexploitable. */
+    async function quiEstCe(entite: string, id: string): Promise<string> {
+      try {
+        let clienteId = id;
+
+        if (entite !== 'cliente') {
+          const table =
+            entite === 'bilan' ? 'bilans' : entite === 'programme' ? 'programmes' : 'contrats';
+          const { data } = await db.from(table).select('cliente_id').eq('id', id).maybeSingle();
+          if (!data) return 'ligne introuvable';
+          clienteId = data.cliente_id;
+        }
+
+        const { data: c } = await db
+          .from('clientes')
+          .select('prenom, nom')
+          .eq('id', clienteId)
+          .maybeSingle();
+
+        return c ? `${c.prenom} ${c.nom}` : 'fiche introuvable';
+      } catch {
+        return '';
+      }
+    }
 
     for (const t of taches as Array<{ id: string; entite: string; entite_id: string; tentatives: number }>) {
       try {
@@ -470,7 +584,11 @@ Deno.serve(async (req: Request) => {
         traitees++;
       } catch (err) {
         echecs++;
-        erreurs.push({ entite: t.entite, message: String(err).slice(0, 300) });
+        erreurs.push({
+          entite: t.entite,
+          qui: await quiEstCe(t.entite, t.entite_id),
+          message: String(err).slice(0, 400),
+        });
         await db
           .from('airtable_sync')
           .update({

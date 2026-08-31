@@ -167,6 +167,16 @@ export async function generateSignedContractPdf(
   for (const item of data.careItems) {
     y = checkboxRow(doc, item.label, MARGIN, y, item.checked, item.sessions);
   }
+  // Les séances gagnées par parrainage figurent au contrat : la cliente doit
+  // en avoir la trace écrite. Elles n'entrent dans aucun montant.
+  if (data.offeredSessions > 0) {
+    y = paragraph(
+      doc,
+      `À ces séances s'ajoutent ${data.offeredSessions} séance${data.offeredSessions > 1 ? 's' : ''} offerte${data.offeredSessions > 1 ? 's' : ''}${data.offeredLabel ? ` (${data.offeredLabel})` : ''} au titre du parrainage, sans supplément de prix.`,
+      y,
+      SMALL_LINE_H,
+    );
+  }
   y = paragraph(doc, 'Les modalités précises de la cure (fréquence, organisation, durée estimée) sont définies lors du bilan préalable.', y, SMALL_LINE_H);
   y += 2;
 
