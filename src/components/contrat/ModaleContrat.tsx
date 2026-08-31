@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Eye, FileSignature, Headphones, Loader2, X } from 'lucide-react';
+import { Check, Eye, FileSignature, Headphones, Loader2, Maximize2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Signature, { type SignatureHandle } from './Signature';
 import { ENGAGEMENTS, construireContrat, type ContractData } from '../../domain/contrat';
@@ -245,7 +245,7 @@ export default function ModaleContrat({
         role="dialog"
         aria-modal="true"
         aria-label="Signature du contrat"
-        className="my-4 w-full max-w-3xl overflow-hidden rounded-xl bg-white shadow-carte"
+        className="my-4 w-full max-w-5xl overflow-hidden rounded-xl bg-white shadow-carte"
       >
         <div className="flex items-center justify-between border-b border-ardoise-200 px-5 py-3.5">
           <div>
@@ -322,16 +322,29 @@ export default function ModaleContrat({
                 {doc && (
                   <iframe
                     key={doc.cle}
-                    src={`${doc.url}#view=FitH`}
+                    src={`${doc.url}#toolbar=0&navpanes=0&scrollbar=1&view=FitH&zoom=page-width`}
                     title={doc.titre}
-                    className="h-96 w-full rounded-xl border border-ardoise-300 bg-ardoise-50"
+                    className="h-[70vh] min-h-[520px] w-full rounded-xl border border-ardoise-300 bg-ardoise-50"
                   />
                 )}
 
-                <p className="mt-2 text-xs text-ardoise-500">
-                  Parcourez chaque document avec la cliente. Tant qu'un document n'a pas été
-                  ouvert, la signature reste bloquée.
-                </p>
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs text-ardoise-500">
+                    Parcourez chaque document avec la cliente. Tant qu'un document n'a pas été
+                    ouvert, la signature reste bloquée.
+                  </p>
+                  {doc && (
+                    <a
+                      href={doc.url}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-marine-700 hover:text-marine-900"
+                    >
+                      <Maximize2 className="h-3.5 w-3.5" />
+                      Ouvrir en plein écran
+                    </a>
+                  )}
+                </div>
               </>
             )}
           </section>
