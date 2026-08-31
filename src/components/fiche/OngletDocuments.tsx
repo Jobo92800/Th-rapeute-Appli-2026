@@ -12,6 +12,7 @@ import {
   programmesDeLaCliente,
 } from '../../services/metier';
 import ModaleContrat from '../contrat/ModaleContrat';
+import CarteParcoursAudio from './CarteParcoursAudio';
 import type { Cliente } from '../../types/db';
 
 /** Déclenche le téléchargement d'un PDF encodé en base64. */
@@ -202,6 +203,8 @@ export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
           </>
         )}
       </section>
+
+      <CarteParcoursAudio cliente={cliente} />
 
       {signature && actif && (
         <ModaleContrat

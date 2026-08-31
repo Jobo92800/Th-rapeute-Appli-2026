@@ -515,14 +515,44 @@ export async function donnerAccesParcours(
   parcours: 'A' | 'B' | 'C',
 ): Promise<{ dejaLa: boolean }> {
   const { data, error } = await supabase.functions.invoke('acces-parcours-audio', {
-    body: { clienteId, parcours },
+    body: { clienteId, parcours, action: 'creer' },
   });
 
   if (error) {
     throw new Error(
-      (data as { error?: string })?.error ??
-        "L'accès au parcours audio n'a pas pu être créé.",
+      (data as { error?: string })?.error ?? "L'accès au parcours audio n'a pas pu être créé.",
     );
   }
   return { dejaLa: Boolean((data as { dejaLa?: boolean })?.dejaLa) };
+}
+
+export async function renvoyerInvitationParcours(clienteId: string): Promise<string> {
+  const { data, error } = await supabase.functions.invoke('acces-parcours-audio', {
+    body: { clienteId, action: 'renvoyer' },
+  });
+
+  if (error) {
+    throw new Error(
+      (data as { error?: string })?.error ?? "L'invitation n'a pas pu être renvoyée.",
+    );
+  }
+  return (data as { email?: string })?.email ?? '';
+}
+
+export interface CompteParcours {
+  id: string;
+  parcoursCode: string;
+  compteActive: boolean;
+  terminees: number;
+  total: number;
+  derniereActivite: string | null;
+}
+
+/** État du compte de la cliente côté Mon Parcours, ou null s'il n'existe pas. */
+export async function etatParcours(clienteId: string): Promise<CompteParcours | null> {
+  const { data, error } = await supabase.functions.invoke('acces-parcours-audio', {
+    body: { clienteId, action: 'etat' },
+  });
+  if (error) return null;
+  return ((data as { compte?: CompteParcours | null })?.compte ?? null) as CompteParcours | null;
 }
