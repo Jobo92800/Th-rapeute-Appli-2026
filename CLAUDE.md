@@ -36,6 +36,7 @@ cliquer. Ne jamais supposer qu'une étape technique est évidente.
 | Airtable | Reste le CRM et le moteur des automatisations. La V2 y écrit via une fonction Edge, jamais depuis le navigateur. |
 | Parcours audio | L'application « Mon Parcours » (`Jobo92800/Applipodcast`, `applipodcast.netlify.app`) reste **séparée** : son projet Supabase, son site Netlify, ses fonctions. La V2 se contente de créer le compte de la cliente au moment de la signature du contrat, avec le parcours A/B/C **choisi par la thérapeute**. **Il n'y a aucun lien personnel à récupérer** : l'adresse du site est la même pour toutes, ce qui est personnel c'est le compte. Le chemin normal est désormais le **mot de passe choisi avec la cliente au comptoir** : le compte est créé avec l'email déjà confirmé, elle se connecte tout de suite. L'invitation par email reste en secours (laisser le mot de passe vide), mais son lien est à usage unique et expire en 24 h — c'est ce qui posait problème. Dans Airtable, `Lien parcours audio` renvoie l'adresse du site quand `Accès audio` est rempli. |
 | Support | Ordinateur (90 % du temps). Seul le questionnaire du bilan est pensé pour la tablette. |
+| Stock | La quantité en rayon **ne se stocke pas** : elle se calcule (entrées − sorties), comme les séances restantes. La V1 recopiait un compteur, qui mentait au bout de quelques jours. Une vente de compléments **est** un mouvement de sortie, écrit par la base : les deux systèmes ne peuvent plus diverger. Le stock peut passer en négatif — c'est le signe qu'un comptage s'impose, pas une raison de refuser une vente réelle. Le guide et la tenue sortent du rayon **à la signature du contrat** : c'est le moment où la cliente repart avec. La taille de la tenue est demandée dans la fenêtre de signature, et la signature reste bloquée tant qu'elle n'est pas choisie. |
 | Suppression | **Archiver** est le geste courant : réversible, rien n'est perdu. **Supprimer** est définitif, emporte tout le dossier, exige de retaper le nom, et reste réservé à la direction. |
 
 ---
@@ -66,11 +67,11 @@ cliquer. Ne jamais supposer qu'une étape technique est évidente.
 **Vite · React 18 · TypeScript · Tailwind · TanStack Query · Supabase.**
 
 ```
-src/domain/        règles métier pures (tarification, empreinte, jeuDuJour, reglement, contrat)
-src/services/      accès aux données (clientes, metier, contratPdf, consentementsPdf)
+src/domain/        règles métier pures (tarification, empreinte, jeuDuJour, reglement, contrat, stock)
+src/services/      accès aux données (clientes, metier, stock, contratPdf, consentementsPdf)
 src/lib/           supabase, session
-src/pages/         Accueil, Clientes, FicheCliente, NouveauBilan, Connexion
-src/components/    bilan/, contrat/, fiche/, Layout
+src/pages/         Accueil, Clientes, FicheCliente, NouveauBilan, Stock, Connexion
+src/components/    bilan/, contrat/, cure/, fiche/, stock/, Layout
 supabase/migrations/   le schéma, numéroté, à exécuter dans l'ordre
 supabase/functions/    synchro-airtable, envoyer-contrat, acces-parcours-audio
 ```
@@ -112,10 +113,12 @@ moteur du jeu du jour · mensurations avec courbe · notes entre thérapeutes ·
 contrats et consentements signés, avec lecture obligatoire avant signature ·
 synchronisation Airtable complète, PDF en pièces jointes compris ·
 archivage réversible et suppression définitive (direction) · accès au
-parcours audio avec mot de passe donné au comptoir.
+parcours audio avec mot de passe donné au comptoir · **stock et ventes de
+compléments**, la vente décomptant le rayon toute seule.
 
 **Tout est vérifié en conditions réelles** : fiches, bilan, cure, contrat,
-consentements, synchro Airtable et parcours audio fonctionnent.
+consentements, synchro Airtable et parcours audio fonctionnent. Le stock,
+lui, n'a été vu que sur des données factices : il attend la migration 015.
 
 **Reste à faire**
 
@@ -124,17 +127,20 @@ consentements, synchro Airtable et parcours audio fonctionnent.
   secret `RESEND_API_KEY`. **À arbitrer** : les documents arrivant désormais
   en pièces jointes dans Airtable, l'envoi peut aussi se faire depuis les
   automatisations Airtable — c'est peut-être plus simple que Resend.
-- **Écran Stock** : le lien du menu existe mais mène à un écran vide. Le
-  modèle Supabase de la V1 (`stock_products`, `stock_levels`,
-  `stock_movements`) est bon, à reprendre tel quel dans le projet V2.
-- **Ventes de compléments** reliées au décompte de stock : la table
-  `ventes_complements` existe et n'a aucune interface. Les deux systèmes
-  s'ignoraient dans la V1, ne pas refaire cette erreur.
+- **Sécurité des fonctions SQL** : les fonctions `SECURITY DEFINER` reçoivent
+  un `GRANT` à `service_role` ou `authenticated`, mais personne ne retire le
+  droit implicite que PostgreSQL donne à `PUBLIC`. N'importe qui muni de la
+  clé publique du site peut donc appeler `reclamer_taches_airtable` et vider
+  la file de synchro en la marquant « en cours ». Aucune donnée cliente ne
+  fuit ; la synchro, elle, s'arrêterait sans un mot. À refermer par une
+  migration `REVOKE EXECUTE … FROM PUBLIC, anon` sur les six fonctions
+  concernées (001, 010, 012, 014).
+- **Vente des cosmétiques KOS** : ils sont au stock, mais aucune interface ne
+  les vend. Une vente se note en sortie manuelle (« Ça sort »). Seuls les
+  compléments se vendent depuis la fiche cliente.
 - **Tableau de bord d'accueil** : aujourd'hui il ne montre que le nombre de
   fiches et l'état de la synchro. Il devrait montrer les échéances du jour,
   les retards, les séances à faire, les alertes de stock.
-- **Compte à rebours des compléments** : règles d'épuisement reprises de la
-  V1 (BURN et DETOX 15 jours par boîte, SKIN 30, SOS pas de calcul).
 - Migration éventuelle de l'historique Firestore.
 - Le dépôt est **public** : il contient le questionnaire Empreinte, les 60
   jeux, les textes de contrat et la grille tarifaire. À repasser en privé.
@@ -144,6 +150,9 @@ consentements, synchro Airtable et parcours audio fonctionnent.
 
 - Tarif du Dôme : 39 € (V1) ou 59 € comme la Méthode ?
 - Les compléments sont-ils inclus dans le montant de la cure ou vendus à part ?
+  (l'écran les vend à part, au tarif `complement`, 37 € la boîte)
+- Les produits Advance Beauty du Grau-du-Roi (V1) sont-ils encore tenus ?
+  Les cosmétiques KOS, eux, sont au catalogue depuis la 016.
 - Les frais Alma sont-ils ajoutés au montant cliente ou absorbés par le centre ?
 - Classer les 60 jeux en `pedagogique` / `action` (colonne `jeux.nature`,
   tous en `action` par défaut) pour la règle d'alternance sur deux venues
@@ -224,7 +233,9 @@ curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
-Migrations passées jusqu'à **013** incluse.
+Migrations passées jusqu'à **014** incluse. Les **015** (stock) et **016**
+(cosmétiques KOS, tenue décomptée à la signature) sont écrites et attendent
+d'être collées dans l'éditeur SQL, dans cet ordre.
 
 Les migrations SQL se collent dans l'éditeur SQL de Supabase, dans l'ordre
 des numéros. Elles sont rejouables sans risque.

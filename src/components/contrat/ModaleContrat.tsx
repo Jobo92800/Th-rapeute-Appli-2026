@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Eye, FileSignature, Headphones, Loader2, Maximize2, X } from 'lucide-react';
+import { Check, Eye, FileSignature, Headphones, Loader2, Maximize2, Shirt, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Signature, { type SignatureHandle } from './Signature';
 import { ENGAGEMENTS, construireContrat, type ContractData } from '../../domain/contrat';
@@ -7,8 +7,16 @@ import {
   MOT_DE_PASSE_MIN,
   donnerAccesParcours,
   enregistrerContrat,
+  enregistrerTailleTenue,
 } from '../../services/metier';
-import type { Centre, Cliente, Echeance, LigneProgramme, Programme } from '../../types/db';
+import type {
+  Centre,
+  Cliente,
+  Echeance,
+  LigneProgramme,
+  Programme,
+  TailleTenue,
+} from '../../types/db';
 
 interface Props {
   cliente: Cliente;
@@ -68,6 +76,7 @@ export default function ModaleContrat({
   const [signatureVide, setSignatureVide] = useState(true);
   const [enCours, setEnCours] = useState(false);
   const [parcoursAudio, setParcoursAudio] = useState<'A' | 'B' | 'C' | null>('A');
+  const [tailleTenue, setTailleTenue] = useState<TailleTenue | null>(programme.taille_tenue ?? null);
   const [motDePasse, setMotDePasse] = useState('');
 
   const [documents, setDocuments] = useState<DocumentAffiche[]>([]);
@@ -76,6 +85,9 @@ export default function ModaleContrat({
   const [preparation, setPreparation] = useState(true);
 
   const contrat: ContractData = construireContrat({ cliente, centre, programme, lignes, echeances });
+
+  // La tenue est facturée sur cette cure : il faut savoir laquelle sortir du rayon.
+  const tenueAremettre = programme.tenue || Number(programme.prix_tenue) > 0;
 
   /*
     Les documents sont générés à l'ouverture, sans signature, pour être lus
@@ -150,7 +162,9 @@ export default function ModaleContrat({
   const mdpIncomplet =
     parcoursAudio !== null && motDePasse.length > 0 && motDePasse.length < MOT_DE_PASSE_MIN;
   const tousCoches = coches.every(Boolean);
-  const pret = tousLus && tousCoches && !signatureVide && !enCours && !mdpIncomplet;
+  const tailleManquante = tenueAremettre && !tailleTenue;
+  const pret =
+    tousLus && tousCoches && !signatureVide && !enCours && !mdpIncomplet && !tailleManquante;
   const restants = documents.length - vus.size;
 
   const manque = mdpIncomplet
@@ -161,9 +175,11 @@ export default function ModaleContrat({
       ? `Il reste ${restants} document${restants > 1 ? 's' : ''} à ouvrir.`
       : !tousCoches
         ? 'Cochez les quatre engagements pour continuer.'
-        : signatureVide
-          ? 'Il manque la signature.'
-          : 'Prêt à signer.';
+        : tailleManquante
+          ? 'Choisissez la taille de la tenue I-Shape.'
+          : signatureVide
+            ? 'Il manque la signature.'
+            : 'Prêt à signer.';
 
   async function signer() {
     const trace = signature.current?.lire();
@@ -178,6 +194,24 @@ export default function ModaleContrat({
         import('../../services/contratPdf'),
         import('../../services/consentementsPdf'),
       ]);
+
+      /*
+        La taille part avant le contrat : c'est en enregistrant le contrat que
+        la base sort la tenue du rayon, et elle a besoin de savoir laquelle.
+        Si cette écriture échoue, on signe quand même — le contrat prime, le
+        rayon se recale à la main.
+      */
+      if (tenueAremettre && tailleTenue && tailleTenue !== programme.taille_tenue) {
+        try {
+          await enregistrerTailleTenue(programme.id, tailleTenue);
+        } catch (e) {
+          console.error(e);
+          toast.error(
+            'La taille de la tenue n’a pas pu être enregistrée : le rayon ne sera pas décompté.',
+            { duration: 8000 },
+          );
+        }
+      }
 
       const pdf = await generateSignedContractPdf(contrat, trace, coches);
       const consentements = generateSignedConsents(
@@ -390,6 +424,40 @@ export default function ModaleContrat({
               ))}
             </div>
           </section>
+
+          {/* Tenue I-Shape ---------------------------------------------- */}
+          {tenueAremettre && (
+            <section>
+              <h3 className="mb-2 flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
+                <Shirt className="h-3.5 w-3.5" />
+                Tenue I-Shape remise à la cliente
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {(['S', 'M', 'L', 'XL'] as const).map((t) => {
+                  const actif = tailleTenue === t;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setTailleTenue(t)}
+                      aria-pressed={actif}
+                      className={`rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
+                        actif
+                          ? 'border-marine-600 bg-marine-600 text-white'
+                          : 'border-ardoise-300 bg-white text-ardoise-700 hover:border-marine-400'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-xs text-ardoise-500">
+                La tenue de cette taille sort du rayon à la signature. Une seule par cure, même
+                si le contrat est signé deux fois.
+              </p>
+            </section>
+          )}
 
           {/* Parcours audio --------------------------------------------- */}
           <section>
