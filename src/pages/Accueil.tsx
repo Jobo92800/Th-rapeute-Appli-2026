@@ -2,16 +2,18 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { UserPlus, ArrowRight, RefreshCw, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react';
+import { UserPlus, ArrowRight, Sparkles } from 'lucide-react';
 import { format, startOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useCentre } from '../lib/session';
 import { listerClientes } from '../services/clientes';
-import { etatSynchro, relancerSynchro } from '../services/metier';
+import { etatSynchro, oublierErreursSynchro, relancerSynchro } from '../services/metier';
+import EtatSynchro from '../components/EtatSynchro';
 
 export default function Accueil() {
   const centre = useCentre();
   const [relance, setRelance] = useState(false);
+  const [oubli, setOubli] = useState(false);
 
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ['clientes', centre.id],
@@ -57,6 +59,24 @@ export default function Accueil() {
           enErreur={sync?.enErreur ?? 0}
           erreurs={sync?.dernieresErreurs ?? []}
           relanceEnCours={relance}
+          oubliEnCours={oubli}
+          onOublier={async () => {
+            setOubli(true);
+            try {
+              const n = await oublierErreursSynchro();
+              await relireSync();
+              toast.success(
+                n === 0
+                  ? 'Aucune erreur à écarter'
+                  : `${n} erreur${n > 1 ? 's' : ''} écartée${n > 1 ? 's' : ''}. La fiche repartira à sa prochaine modification.`,
+                { duration: 6000 },
+              );
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Les erreurs n'ont pas pu être écartées.");
+            } finally {
+              setOubli(false);
+            }
+          }}
           onRelancer={async () => {
             setRelance(true);
             try {
@@ -148,74 +168,6 @@ function Indicateur({ libelle, valeur }: { libelle: string; valeur: string }) {
       <div className="chiffres mt-1 text-3xl font-bold tracking-tight text-ardoise-900">
         {valeur}
       </div>
-    </div>
-  );
-}
-
-function EtatSynchro({
-  enAttente,
-  enErreur,
-  erreurs,
-  relanceEnCours,
-  onRelancer,
-}: {
-  enAttente: number;
-  enErreur: number;
-  erreurs: Array<{ entite: string; message: string }>;
-  relanceEnCours: boolean;
-  onRelancer: () => void;
-}) {
-  const enPanne = enErreur > 0;
-  const enCours = enAttente > 0;
-
-  return (
-    <div className="carte px-5 py-4">
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
-          Synchronisation Airtable
-        </span>
-        {(enPanne || enCours) && (
-          <button
-            onClick={onRelancer}
-            disabled={relanceEnCours}
-            className="text-2xs font-semibold uppercase tracking-wide text-marine-700 hover:text-marine-900 disabled:opacity-50"
-          >
-            {relanceEnCours ? 'Envoi…' : 'Relancer'}
-          </button>
-        )}
-      </div>
-      <div className="mt-1.5 flex items-center gap-2">
-        {enPanne ? (
-          <>
-            <AlertTriangle className="h-5 w-5 text-rose-600" />
-            <span className="text-sm font-semibold text-rose-700">
-              {enErreur} fiche{enErreur > 1 ? 's' : ''} en échec
-            </span>
-          </>
-        ) : enCours ? (
-          <>
-            <RefreshCw className="h-5 w-5 text-marine-600" />
-            <span className="text-sm font-semibold text-marine-800">
-              {enAttente} en attente d'envoi
-            </span>
-          </>
-        ) : (
-          <>
-            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-            <span className="text-sm font-semibold text-emerald-700">Tout est à jour</span>
-          </>
-        )}
-      </div>
-
-      {enPanne && erreurs.length > 0 && (
-        <ul className="mt-2 space-y-1 border-t border-ardoise-100 pt-2">
-          {erreurs.map((e, i) => (
-            <li key={i} className="text-2xs leading-snug text-ardoise-500">
-              <span className="font-semibold text-ardoise-700">{e.entite}</span> — {e.message}
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 }

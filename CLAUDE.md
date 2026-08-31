@@ -190,7 +190,10 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   migration non passée, fonction pas redéployée, secrets absents, et le
   **403 trompeur** — il tombe aussi quand la fiche Airtable visée a été
   supprimée à la main. Dans ce cas, vider `airtable_record_id` sur la fiche
-  la fait recréer.
+  la fait recréer. Le bouton **Écarter** de l'accueil retire ces tâches de la
+  file : l'échec est parfois voulu — une fiche supprimée exprès dans le CRM
+  ne pourra jamais être mise à jour. Rien n'est perdu, la prochaine
+  modification de la fiche la remet en file.
 - **Code admin du podcast.** `ADMIN_CODE` de l'application Mon Parcours vaut
   `0000` : quatre chiffres, devinables en quelques secondes, et il ouvre la
   création de comptes, le déblocage d'étapes et le dépôt de fichiers. À
@@ -244,8 +247,8 @@ curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
-Migrations passées jusqu'à **018** incluse. La **019** (parrainage dans
-Airtable) est écrite et attend d'être collée.
+Migrations passées jusqu'à **019** incluse. La **020** (bouton « Écarter »
+sur les erreurs de synchro) est écrite et attend d'être collée.
 
 Les migrations SQL se collent dans l'éditeur SQL de Supabase, dans l'ordre
 des numéros. Elles sont rejouables sans risque.

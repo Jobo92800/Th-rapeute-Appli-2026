@@ -548,6 +548,19 @@ export interface EtatSynchro {
   dernieresErreurs: Array<{ entite: string; message: string }>;
 }
 
+/**
+ * Retire de la file les tâches en échec. Utile quand l'échec est voulu : une
+ * fiche supprimée à la main dans Airtable ne pourra jamais être mise à jour,
+ * et la V2 réessaierait sans fin.
+ *
+ * Rien n'est perdu : la prochaine modification de la fiche la remet en file.
+ */
+export async function oublierErreursSynchro(): Promise<number> {
+  const { data, error } = await supabase.rpc('oublier_taches_airtable');
+  if (error) throw error;
+  return (data as number) ?? 0;
+}
+
 export async function etatSynchro(): Promise<EtatSynchro> {
   const [attente, erreur, details] = await Promise.all([
     supabase.from('airtable_sync').select('*', { count: 'exact', head: true }).eq('statut', 'en_attente'),
