@@ -27,3 +27,4 @@ CREATE TRIGGER clientes_vers_airtable
                             parcours_audio, acces_audio_le
   ON clientes
   FOR EACH ROW EXECUTE FUNCTION enfiler_airtable('cliente');
+

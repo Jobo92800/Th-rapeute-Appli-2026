@@ -8,7 +8,7 @@
   il vit ici, en secret de fonction.
 
   Secrets attendus (Supabase → Edge Functions → Secrets) :
-    PODCAST_API_URL      https://monparcours.mabeautyplus.fr/api/admin
+    PODCAST_API_URL      https://applipodcast.netlify.app/api/admin
     PODCAST_ADMIN_CODE   le code de l'espace thérapeute
 */
 

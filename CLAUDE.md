@@ -34,7 +34,7 @@ cliquer. Ne jamais supposer qu'une étape technique est évidente.
 | Règlement | 4× sans frais (maison) ou 10× Alma (taux repris de la V1, constante empirique comprise). |
 | Connexion | **Un compte par thérapeute**, pas par centre. Cloisonnement par centre en RLS. Un compte `direction` voit les 5 centres. |
 | Airtable | Reste le CRM et le moteur des automatisations. La V2 y écrit via une fonction Edge, jamais depuis le navigateur. |
-| Parcours audio | L'application « Mon Parcours » (`Jobo92800/Applipodcast`) reste **séparée** : son projet Supabase, son site Netlify, ses fonctions. La V2 se contente de créer le compte de la cliente au moment de la signature du contrat, avec le parcours A/B/C **choisi par la thérapeute**. Il n'y a plus de lien personnel : la cliente reçoit une invitation par email et choisit son mot de passe. |
+| Parcours audio | L'application « Mon Parcours » (`Jobo92800/Applipodcast`, `applipodcast.netlify.app`) reste **séparée** : son projet Supabase, son site Netlify, ses fonctions. La V2 se contente de créer le compte de la cliente au moment de la signature du contrat, avec le parcours A/B/C **choisi par la thérapeute**. Il n'y a plus de lien personnel : la cliente reçoit une invitation par email et choisit son mot de passe. |
 | Support | Ordinateur (90 % du temps). Seul le questionnaire du bilan est pensé pour la tablette. |
 | Suppression | **Archiver** est le geste courant : réversible, rien n'est perdu. **Supprimer** est définitif, emporte tout le dossier, exige de retaper le nom, et reste réservé à la direction. |
 
@@ -150,6 +150,11 @@ signature · archivage réversible et suppression définitive (direction).
   `curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $ANON"`.
   Trois causes déjà vues : migration non passée, fonction pas redéployée,
   secrets absents.
+- **Code admin du podcast.** `ADMIN_CODE` de l'application Mon Parcours vaut
+  `0000` : quatre chiffres, devinables en quelques secondes, et il ouvre la
+  création de comptes, le déblocage d'étapes et le dépôt de fichiers. À
+  remplacer par une phrase longue, côté Netlify (podcast) **et** côté secret
+  `PODCAST_ADMIN_CODE` (V2), les deux doivent rester identiques.
 - **Doublons Airtable.** Le parcours du bilan enchaîne trois écritures ;
   sans verrou, trois synchros parallèles créaient trois fiches. Réglé par
   `reclamer_taches_airtable` (SKIP LOCKED), un verrou par cliente et un
