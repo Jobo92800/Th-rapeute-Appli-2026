@@ -105,13 +105,17 @@ Secrets de la fonction : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`, `AIRTABLE_TABLE`.
 **Fait** — socle et connexion · fiches clientes · Bilan Empreinte complet ·
 programme et prix · échéancier daté avec états de retard · séances et moteur
 du jeu du jour · mensurations avec courbe · notes entre thérapeutes ·
-contrats et consentements signés · synchronisation Airtable.
+contrats et consentements signés · synchronisation Airtable, y compris
+l'envoi des PDF en pièces jointes · lecture obligatoire des documents avant
+signature.
 
 **Reste à faire**
 
 - Envoi du contrat par email : la fonction `envoyer-contrat` est écrite mais
   pas déployée. Demande un compte Resend avec `mabeautyplus.fr` vérifié et le
-  secret `RESEND_API_KEY`.
+  secret `RESEND_API_KEY`. **À arbitrer** : les documents arrivant désormais
+  en pièces jointes dans Airtable, l'envoi peut aussi se faire depuis les
+  automatisations Airtable — c'est peut-être plus simple que Resend.
 - Écran Stock (lot 5) : à reprendre du modèle Supabase de la V1.
 - Ventes de compléments reliées au décompte de stock.
 - Tableau de bord d'accueil : échéances du jour, séances à faire.
@@ -138,12 +142,25 @@ contrats et consentements signés · synchronisation Airtable.
   web de Supabase se coupe. Déployer la fonction par la CLI.
 - **Ordre des opérations.** Toujours passer la migration SQL *avant* de
   redéployer la fonction Edge, sinon elle appelle des fonctions absentes.
+- **Diagnostiquer la synchro.** La fonction renvoie ses messages d'erreur
+  dans sa réponse. Un simple appel suffit à savoir ce qui bloque :
+  `curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $ANON"`.
+  Trois causes déjà vues : migration non passée, fonction pas redéployée,
+  secrets absents.
 - **Doublons Airtable.** Le parcours du bilan enchaîne trois écritures ;
   sans verrou, trois synchros parallèles créaient trois fiches. Réglé par
   `reclamer_taches_airtable` (SKIP LOCKED), un verrou par cliente et un
   regroupement des appels côté application. Ne pas défaire.
 
 ---
+
+## Déploiement
+
+Dépôt : `Jobo92800/Th-rapeute-Appli-2026` (public pour l'instant — contient
+le questionnaire Empreinte, les 60 jeux, les textes de contrat et la grille
+tarifaire ; à repasser en privé). Netlify déploie automatiquement sur chaque
+poussée. Variables à définir côté Netlify : `VITE_SUPABASE_URL` et
+`VITE_SUPABASE_ANON_KEY`.
 
 ## Commandes
 
