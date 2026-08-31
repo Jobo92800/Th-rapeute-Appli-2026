@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Search, UserPlus, X, Sparkles, AlertTriangle, MessageSquare, Pin } from 'lucide-react';
+import { Search, UserPlus, X, Sparkles, AlertTriangle, MessageSquare, Pin, Archive, Undo2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useCentre } from '../lib/session';
-import { listerClientes, listerTherapeutes } from '../services/clientes';
+import { listerClientes, listerArchivees, listerTherapeutes, restaurerCliente } from '../services/clientes';
 import { resumeNotesDuCentre, situationsDuCentre } from '../services/metier';
 import { etatCliente, type SituationReglement } from '../domain/reglement';
 import ModaleNotes from '../components/ModaleNotes';
@@ -28,11 +29,24 @@ export default function Clientes() {
   const [therapeute, setTherapeute] = useState('');
   const [retardsSeuls, setRetardsSeuls] = useState(false);
   const [notesOuvertes, setNotesOuvertes] = useState<Cliente | null>(null);
+  const [archives, setArchives] = useState(false);
+  const qc = useQueryClient();
 
   const { data: clientes = [], isLoading, error } = useQuery({
-    queryKey: ['clientes', centre.id],
-    queryFn: () => listerClientes(centre.id),
+    queryKey: archives ? ['clientes-archivees', centre.id] : ['clientes', centre.id],
+    queryFn: () => (archives ? listerArchivees(centre.id) : listerClientes(centre.id)),
   });
+
+  async function restaurer(c: Cliente) {
+    try {
+      await restaurerCliente(c.id);
+      qc.invalidateQueries({ queryKey: ['clientes-archivees', centre.id] });
+      qc.invalidateQueries({ queryKey: ['clientes', centre.id] });
+      toast.success(`${c.prenom} ${c.nom} restaurée`);
+    } catch {
+      toast.error('La fiche n\'a pas pu être restaurée.');
+    }
+  }
 
   const { data: therapeutes = [] } = useQuery({
     queryKey: ['therapeutes', centre.id],
@@ -165,7 +179,24 @@ export default function Clientes() {
           ))}
         </select>
 
-        {nbEnRetard > 0 && (
+        <button
+          type="button"
+          onClick={() => {
+            setArchives((v) => !v);
+            setRetardsSeuls(false);
+          }}
+          aria-pressed={archives}
+          className={`bouton ${
+            archives
+              ? 'bg-ardoise-700 text-white hover:bg-ardoise-800'
+              : 'border border-ardoise-300 bg-white text-ardoise-600 hover:bg-ardoise-50'
+          }`}
+        >
+          <Archive className="h-4 w-4" />
+          Archivées
+        </button>
+
+        {!archives && nbEnRetard > 0 && (
           <button
             type="button"
             onClick={() => setRetardsSeuls((v) => !v)}
@@ -222,9 +253,11 @@ export default function Clientes() {
       ) : filtrees.length === 0 ? (
         <div className="carte px-5 py-12 text-center">
           <p className="text-sm text-ardoise-500">
-            {filtreActif
-              ? 'Aucune fiche ne correspond à cette recherche.'
-              : "Aucune cliente dans ce centre pour l'instant."}
+            {archives
+              ? 'Aucune fiche archivée dans ce centre.'
+              : filtreActif
+                ? 'Aucune fiche ne correspond à cette recherche.'
+                : "Aucune cliente dans ce centre pour l'instant."}
           </p>
         </div>
       ) : (
@@ -239,7 +272,7 @@ export default function Clientes() {
                 <Entete>Thérapeute</Entete>
                 <Entete>Règlement</Entete>
                 <Entete>Notes</Entete>
-                <Entete>Créée le</Entete>
+                <Entete>{archives ? 'Archivée' : 'Créée le'}</Entete>
               </tr>
             </thead>
             <tbody className="divide-y divide-ardoise-100">
@@ -289,7 +322,14 @@ export default function Clientes() {
                     />
                   </td>
                   <td className="px-4 py-2.5 text-ardoise-500">
-                    {format(new Date(c.cree_le), 'd MMM yyyy', { locale: fr })}
+                    {archives && c.archivee_le ? (
+                      <button onClick={() => restaurer(c)} className="bouton-discret text-xs">
+                        <Undo2 className="h-3.5 w-3.5" />
+                        Restaurer
+                      </button>
+                    ) : (
+                      format(new Date(c.cree_le), 'd MMM yyyy', { locale: fr })
+                    )}
                   </td>
                 </tr>
                 );

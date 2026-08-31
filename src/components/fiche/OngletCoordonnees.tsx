@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Archive, Save } from 'lucide-react';
+import { AlertTriangle, Archive, Save, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { differenceInYears } from 'date-fns';
 import { useSession } from '../../lib/session';
@@ -12,6 +12,7 @@ import {
   listerTherapeutes,
   modifierCliente,
 } from '../../services/clientes';
+import ModaleSuppression from './ModaleSuppression';
 import type { Cliente, ClienteSaisie } from '../../types/db';
 
 const SOURCES = [
@@ -45,12 +46,13 @@ interface Props {
 
 export default function OngletCoordonnees({ centreId, cliente }: Props) {
   const creation = !cliente;
-  const { therapeute: moi } = useSession();
+  const { therapeute: moi, role } = useSession();
   const navigate = useNavigate();
   const qc = useQueryClient();
 
   const [saisie, setSaisie] = useState<ClienteSaisie>(VIDE);
   const [homonymes, setHomonymes] = useState<Cliente[]>([]);
+  const [suppression, setSuppression] = useState(false);
 
   const { data: therapeutes = [] } = useQuery({
     queryKey: ['therapeutes', centreId],
@@ -254,21 +256,48 @@ export default function OngletCoordonnees({ centreId, cliente }: Props) {
           </button>
 
           {!creation && (
-            <button
-              type="button"
-              onClick={() => {
-                if (confirm(`Archiver la fiche de ${cliente!.prenom} ${cliente!.nom} ?`)) {
-                  archiver.mutate();
-                }
-              }}
-              className="bouton-discret text-ardoise-500"
-            >
-              <Archive className="h-4 w-4" />
-              Archiver
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm(`Archiver la fiche de ${cliente!.prenom} ${cliente!.nom} ?`)) {
+                    archiver.mutate();
+                  }
+                }}
+                title="Sort la fiche des listes sans rien perdre"
+                className="bouton-discret text-ardoise-500"
+              >
+                <Archive className="h-4 w-4" />
+                Archiver
+              </button>
+
+              {role === 'direction' && (
+                <button
+                  type="button"
+                  onClick={() => setSuppression(true)}
+                  title="Efface la fiche et tout son dossier, sans retour possible"
+                  className="bouton border border-rose-300 bg-white text-rose-700 hover:bg-rose-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Supprimer
+                </button>
+              )}
+            </div>
           )}
         </div>
       </form>
+
+      {suppression && cliente && (
+        <ModaleSuppression
+          cliente={cliente}
+          onFerme={() => setSuppression(false)}
+          onSupprimee={() => {
+            qc.invalidateQueries({ queryKey: ['clientes', centreId] });
+            toast.success('Fiche supprimée');
+            navigate('/clientes');
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -98,6 +98,40 @@ Deno.serve(async (req: Request) => {
     );
   }
 
+  /*
+    Suppression d'une fiche dans Airtable.
+
+    Appelée quand la direction supprime définitivement une cliente et
+    demande que le CRM soit nettoyé aussi. Séparée du dépilage de la file :
+    la ligne locale a déjà disparu, il ne reste que l'identifiant Airtable.
+  */
+  let corpsRequete: { action?: string; recordId?: string } = {};
+  try {
+    corpsRequete = await req.json();
+  } catch {
+    corpsRequete = {};
+  }
+
+  if (corpsRequete.action === 'supprimer_fiche') {
+    const recordId = corpsRequete.recordId;
+    if (!recordId) return json({ error: 'recordId manquant.' }, 400);
+
+    const r = await fetch(`https://api.airtable.com/v0/${base}/${table}/${recordId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${jeton}` },
+    });
+
+    if (!r.ok && r.status !== 404) {
+      const corps = await r.json().catch(() => ({}));
+      return json(
+        { error: `Airtable ${r.status} : ${corps?.error?.message ?? 'suppression refusée'}` },
+        500,
+      );
+    }
+
+    return json({ supprimee: true });
+  }
+
   const db = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,

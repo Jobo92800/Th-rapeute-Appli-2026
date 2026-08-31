@@ -34,6 +34,7 @@ cliquer. Ne jamais supposer qu'une étape technique est évidente.
 | Connexion | **Un compte par thérapeute**, pas par centre. Cloisonnement par centre en RLS. Un compte `direction` voit les 5 centres. |
 | Airtable | Reste le CRM et le moteur des automatisations. La V2 y écrit via une fonction Edge, jamais depuis le navigateur. |
 | Support | Ordinateur (90 % du temps). Seul le questionnaire du bilan est pensé pour la tablette. |
+| Suppression | **Archiver** est le geste courant : réversible, rien n'est perdu. **Supprimer** est définitif, emporte tout le dossier, exige de retaper le nom, et reste réservé à la direction. |
 
 ---
 
@@ -107,7 +108,7 @@ programme et prix · échéancier daté avec états de retard · séances et mot
 du jeu du jour · mensurations avec courbe · notes entre thérapeutes ·
 contrats et consentements signés · synchronisation Airtable, y compris
 l'envoi des PDF en pièces jointes · lecture obligatoire des documents avant
-signature.
+signature · archivage réversible et suppression définitive (direction).
 
 **Reste à faire**
 

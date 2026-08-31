@@ -69,12 +69,71 @@ export async function modifierCliente(id: string, saisie: Partial<ClienteSaisie>
   return data as Cliente;
 }
 
-/** On archive, on ne supprime jamais : l'historique commercial doit rester. */
+/** Sort la fiche des listes sans rien perdre. Se restaure. */
 export async function archiverCliente(id: string): Promise<void> {
   const { error } = await supabase
     .from('clientes')
     .update({ archivee_le: new Date().toISOString() })
     .eq('id', id);
+  if (error) throw error;
+}
+
+export async function restaurerCliente(id: string): Promise<void> {
+  const { error } = await supabase.from('clientes').update({ archivee_le: null }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function listerArchivees(centreId: string): Promise<Cliente[]> {
+  const { data, error } = await supabase
+    .from('clientes')
+    .select('*')
+    .eq('centre_id', centreId)
+    .not('archivee_le', 'is', null)
+    .order('archivee_le', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as Cliente[];
+}
+
+export interface ContenuCliente {
+  bilans: number;
+  programmes: number;
+  seances: number;
+  mensurations: number;
+  notes: number;
+  contrats: number;
+  ventes: number;
+}
+
+/** Ce qui disparaîtra avec la fiche, à montrer avant de confirmer. */
+export async function contenuCliente(id: string): Promise<ContenuCliente> {
+  const { data, error } = await supabase.rpc('contenu_cliente', { p_cliente: id });
+  if (error) throw error;
+  const l = Array.isArray(data) ? data[0] : data;
+  return (l ?? {
+    bilans: 0, programmes: 0, seances: 0, mensurations: 0, notes: 0, contrats: 0, ventes: 0,
+  }) as ContenuCliente;
+}
+
+/**
+ * Suppression définitive. Emporte bilan, cure, échéancier, séances,
+ * mensurations, notes, contrats et consentements. Réservée à la direction
+ * par les règles d'accès de la base.
+ */
+export async function supprimerCliente(
+  id: string,
+  options: { supprimerDansAirtable?: boolean; airtableRecordId?: string | null } = {},
+): Promise<void> {
+  // On nettoie Airtable d'abord : une fois la ligne locale partie, on n'a
+  // plus l'identifiant du CRM.
+  if (options.supprimerDansAirtable && options.airtableRecordId) {
+    const { error } = await supabase.functions.invoke('synchro-airtable', {
+      body: { action: 'supprimer_fiche', recordId: options.airtableRecordId },
+    });
+    if (error) throw new Error("La fiche Airtable n'a pas pu être supprimée. Rien n'a été effacé.");
+  }
+
+  const { error } = await supabase.from('clientes').delete().eq('id', id);
   if (error) throw error;
 }
 
