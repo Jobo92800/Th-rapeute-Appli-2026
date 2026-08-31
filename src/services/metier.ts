@@ -77,6 +77,7 @@ export async function majBilan(id: string, patch: Partial<Bilan>): Promise<Bilan
     .select()
     .single();
   if (error) throw error;
+  declencherSynchro();
   return data as Bilan;
 }
 
@@ -201,6 +202,7 @@ export async function creerProgramme(n: NouveauProgramme): Promise<Programme> {
     if (e) throw e;
   }
 
+  declencherSynchro();
   return programme as Programme;
 }
 
@@ -217,6 +219,7 @@ export async function situationsDuCentre(centreId: string): Promise<SituationReg
 export async function majEcheance(id: string, patch: Partial<Echeance>): Promise<void> {
   const { error } = await supabase.from('echeances').update(patch).eq('id', id);
   if (error) throw error;
+  declencherSynchro();
 }
 
 // ---------------------------------------------------------------------------
@@ -441,4 +444,47 @@ export async function consentementsDuContrat(contratId: string): Promise<Consent
 
   if (error) throw error;
   return (data ?? []) as Consentement[];
+}
+
+// ---------------------------------------------------------------------------
+// Synchronisation Airtable
+// ---------------------------------------------------------------------------
+
+/**
+ * Demande au serveur de vider la file d'attente.
+ *
+ * Volontairement silencieuse : l'écriture en base a déjà réussi, et la file
+ * garde la trace de ce qui reste à envoyer. Si l'appel échoue, la prochaine
+ * tentative repartira de la file.
+ */
+export function declencherSynchro(): void {
+  supabase.functions.invoke('synchro-airtable').catch(() => undefined);
+}
+
+export interface EtatSynchro {
+  enAttente: number;
+  enErreur: number;
+  dernieresErreurs: Array<{ entite: string; message: string }>;
+}
+
+export async function etatSynchro(): Promise<EtatSynchro> {
+  const [attente, erreur, details] = await Promise.all([
+    supabase.from('airtable_sync').select('*', { count: 'exact', head: true }).eq('statut', 'en_attente'),
+    supabase.from('airtable_sync').select('*', { count: 'exact', head: true }).eq('statut', 'erreur'),
+    supabase
+      .from('airtable_sync')
+      .select('entite, derniere_erreur')
+      .eq('statut', 'erreur')
+      .order('cree_le', { ascending: false })
+      .limit(3),
+  ]);
+
+  return {
+    enAttente: attente.count ?? 0,
+    enErreur: erreur.count ?? 0,
+    dernieresErreurs: (details.data ?? []).map((d) => ({
+      entite: d.entite as string,
+      message: (d.derniere_erreur as string) ?? '',
+    })),
+  };
 }

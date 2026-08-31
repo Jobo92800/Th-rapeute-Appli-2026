@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { declencherSynchro } from './metier';
 import type { Cliente, ClienteSaisie, Therapeute } from '../types/db';
 
 export async function listerClientes(centreId: string): Promise<Cliente[]> {
@@ -51,6 +52,7 @@ export async function creerCliente(centreId: string, saisie: ClienteSaisie): Pro
     .single();
 
   if (error) throw error;
+  declencherSynchro();
   return data as Cliente;
 }
 
@@ -63,6 +65,7 @@ export async function modifierCliente(id: string, saisie: Partial<ClienteSaisie>
     .single();
 
   if (error) throw error;
+  declencherSynchro();
   return data as Cliente;
 }
 

@@ -4,8 +4,8 @@ import { UserPlus, ArrowRight, RefreshCw, CheckCircle2, AlertTriangle, Sparkles 
 import { format, startOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useCentre } from '../lib/session';
-import { supabase } from '../lib/supabase';
 import { listerClientes } from '../services/clientes';
+import { declencherSynchro, etatSynchro } from '../services/metier';
 
 export default function Accueil() {
   const centre = useCentre();
@@ -15,19 +15,9 @@ export default function Accueil() {
     queryFn: () => listerClientes(centre.id),
   });
 
-  const { data: sync } = useQuery({
+  const { data: sync, refetch: relireSync } = useQuery({
     queryKey: ['sync-etat'],
-    queryFn: async () => {
-      const { count: enAttente } = await supabase
-        .from('airtable_sync')
-        .select('*', { count: 'exact', head: true })
-        .eq('statut', 'en_attente');
-      const { count: enErreur } = await supabase
-        .from('airtable_sync')
-        .select('*', { count: 'exact', head: true })
-        .eq('statut', 'erreur');
-      return { enAttente: enAttente ?? 0, enErreur: enErreur ?? 0 };
-    },
+    queryFn: etatSynchro,
     refetchInterval: 60_000,
   });
 
@@ -59,7 +49,15 @@ export default function Accueil() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Indicateur libelle="Clientes suivies" valeur={isLoading ? '—' : String(clientes.length)} />
         <Indicateur libelle="Créées ce mois-ci" valeur={isLoading ? '—' : String(ceMois)} />
-        <EtatSynchro enAttente={sync?.enAttente ?? 0} enErreur={sync?.enErreur ?? 0} />
+        <EtatSynchro
+          enAttente={sync?.enAttente ?? 0}
+          enErreur={sync?.enErreur ?? 0}
+          erreurs={sync?.dernieresErreurs ?? []}
+          onRelancer={async () => {
+            declencherSynchro();
+            setTimeout(() => relireSync(), 2500);
+          }}
+        />
       </div>
 
       <section className="carte">
@@ -131,14 +129,34 @@ function Indicateur({ libelle, valeur }: { libelle: string; valeur: string }) {
   );
 }
 
-function EtatSynchro({ enAttente, enErreur }: { enAttente: number; enErreur: number }) {
+function EtatSynchro({
+  enAttente,
+  enErreur,
+  erreurs,
+  onRelancer,
+}: {
+  enAttente: number;
+  enErreur: number;
+  erreurs: Array<{ entite: string; message: string }>;
+  onRelancer: () => void;
+}) {
   const enPanne = enErreur > 0;
   const enCours = enAttente > 0;
 
   return (
     <div className="carte px-5 py-4">
-      <div className="text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
-        Synchronisation Airtable
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
+          Synchronisation Airtable
+        </span>
+        {(enPanne || enCours) && (
+          <button
+            onClick={onRelancer}
+            className="text-2xs font-semibold uppercase tracking-wide text-marine-700 hover:text-marine-900"
+          >
+            Relancer
+          </button>
+        )}
       </div>
       <div className="mt-1.5 flex items-center gap-2">
         {enPanne ? (
@@ -162,6 +180,16 @@ function EtatSynchro({ enAttente, enErreur }: { enAttente: number; enErreur: num
           </>
         )}
       </div>
+
+      {enPanne && erreurs.length > 0 && (
+        <ul className="mt-2 space-y-1 border-t border-ardoise-100 pt-2">
+          {erreurs.map((e, i) => (
+            <li key={i} className="text-2xs leading-snug text-ardoise-500">
+              <span className="font-semibold text-ardoise-700">{e.entite}</span> — {e.message}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
