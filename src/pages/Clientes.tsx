@@ -1,15 +1,22 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Search, UserPlus, X, Sparkles, AlertTriangle, MessageSquare, Pin, Archive, Undo2 } from 'lucide-react';
+import { Search, UserPlus, X, Sparkles, AlertTriangle, MessageSquare, Pin, Archive, Undo2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useCentre } from '../lib/session';
-import { listerClientes, listerArchivees, listerTherapeutes, restaurerCliente } from '../services/clientes';
+import { useCentre, useSession } from '../lib/session';
+import {
+  archiverCliente,
+  listerClientes,
+  listerArchivees,
+  listerTherapeutes,
+  restaurerCliente,
+} from '../services/clientes';
 import { resumeNotesDuCentre, situationsDuCentre } from '../services/metier';
 import { etatCliente, type SituationReglement } from '../domain/reglement';
 import ModaleNotes from '../components/ModaleNotes';
+import ModaleSuppression from '../components/fiche/ModaleSuppression';
 import type { Cliente } from '../types/db';
 import { formaterEuros } from '../domain/tarification';
 
@@ -24,18 +31,32 @@ const TRIS: { valeur: Tri; libelle: string }[] = [
 
 export default function Clientes() {
   const centre = useCentre();
+  const { role } = useSession();
   const [recherche, setRecherche] = useState('');
   const [tri, setTri] = useState<Tri>('recent');
   const [therapeute, setTherapeute] = useState('');
   const [retardsSeuls, setRetardsSeuls] = useState(false);
   const [notesOuvertes, setNotesOuvertes] = useState<Cliente | null>(null);
   const [archives, setArchives] = useState(false);
+  const [aSupprimer, setASupprimer] = useState<Cliente | null>(null);
   const qc = useQueryClient();
 
   const { data: clientes = [], isLoading, error } = useQuery({
     queryKey: archives ? ['clientes-archivees', centre.id] : ['clientes', centre.id],
     queryFn: () => (archives ? listerArchivees(centre.id) : listerClientes(centre.id)),
   });
+
+  async function archiver(c: Cliente) {
+    if (!confirm(`Archiver la fiche de ${c.prenom} ${c.nom} ?\n\nElle sort des listes, rien n'est perdu, et elle se restaure.`)) return;
+    try {
+      await archiverCliente(c.id);
+      qc.invalidateQueries({ queryKey: ['clientes', centre.id] });
+      qc.invalidateQueries({ queryKey: ['clientes-archivees', centre.id] });
+      toast.success(`${c.prenom} ${c.nom} archivée`);
+    } catch {
+      toast.error("La fiche n'a pas pu être archivée.");
+    }
+  }
 
   async function restaurer(c: Cliente) {
     try {
@@ -273,6 +294,7 @@ export default function Clientes() {
                 <Entete>Règlement</Entete>
                 <Entete>Notes</Entete>
                 <Entete>{archives ? 'Archivée' : 'Créée le'}</Entete>
+                <th className="w-20 px-4 py-2.5" aria-label="Actions" />
               </tr>
             </thead>
             <tbody className="divide-y divide-ardoise-100">
@@ -331,12 +353,52 @@ export default function Clientes() {
                       format(new Date(c.cree_le), 'd MMM yyyy', { locale: fr })
                     )}
                   </td>
+                  <td className="px-4 py-2.5">
+                    <span className="flex items-center justify-end gap-0.5">
+                      {!archives && (
+                        <button
+                          type="button"
+                          onClick={() => archiver(c)}
+                          title="Archiver — réversible, rien n'est perdu"
+                          aria-label={`Archiver ${c.prenom} ${c.nom}`}
+                          className="rounded-lg p-1.5 text-ardoise-300 hover:bg-ardoise-100 hover:text-ardoise-700"
+                        >
+                          <Archive className="h-4 w-4" />
+                        </button>
+                      )}
+                      {role === 'direction' && (
+                        <button
+                          type="button"
+                          onClick={() => setASupprimer(c)}
+                          title="Supprimer définitivement"
+                          aria-label={`Supprimer ${c.prenom} ${c.nom}`}
+                          className="rounded-lg p-1.5 text-ardoise-300 hover:bg-rose-50 hover:text-rose-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </span>
+                  </td>
                 </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
+      )}
+
+      {aSupprimer && (
+        <ModaleSuppression
+          cliente={aSupprimer}
+          onFerme={() => setASupprimer(null)}
+          onSupprimee={() => {
+            const nom = `${aSupprimer.prenom} ${aSupprimer.nom}`;
+            setASupprimer(null);
+            qc.invalidateQueries({ queryKey: ['clientes', centre.id] });
+            qc.invalidateQueries({ queryKey: ['clientes-archivees', centre.id] });
+            toast.success(`${nom} supprimée`);
+          }}
+        />
       )}
 
       {notesOuvertes && (
