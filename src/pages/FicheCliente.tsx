@@ -11,6 +11,7 @@ import {
   User,
   FileSignature,
   MessageSquare,
+  Pill,
   Pin,
   Wallet,
   Zap,
@@ -26,11 +27,20 @@ import OngletEmpreinte from '../components/fiche/OngletEmpreinte';
 import OngletProgramme from '../components/fiche/OngletProgramme';
 import OngletSeances from '../components/fiche/OngletSeances';
 import OngletMensurations from '../components/fiche/OngletMensurations';
+import OngletComplements from '../components/fiche/OngletComplements';
 import Notes from '../components/fiche/Notes';
 import OngletDocuments from '../components/fiche/OngletDocuments';
 import type { AxeProfil } from '../domain/empreinte';
 
-type Onglet = 'coordonnees' | 'empreinte' | 'programme' | 'seances' | 'mensurations' | 'documents' | 'notes';
+type Onglet =
+  | 'coordonnees'
+  | 'empreinte'
+  | 'programme'
+  | 'seances'
+  | 'mensurations'
+  | 'complements'
+  | 'documents'
+  | 'notes';
 
 const ONGLETS: { id: Onglet; libelle: string; icone: typeof User }[] = [
   { id: 'coordonnees', libelle: 'Coordonnées', icone: User },
@@ -38,6 +48,7 @@ const ONGLETS: { id: Onglet; libelle: string; icone: typeof User }[] = [
   { id: 'programme', libelle: 'Cure & règlement', icone: Wallet },
   { id: 'seances', libelle: 'Séances', icone: Zap },
   { id: 'mensurations', libelle: 'Mensurations', icone: Ruler },
+  { id: 'complements', libelle: 'Compléments', icone: Pill },
   { id: 'documents', libelle: 'Contrat', icone: FileSignature },
   { id: 'notes', libelle: 'Notes', icone: MessageSquare },
 ];
@@ -182,6 +193,9 @@ export default function FicheCliente() {
       )}
       {!creation && onglet === 'mensurations' && (
         <OngletMensurations clienteId={id!} centreId={centre.id} />
+      )}
+      {!creation && onglet === 'complements' && (
+        <OngletComplements clienteId={id!} centreId={centre.id} />
       )}
       {!creation && onglet === 'documents' && <OngletDocuments cliente={cliente!} />}
       {!creation && onglet === 'notes' && <Notes clienteId={id!} centreId={centre.id} />}

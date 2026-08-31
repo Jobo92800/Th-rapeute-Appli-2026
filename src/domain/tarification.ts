@@ -36,6 +36,8 @@ export interface GrilleTarifaire {
   tenue: number;
   bilan: number;
   dome: number;
+  /** Une boîte de compléments, vendue à part de la cure. */
+  complement: number;
 }
 
 export interface DetailMontant {

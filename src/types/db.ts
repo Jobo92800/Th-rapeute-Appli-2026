@@ -152,6 +152,8 @@ export type StatutProgramme = 'propose' | 'valide' | 'en_cours' | 'termine' | 'a
 export type ModeReglement = 'comptant' | '4x_maison' | '10x_alma';
 export type Technologie = 'luxo' | 'ishape' | 'presso' | 'dome';
 
+export type TailleTenue = 'S' | 'M' | 'L' | 'XL';
+
 export interface Programme {
   id: string;
   cliente_id: string;
@@ -162,6 +164,9 @@ export interface Programme {
   statut: StatutProgramme;
   electro: boolean;
   guide: boolean;
+  tenue: boolean;
+  /** Taille remise à la cliente, choisie à la signature du contrat. */
+  taille_tenue: TailleTenue | null;
   prix_guide: number;
   prix_tenue: number;
   montant_total: number;
@@ -318,4 +323,58 @@ export interface Consentement {
   service_id: string;
   nom_fichier: string;
   pdf_base64: string;
+}
+
+// ---------------------------------------------------------------------------
+// Stock
+// ---------------------------------------------------------------------------
+
+export type CategorieProduit = 'complement' | 'guide' | 'tenue' | 'cosmetique' | 'autre';
+
+export interface ProduitStock {
+  id: string;
+  code: string;
+  nom: string;
+  categorie: CategorieProduit;
+  unite: string;
+  centres: string[] | null;
+  jours_par_boite: number | null;
+  code_tarif: string | null;
+  ordre: number;
+  actif: boolean;
+  cree_le: string;
+}
+
+/** Une ligne de rayon : le produit, le centre, et la quantité calculée. */
+export interface EtatStock {
+  produit_id: string;
+  code: string;
+  nom: string;
+  categorie: CategorieProduit;
+  unite: string;
+  ordre: number;
+  jours_par_boite: number | null;
+  centre_id: string;
+  quantite: number;
+  seuil_bas: number;
+  seuil_critique: number;
+  dernier_mouvement_le: string | null;
+}
+
+export type SensMouvement = 'entree' | 'sortie';
+export type MotifMouvement = 'reception' | 'vente' | 'offert' | 'perte' | 'usage_centre' | 'inventaire';
+
+export interface MouvementStock {
+  id: string;
+  produit_id: string;
+  centre_id: string;
+  sens: SensMouvement;
+  quantite: number;
+  motif: MotifMouvement;
+  vente_id: string | null;
+  therapeute_id: string | null;
+  auteur: string;
+  note: string;
+  fait_le: string;
+  cree_le: string;
 }

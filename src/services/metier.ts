@@ -13,6 +13,7 @@ import type {
   ResumeNotes,
   Seance,
   SuiviSeances,
+  TailleTenue,
   Technologie,
   VenteComplement,
 } from '../types/db';
@@ -44,6 +45,7 @@ export async function lireGrilleTarifaire(): Promise<GrilleTarifaire> {
     tenue: vus.get('tenue') ?? 60,
     bilan: vus.get('bilan') ?? 87,
     dome: vus.get('dome') ?? 39,
+    complement: vus.get('complement') ?? 37,
   };
 }
 
@@ -147,6 +149,22 @@ export interface NouveauProgramme {
   complementRecommande: string | null;
 }
 
+/**
+ * La taille est choisie avec la cliente au moment de la signature. Elle est
+ * écrite avant l'enregistrement du contrat : c'est elle qui dit quelle tenue
+ * sortir du rayon.
+ */
+export async function enregistrerTailleTenue(
+  programmeId: string,
+  taille: TailleTenue,
+): Promise<void> {
+  const { error } = await supabase
+    .from('programmes')
+    .update({ taille_tenue: taille })
+    .eq('id', programmeId);
+  if (error) throw error;
+}
+
 export async function creerProgramme(n: NouveauProgramme): Promise<Programme> {
   // Numéro de cure : 1 pour la première, puis 2, 3…
   const { count } = await supabase
@@ -164,6 +182,7 @@ export async function creerProgramme(n: NouveauProgramme): Promise<Programme> {
       statut: 'valide',
       electro: n.electro,
       guide: n.guide,
+      tenue: n.tenue,
       prix_guide: n.guide ? n.prixGuide : 0,
       prix_tenue: n.tenue ? n.prixTenue : 0,
       montant_total: n.montantTotal,
@@ -315,6 +334,15 @@ export async function ventesDeLaCliente(clienteId: string): Promise<VenteComplem
 
 export async function ajouterVente(v: Partial<VenteComplement>): Promise<void> {
   const { error } = await supabase.from('ventes_complements').insert(v);
+  if (error) throw error;
+}
+
+/**
+ * Supprimer la vente rend la boîte au rayon : le mouvement de stock qu'elle
+ * avait créé part avec elle.
+ */
+export async function supprimerVente(id: string): Promise<void> {
+  const { error } = await supabase.from('ventes_complements').delete().eq('id', id);
   if (error) throw error;
 }
 

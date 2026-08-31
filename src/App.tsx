@@ -5,6 +5,7 @@ import { FournisseurSession, useSession } from './lib/session';
 import Layout from './components/Layout';
 import Connexion from './pages/Connexion';
 import Accueil from './pages/Accueil';
+import Stock from './pages/Stock';
 import Clientes from './pages/Clientes';
 import FicheCliente from './pages/FicheCliente';
 import NouveauBilan from './pages/NouveauBilan';
@@ -58,19 +59,10 @@ where lower(u.email) = lower(t.email)
         <Route path="/clientes/nouvelle" element={<FicheCliente />} />
         <Route path="/bilan" element={<NouveauBilan />} />
         <Route path="/clientes/:id" element={<FicheCliente />} />
-        <Route path="/stock" element={<AVenir titre="Stock" lot="lot 5" />} />
+        <Route path="/stock" element={<Stock />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
-  );
-}
-
-function AVenir({ titre, lot }: { titre: string; lot: string }) {
-  return (
-    <div className="carte px-5 py-12 text-center">
-      <h1 className="text-lg font-semibold text-ardoise-900">{titre}</h1>
-      <p className="mt-1.5 text-sm text-ardoise-500">Cet écran arrive avec le {lot}.</p>
-    </div>
   );
 }
 
