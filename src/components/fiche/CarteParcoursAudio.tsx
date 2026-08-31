@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import {
+  MOT_DE_PASSE_MIN,
   donnerAccesParcours,
   etatParcours,
   renvoyerInvitationParcours,
@@ -24,6 +25,7 @@ export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
   const qc = useQueryClient();
   const [action, setAction] = useState<'creer' | 'renvoyer' | null>(null);
   const [parcoursChoisi, setParcoursChoisi] = useState<'A' | 'B' | 'C'>('A');
+  const [motDePasse, setMotDePasse] = useState('');
 
   const aAcces = Boolean(cliente.acces_audio_le);
 
@@ -37,13 +39,19 @@ export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
   async function donner() {
     setAction('creer');
     try {
-      const { dejaLa } = await donnerAccesParcours(cliente.id, parcoursChoisi);
+      const { motDePasseDefini } = await donnerAccesParcours(
+        cliente.id,
+        parcoursChoisi,
+        motDePasse,
+      );
+      setMotDePasse('');
       qc.invalidateQueries({ queryKey: ['cliente', cliente.id] });
       qc.invalidateQueries({ queryKey: ['parcours-audio', cliente.id] });
       toast.success(
-        dejaLa
-          ? 'La cliente avait déjà un compte — parcours enregistré'
+        motDePasseDefini
+          ? 'Compte prêt — la cliente peut se connecter dès maintenant'
           : `Invitation envoyée à ${cliente.email}`,
+        { duration: 6000 },
       );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "L'accès n'a pas pu être créé.");
@@ -93,32 +101,66 @@ export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
             dans l'onglet Coordonnées.
           </p>
         ) : !aAcces ? (
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex gap-1.5">
-              {(['A', 'B', 'C'] as const).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setParcoursChoisi(p)}
-                  aria-pressed={parcoursChoisi === p}
-                  className={`rounded-lg border px-3.5 py-1.5 text-sm font-semibold transition-colors ${
-                    parcoursChoisi === p
-                      ? 'border-marine-600 bg-marine-600 text-white'
-                      : 'border-ardoise-300 bg-white text-ardoise-700 hover:border-marine-400'
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-end gap-3">
+              <div>
+                <span className="etiquette">Parcours</span>
+                <div className="flex gap-1.5">
+                  {(['A', 'B', 'C'] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setParcoursChoisi(p)}
+                      aria-pressed={parcoursChoisi === p}
+                      className={`rounded-lg border px-3.5 py-1.5 text-sm font-semibold transition-colors ${
+                        parcoursChoisi === p
+                          ? 'border-marine-600 bg-marine-600 text-white'
+                          : 'border-ardoise-300 bg-white text-ardoise-700 hover:border-marine-400'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="min-w-52 flex-1">
+                <label htmlFor="mdp-carte" className="etiquette">
+                  Mot de passe, à choisir avec la cliente
+                </label>
+                <input
+                  id="mdp-carte"
+                  type="text"
+                  autoComplete="off"
+                  value={motDePasse}
+                  onChange={(e) => setMotDePasse(e.target.value)}
+                  className="champ"
+                  placeholder={`${MOT_DE_PASSE_MIN} caractères minimum`}
+                />
+              </div>
+
+              <button
+                onClick={donner}
+                disabled={
+                  action !== null ||
+                  (motDePasse.length > 0 && motDePasse.length < MOT_DE_PASSE_MIN)
+                }
+                className="bouton-principal"
+              >
+                {action === 'creer' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                Donner accès
+              </button>
             </div>
-            <button onClick={donner} disabled={action !== null} className="bouton-principal">
-              {action === 'creer' ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-              Donner accès
-            </button>
+
+            <p className="text-xs text-ardoise-500">
+              {motDePasse.length >= MOT_DE_PASSE_MIN
+                ? `Le compte sera utilisable immédiatement : ${cliente.email} et ce mot de passe.`
+                : 'Sans mot de passe, une invitation part par email — plus fragile, le lien expire au bout de 24 h.'}
+            </p>
           </div>
         ) : (
           <div className="space-y-3">

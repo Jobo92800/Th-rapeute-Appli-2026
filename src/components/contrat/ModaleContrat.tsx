@@ -3,7 +3,11 @@ import { Check, Eye, FileSignature, Headphones, Loader2, X } from 'lucide-react'
 import toast from 'react-hot-toast';
 import Signature, { type SignatureHandle } from './Signature';
 import { ENGAGEMENTS, construireContrat, type ContractData } from '../../domain/contrat';
-import { donnerAccesParcours, enregistrerContrat } from '../../services/metier';
+import {
+  MOT_DE_PASSE_MIN,
+  donnerAccesParcours,
+  enregistrerContrat,
+} from '../../services/metier';
 import type { Centre, Cliente, Echeance, LigneProgramme, Programme } from '../../types/db';
 
 interface Props {
@@ -64,6 +68,7 @@ export default function ModaleContrat({
   const [signatureVide, setSignatureVide] = useState(true);
   const [enCours, setEnCours] = useState(false);
   const [parcoursAudio, setParcoursAudio] = useState<'A' | 'B' | 'C' | null>('A');
+  const [motDePasse, setMotDePasse] = useState('');
 
   const [documents, setDocuments] = useState<DocumentAffiche[]>([]);
   const [docActif, setDocActif] = useState<string | null>(null);
@@ -142,11 +147,15 @@ export default function ModaleContrat({
   }, [onFerme, enCours]);
 
   const tousLus = documents.length > 0 && vus.size >= documents.length;
+  const mdpIncomplet =
+    parcoursAudio !== null && motDePasse.length > 0 && motDePasse.length < MOT_DE_PASSE_MIN;
   const tousCoches = coches.every(Boolean);
-  const pret = tousLus && tousCoches && !signatureVide && !enCours;
+  const pret = tousLus && tousCoches && !signatureVide && !enCours && !mdpIncomplet;
   const restants = documents.length - vus.size;
 
-  const manque = preparation
+  const manque = mdpIncomplet
+    ? `Le mot de passe du parcours audio doit faire ${MOT_DE_PASSE_MIN} caractères au minimum.`
+    : preparation
     ? 'Préparation des documents…'
     : !tousLus
       ? `Il reste ${restants} document${restants > 1 ? 's' : ''} à ouvrir.`
@@ -200,11 +209,16 @@ export default function ModaleContrat({
       // il est signé, il est enregistré. On signale l'échec, c'est tout.
       if (parcoursAudio && cliente.email) {
         try {
-          const { dejaLa } = await donnerAccesParcours(cliente.id, parcoursAudio);
+          const { motDePasseDefini } = await donnerAccesParcours(
+            cliente.id,
+            parcoursAudio,
+            motDePasse,
+          );
           toast.success(
-            dejaLa
-              ? `Parcours audio ${parcoursAudio} — la cliente avait déjà un compte`
+            motDePasseDefini
+              ? `Parcours audio ${parcoursAudio} — la cliente peut se connecter dès maintenant`
               : `Parcours audio ${parcoursAudio} — invitation envoyée à ${cliente.email}`,
+            { duration: 6000 },
           );
         } catch (e) {
           toast.error(
@@ -405,11 +419,31 @@ export default function ModaleContrat({
                     Aucun accès
                   </button>
                 </div>
-                <p className="mt-2 text-xs text-ardoise-500">
-                  {parcoursAudio
-                    ? `À la signature, ${cliente.prenom} recevra une invitation à ${cliente.email} pour créer son mot de passe.`
-                    : "Aucun compte ne sera créé. L'accès pourra être donné plus tard."}
-                </p>
+                {parcoursAudio ? (
+                  <div className="mt-3">
+                    <label htmlFor="mdp-parcours" className="etiquette">
+                      Mot de passe, à choisir avec la cliente
+                    </label>
+                    <input
+                      id="mdp-parcours"
+                      type="text"
+                      autoComplete="off"
+                      value={motDePasse}
+                      onChange={(e) => setMotDePasse(e.target.value)}
+                      className="champ max-w-xs"
+                      placeholder={`${MOT_DE_PASSE_MIN} caractères minimum`}
+                    />
+                    <p className="mt-1.5 text-xs text-ardoise-500">
+                      {motDePasse.length >= MOT_DE_PASSE_MIN
+                        ? `${cliente.prenom} pourra se connecter tout de suite sur applipodcast.netlify.app avec ${cliente.email}. Notez-lui ce mot de passe, elle pourra le changer ensuite.`
+                        : `Laissez vide pour lui envoyer une invitation par email à la place — plus fragile, le lien expire au bout de 24 h.`}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs text-ardoise-500">
+                    Aucun compte ne sera créé. L'accès pourra être donné plus tard depuis la fiche.
+                  </p>
+                )}
               </>
             ) : (
               <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">

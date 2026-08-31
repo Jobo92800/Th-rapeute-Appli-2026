@@ -74,7 +74,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { clienteId, parcours, action = 'creer' } = await req.json();
+    const { clienteId, parcours, motDePasse, action = 'creer' } = await req.json();
     if (!clienteId) return json({ error: 'clienteId manquant.' }, 400);
 
     const db = createClient(
@@ -150,6 +150,9 @@ Deno.serve(async (req: Request) => {
       telephone: c.telephone,
       centre: centre?.nom ?? c.centre_id,
       parcours,
+      // Fourni : le compte est utilisable tout de suite, la cliente n'a
+      // aucun lien à cliquer. Absent : invitation par email comme avant.
+      ...(motDePasse ? { motDePasse } : {}),
     });
 
     // Un compte déjà existant n'est pas une erreur : on retient simplement
@@ -171,7 +174,12 @@ Deno.serve(async (req: Request) => {
       })
       .eq('id', clienteId);
 
-    return json({ ok: true, dejaLa, invitation: r.corps?.invitation ?? null });
+    return json({
+      ok: true,
+      dejaLa,
+      motDePasseDefini: Boolean(r.corps?.invitation?.motDePasseDefini),
+      invitation: r.corps?.invitation ?? null,
+    });
   } catch (err) {
     return json({ error: String(err) }, 500);
   }

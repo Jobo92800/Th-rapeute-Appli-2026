@@ -510,12 +510,22 @@ export async function etatSynchro(): Promise<EtatSynchro> {
  * déclenche son invitation par email. Le code d'accès de cette application
  * vit côté serveur, jamais dans le navigateur.
  */
+export const MOT_DE_PASSE_MIN = 8;
+
+/**
+ * Crée l'accès de la cliente sur « Mon Parcours ».
+ *
+ * Avec un mot de passe, le compte est utilisable immédiatement : la cliente
+ * repart du centre en sachant se connecter. Sans, elle reçoit une invitation
+ * par email — plus fragile, le lien expire et se perd.
+ */
 export async function donnerAccesParcours(
   clienteId: string,
   parcours: 'A' | 'B' | 'C',
-): Promise<{ dejaLa: boolean }> {
+  motDePasse?: string,
+): Promise<{ dejaLa: boolean; motDePasseDefini: boolean }> {
   const { data, error } = await supabase.functions.invoke('acces-parcours-audio', {
-    body: { clienteId, parcours, action: 'creer' },
+    body: { clienteId, parcours, action: 'creer', motDePasse: motDePasse || undefined },
   });
 
   if (error) {
@@ -523,7 +533,8 @@ export async function donnerAccesParcours(
       (data as { error?: string })?.error ?? "L'accès au parcours audio n'a pas pu être créé.",
     );
   }
-  return { dejaLa: Boolean((data as { dejaLa?: boolean })?.dejaLa) };
+  const d = data as { dejaLa?: boolean; motDePasseDefini?: boolean };
+  return { dejaLa: Boolean(d?.dejaLa), motDePasseDefini: Boolean(d?.motDePasseDefini) };
 }
 
 export async function renvoyerInvitationParcours(clienteId: string): Promise<string> {
