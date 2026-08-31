@@ -37,6 +37,7 @@ cliquer. Ne jamais supposer qu'une étape technique est évidente.
 | Parcours audio | L'application « Mon Parcours » (`Jobo92800/Applipodcast`, `applipodcast.netlify.app`) reste **séparée** : son projet Supabase, son site Netlify, ses fonctions. La V2 se contente de créer le compte de la cliente au moment de la signature du contrat, avec le parcours A/B/C **choisi par la thérapeute**. **Il n'y a aucun lien personnel à récupérer** : l'adresse du site est la même pour toutes, ce qui est personnel c'est le compte. Le chemin normal est désormais le **mot de passe choisi avec la cliente au comptoir** : le compte est créé avec l'email déjà confirmé, elle se connecte tout de suite. L'invitation par email reste en secours (laisser le mot de passe vide), mais son lien est à usage unique et expire en 24 h — c'est ce qui posait problème. Dans Airtable, `Lien parcours audio` renvoie l'adresse du site quand `Accès audio` est rempli. |
 | Support | Ordinateur (90 % du temps). Seul le questionnaire du bilan est pensé pour la tablette. |
 | Stock | La quantité en rayon **ne se stocke pas** : elle se calcule (entrées − sorties), comme les séances restantes. La V1 recopiait un compteur, qui mentait au bout de quelques jours. Une vente de compléments **est** un mouvement de sortie, écrit par la base : les deux systèmes ne peuvent plus diverger. Le stock peut passer en négatif — c'est le signe qu'un comptage s'impose, pas une raison de refuser une vente réelle. Le guide et la tenue sortent du rayon **à la signature du contrat** : c'est le moment où la cliente repart avec. La taille de la tenue est demandée dans la fenêtre de signature, et la signature reste bloquée tant qu'elle n'est pas choisie. |
+| Parrainage | 2 séances offertes par filleule **qui a signé son contrat**, plafond 10 (5 filleules). Elles ne touchent jamais la cure en cours — déjà signée, réglée, facturée : ce sont des crédits pour **la cure suivante**, où elles s'ajoutent au décompte sans changer le montant. Un parrainage traverse les 5 centres. Rien de calculable n'est stocké : les filleules se lisent sur les fiches, « engagée » veut dire « a un contrat », les séances gagnées se calculent. Le seul fait écrit est « cette cure comporte N séances offertes ». |
 | Suppression | **Archiver** est le geste courant : réversible, rien n'est perdu. **Supprimer** est définitif, emporte tout le dossier, exige de retaper le nom, et reste réservé à la direction. |
 
 ---
@@ -67,8 +68,8 @@ cliquer. Ne jamais supposer qu'une étape technique est évidente.
 **Vite · React 18 · TypeScript · Tailwind · TanStack Query · Supabase.**
 
 ```
-src/domain/        règles métier pures (tarification, empreinte, jeuDuJour, reglement, contrat, stock)
-src/services/      accès aux données (clientes, metier, stock, contratPdf, consentementsPdf)
+src/domain/        règles métier pures (tarification, empreinte, jeuDuJour, reglement, contrat, stock, parrainage)
+src/services/      accès aux données (clientes, metier, stock, parrainage, contratPdf, consentementsPdf)
 src/lib/           supabase, session
 src/pages/         Accueil, Clientes, FicheCliente, NouveauBilan, Stock, Connexion
 src/components/    bilan/, contrat/, cure/, fiche/, stock/, Layout
@@ -113,8 +114,9 @@ moteur du jeu du jour · mensurations avec courbe · notes entre thérapeutes ·
 contrats et consentements signés, avec lecture obligatoire avant signature ·
 synchronisation Airtable complète, PDF en pièces jointes compris ·
 archivage réversible et suppression définitive (direction) · accès au
-parcours audio avec mot de passe donné au comptoir · **stock et ventes de
-compléments**, la vente décomptant le rayon toute seule.
+parcours audio avec mot de passe donné au comptoir · stock et ventes de
+compléments, la vente décomptant le rayon toute seule · **parrainage**, avec
+séances offertes reportées sur la cure suivante.
 
 **Tout est vérifié en conditions réelles** : fiches, bilan, cure, contrat,
 consentements, synchro Airtable et parcours audio fonctionnent. Le stock,
@@ -138,6 +140,11 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
 - **Vente des cosmétiques KOS** : ils sont au stock, mais aucune interface ne
   les vend. Une vente se note en sortie manuelle (« Ça sort »). Seuls les
   compléments se vendent depuis la fiche cliente.
+- **Le parrainage sur le contrat** : les séances offertes s'ajoutent au suivi,
+  mais le PDF du contrat n'en parle pas — il n'annonce que les séances
+  facturées. À trancher : faut-il les y mentionner ?
+- **Le parrainage dans Airtable** : ni le parrain ni les filleules ne
+  remontent (champs à créer côté Airtable, puis fonction Edge à compléter).
 - **Tableau de bord d'accueil** : aujourd'hui il ne montre que le nombre de
   fiches et l'état de la synchro. Il devrait montrer les échéances du jour,
   les retards, les séances à faire, les alertes de stock.
@@ -233,9 +240,8 @@ curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
-Migrations passées jusqu'à **014** incluse. Les **015** (stock) et **016**
-(cosmétiques KOS, tenue décomptée à la signature) sont écrites et attendent
-d'être collées dans l'éditeur SQL, dans cet ordre.
+Migrations passées jusqu'à **016** incluse. La **017** (parrainage) est
+écrite et attend d'être collée dans l'éditeur SQL.
 
 Les migrations SQL se collent dans l'éditeur SQL de Supabase, dans l'ordre
 des numéros. Elles sont rejouables sans risque.

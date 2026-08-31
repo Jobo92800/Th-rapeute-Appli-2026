@@ -147,6 +147,8 @@ export interface NouveauProgramme {
   fraisFinancement: number;
   echeances: Array<{ rang: number; montant: number }>;
   complementRecommande: string | null;
+  /** Séances gagnées par parrainage, posées sur une technologie. Jamais facturées. */
+  offertes?: { technologie: Technologie; seances: number } | null;
 }
 
 /**
@@ -196,12 +198,18 @@ export async function creerProgramme(n: NouveauProgramme): Promise<Programme> {
 
   if (error) throw error;
 
+  /*
+    Une technologie qui ne porte que des séances offertes doit exister quand
+    même : sans sa ligne, les séances gagnées n'auraient nulle part où aller.
+  */
+  const offertes = n.offertes ?? null;
   const lignes = n.lignes
-    .filter((l) => l.seances > 0)
+    .filter((l) => l.seances > 0 || (offertes?.technologie === l.technologie && offertes.seances > 0))
     .map((l) => ({
       programme_id: programme.id,
       technologie: l.technologie,
       seances_prevues: l.seances,
+      seances_offertes: offertes?.technologie === l.technologie ? offertes.seances : 0,
       prix_unitaire: l.prixUnitaire,
     }));
 

@@ -56,6 +56,10 @@ export interface Cliente {
   parcours_audio: 'A' | 'B' | 'C' | null;
   acces_audio_le: string | null;
   archivee_le: string | null;
+  /** La marraine, même si elle est suivie dans un autre centre. */
+  parrain_id: string | null;
+  /** Son nom, quand elle n'a pas de fiche (cliente de la V1). */
+  parrain_libre: string;
   cree_le: string;
   maj_le: string;
 }
@@ -183,6 +187,8 @@ export interface LigneProgramme {
   programme_id: string;
   technologie: Technologie;
   seances_prevues: number;
+  /** Séances gagnées par parrainage : comptées dans le suivi, jamais dans le montant. */
+  seances_offertes: number;
   prix_unitaire: number;
 }
 
@@ -230,6 +236,8 @@ export interface SuiviSeances {
   centre_id: string;
   technologie: Technologie;
   seances_prevues: number;
+  /** Séances gagnées par parrainage, comprises dans les prévues. */
+  seances_offertes: number;
   seances_faites: number;
   seances_restantes: number;
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, Minus, Plus } from 'lucide-react';
+import { Check, Gift, Minus, Plus } from 'lucide-react';
 import {
   LIBELLES_TECHNOLOGIE,
   calculerMontant,
@@ -21,6 +21,8 @@ export interface Prescription {
   tenue: boolean;
   /** Le guide est facturé. Décoché si la cliente l'a déjà. */
   guide: boolean;
+  /** Séances gagnées par parrainage, posées sur une technologie. Jamais facturées. */
+  offertes: { technologie: Technologie; seances: number } | null;
   montantTotal: number;
   modeReglement: ModeReglement;
   frais: number;
@@ -38,6 +40,12 @@ interface Props {
    * suivantes : la cliente les a déjà, on ne les lui revend pas.
    */
   optionsModifiables?: boolean;
+  /**
+   * Séances gagnées par parrainage et pas encore posées. Elles s'ajoutent au
+   * décompte sans rien changer au montant : la cure en cours était déjà
+   * signée quand elles ont été gagnées.
+   */
+  seancesOffertes?: number;
   onChange: (p: Prescription, totalSeances: number) => void;
 }
 
@@ -60,6 +68,7 @@ export default function CompositionCure({
   complement,
   seancesInitiales,
   optionsModifiables = false,
+  seancesOffertes = 0,
   onChange,
 }: Props) {
   const [seances, setSeances] = useState<Record<Technologie, number>>({
@@ -74,6 +83,11 @@ export default function CompositionCure({
   // Tant que la thérapeute n'a pas décidé elle-même, la tenue suit la
   // prescription : elle s'ajoute dès qu'il y a de l'I-Shape.
   const [tenueChoisie, setTenueChoisie] = useState<boolean | null>(null);
+
+  // Les séances gagnées sont dues : on les pose d'emblée, sur la
+  // luxothérapie, et la thérapeute déplace ou réduit si besoin.
+  const [offertes, setOffertes] = useState(seancesOffertes);
+  const [technoOfferte, setTechnoOfferte] = useState<Technologie>('luxo');
 
   const electro = seances.ishape > 0;
   const tenue = tenueChoisie ?? electro;
@@ -93,6 +107,8 @@ export default function CompositionCure({
     [lignes, tenue, guide, grille],
   );
 
+  const offertesPosees = Math.min(offertes, seancesOffertes);
+
   const echeancier = useMemo(
     () => construireEcheancier(detail.total, mode),
     [detail.total, mode],
@@ -105,6 +121,8 @@ export default function CompositionCure({
         electro,
         tenue,
         guide,
+        offertes:
+          offertesPosees > 0 ? { technologie: technoOfferte, seances: offertesPosees } : null,
         montantTotal: detail.total,
         modeReglement: mode,
         frais: echeancier.frais,
@@ -114,7 +132,7 @@ export default function CompositionCure({
     );
     // onChange est recréée à chaque rendu du parent : on ne l'observe pas.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lignes, electro, tenue, guide, detail, mode, echeancier]);
+  }, [lignes, electro, tenue, guide, detail, mode, echeancier, offertesPosees, technoOfferte]);
 
   function ajuster(t: Technologie, delta: number) {
     setSeances((s) => ({ ...s, [t]: Math.max(0, s[t] + delta) }));
@@ -200,6 +218,68 @@ export default function CompositionCure({
         </div>
       </section>
 
+      {seancesOffertes > 0 && (
+        <section className="carte border-marine-200 bg-marine-50 p-5">
+          <div className="flex items-start gap-3">
+            <Gift className="mt-0.5 h-4 w-4 shrink-0 text-marine-600" />
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-semibold text-marine-900">
+                {seancesOffertes} séance{seancesOffertes > 1 ? 's' : ''} offerte
+                {seancesOffertes > 1 ? 's' : ''} par son parrainage
+              </h2>
+              <p className="mt-0.5 text-xs text-marine-800">
+                Elles s’ajoutent au programme sans rien changer au montant. Posez-les sur le soin
+                de votre choix.
+              </p>
+
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="etiquette" htmlFor="offertes-nb">
+                    À poser sur cette cure
+                  </label>
+                  <input
+                    id="offertes-nb"
+                    type="number"
+                    min={0}
+                    max={seancesOffertes}
+                    className="champ"
+                    value={offertes}
+                    onChange={(e) =>
+                      setOffertes(Math.min(seancesOffertes, Math.max(0, Number(e.target.value))))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="etiquette" htmlFor="offertes-techno">
+                    Sur quel soin
+                  </label>
+                  <select
+                    id="offertes-techno"
+                    className="champ"
+                    value={technoOfferte}
+                    onChange={(e) => setTechnoOfferte(e.target.value as Technologie)}
+                  >
+                    {(['luxo', 'ishape', 'presso', 'dome'] as Technologie[]).map((t) => (
+                      <option key={t} value={t}>
+                        {LIBELLES_TECHNOLOGIE[t]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {offertesPosees < seancesOffertes && (
+                <p className="mt-2 text-xs text-marine-700">
+                  {seancesOffertes - offertesPosees} séance
+                  {seancesOffertes - offertesPosees > 1 ? 's' : ''} gardée
+                  {seancesOffertes - offertesPosees > 1 ? 's' : ''} pour une cure suivante.
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="overflow-hidden rounded-xl bg-marine-900 text-white shadow-carte">
         <div className="px-6 py-7 text-center">
           <p className="text-2xs font-semibold uppercase tracking-widest text-marine-300">
@@ -207,7 +287,11 @@ export default function CompositionCure({
           </p>
           <p className="chiffres mt-2 text-5xl font-bold">{formaterEuros(detail.total)}</p>
           <p className="mt-2 text-sm text-marine-200">
-            {detail.totalSeances} séance{detail.totalSeances > 1 ? 's' : ''} au programme
+            {detail.totalSeances + offertesPosees} séance
+            {detail.totalSeances + offertesPosees > 1 ? 's' : ''} au programme
+            {offertesPosees > 0 && (
+              <span className="text-marine-300"> — dont {offertesPosees} offertes</span>
+            )}
           </p>
 
           {echeancier.echeances.length > 1 && (

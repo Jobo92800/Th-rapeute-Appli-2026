@@ -4,6 +4,8 @@ import { Check, Loader2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import CompositionCure, { type Prescription } from './CompositionCure';
 import { creerProgramme, lireGrilleTarifaire } from '../../services/metier';
+import { filleulesDe, seancesOffertesUtilisees } from '../../services/parrainage';
+import { calculerSolde } from '../../domain/parrainage';
 import type { Cliente } from '../../types/db';
 
 interface Props {
@@ -40,6 +42,19 @@ export default function ModaleNouvelleCure({
     staleTime: 5 * 60_000,
   });
 
+  // Ce que son parrainage lui a rapporté et qu'elle n'a pas encore utilisé.
+  const { data: filleules = [] } = useQuery({
+    queryKey: ['filleules', cliente.id],
+    queryFn: () => filleulesDe(cliente.id),
+  });
+
+  const { data: offertesUtilisees = 0 } = useQuery({
+    queryKey: ['seances-offertes-utilisees', cliente.id],
+    queryFn: () => seancesOffertesUtilisees(cliente.id),
+  });
+
+  const solde = calculerSolde(filleules, offertesUtilisees);
+
   useEffect(() => {
     const echap = (e: KeyboardEvent) => e.key === 'Escape' && !enCours && onFerme();
     document.addEventListener('keydown', echap);
@@ -69,6 +84,7 @@ export default function ModaleNouvelleCure({
         fraisFinancement: prescription.frais,
         echeances: prescription.echeances,
         complementRecommande: null,
+        offertes: prescription.offertes,
       });
       toast.success(`Cure ${numero} enregistrée`);
       onCreee();
@@ -112,6 +128,7 @@ export default function ModaleNouvelleCure({
           ) : (
             <CompositionCure
               grille={grille}
+              seancesOffertes={solde.disponibles}
               optionsModifiables
               onChange={(p, n) => {
                 setPrescription(p);

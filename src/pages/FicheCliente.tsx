@@ -28,6 +28,7 @@ import OngletProgramme from '../components/fiche/OngletProgramme';
 import OngletSeances from '../components/fiche/OngletSeances';
 import OngletMensurations from '../components/fiche/OngletMensurations';
 import OngletComplements from '../components/fiche/OngletComplements';
+import CarteParrainage from '../components/fiche/CarteParrainage';
 import Notes from '../components/fiche/Notes';
 import OngletDocuments from '../components/fiche/OngletDocuments';
 import type { AxeProfil } from '../domain/empreinte';
@@ -184,6 +185,7 @@ export default function FicheCliente() {
       {(creation || onglet === 'coordonnees') && (
         <OngletCoordonnees centreId={centre.id} cliente={cliente ?? null} />
       )}
+      {!creation && onglet === 'coordonnees' && cliente && <CarteParrainage cliente={cliente} />}
       {!creation && onglet === 'empreinte' && <OngletEmpreinte clienteId={id!} />}
       {!creation && onglet === 'programme' && (
         <OngletProgramme cliente={cliente!} centreId={centre.id} />
