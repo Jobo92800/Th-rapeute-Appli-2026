@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { UserPlus, ArrowRight, RefreshCw, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react';
@@ -5,10 +7,11 @@ import { format, startOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useCentre } from '../lib/session';
 import { listerClientes } from '../services/clientes';
-import { declencherSynchro, etatSynchro } from '../services/metier';
+import { etatSynchro, relancerSynchro } from '../services/metier';
 
 export default function Accueil() {
   const centre = useCentre();
+  const [relance, setRelance] = useState(false);
 
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ['clientes', centre.id],
@@ -53,9 +56,29 @@ export default function Accueil() {
           enAttente={sync?.enAttente ?? 0}
           enErreur={sync?.enErreur ?? 0}
           erreurs={sync?.dernieresErreurs ?? []}
+          relanceEnCours={relance}
           onRelancer={async () => {
-            declencherSynchro();
-            setTimeout(() => relireSync(), 2500);
+            setRelance(true);
+            try {
+              const r = await relancerSynchro();
+              await relireSync();
+              if (r.echecs > 0) {
+                toast.error(
+                  `${r.echecs} fiche${r.echecs > 1 ? 's' : ''} en échec — ${r.erreurs[0]?.message ?? ''}`.slice(0, 200),
+                  { duration: 10_000 },
+                );
+              } else if (r.traitees > 0) {
+                toast.success(
+                  `${r.traitees} fiche${r.traitees > 1 ? 's' : ''} envoyée${r.traitees > 1 ? 's' : ''} à Airtable`,
+                );
+              } else {
+                toast.success('Rien en attente, tout est à jour');
+              }
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : 'La relance a échoué.');
+            } finally {
+              setRelance(false);
+            }
           }}
         />
       </div>
@@ -133,11 +156,13 @@ function EtatSynchro({
   enAttente,
   enErreur,
   erreurs,
+  relanceEnCours,
   onRelancer,
 }: {
   enAttente: number;
   enErreur: number;
   erreurs: Array<{ entite: string; message: string }>;
+  relanceEnCours: boolean;
   onRelancer: () => void;
 }) {
   const enPanne = enErreur > 0;
@@ -152,9 +177,10 @@ function EtatSynchro({
         {(enPanne || enCours) && (
           <button
             onClick={onRelancer}
-            className="text-2xs font-semibold uppercase tracking-wide text-marine-700 hover:text-marine-900"
+            disabled={relanceEnCours}
+            className="text-2xs font-semibold uppercase tracking-wide text-marine-700 hover:text-marine-900 disabled:opacity-50"
           >
-            Relancer
+            {relanceEnCours ? 'Envoi…' : 'Relancer'}
           </button>
         )}
       </div>

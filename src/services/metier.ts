@@ -473,6 +473,39 @@ export function declencherSynchro(): void {
   }, 1200);
 }
 
+export interface ResultatSynchro {
+  reprises: number;
+  traitees: number;
+  echecs: number;
+  erreurs: Array<{ entite: string; message: string }>;
+}
+
+/**
+ * Relance explicite, déclenchée par la thérapeute.
+ *
+ * Remet à zéro le compteur des tâches en échec — sans quoi celles qui ont
+ * dépassé cinq tentatives resteraient écartées et le bouton n'aurait aucun
+ * effet visible — puis attend le résultat pour pouvoir l'annoncer.
+ */
+export async function relancerSynchro(): Promise<ResultatSynchro> {
+  const { data: reprises } = await supabase.rpc('reprendre_taches_airtable');
+
+  const { data, error } = await supabase.functions.invoke('synchro-airtable', { body: {} });
+  if (error) {
+    throw new Error(
+      (data as { error?: string })?.error ?? "La synchronisation n'a pas pu être lancée.",
+    );
+  }
+
+  const r = data as Omit<ResultatSynchro, 'reprises'>;
+  return {
+    reprises: Number(reprises) || 0,
+    traitees: r?.traitees ?? 0,
+    echecs: r?.echecs ?? 0,
+    erreurs: r?.erreurs ?? [],
+  };
+}
+
 export interface EtatSynchro {
   enAttente: number;
   enErreur: number;
