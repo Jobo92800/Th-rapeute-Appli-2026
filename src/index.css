@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    @apply bg-ardoise-100 text-ardoise-900;
+  }
+
+  /* Les chiffres s'alignent partout : montants, séances, mensurations. */
+  table,
+  .chiffres {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-marine-500 ring-offset-2 ring-offset-white;
+  }
+}
+
+@layer components {
+  .champ {
+    @apply block w-full rounded-lg border border-ardoise-300 bg-white px-3 py-2 text-sm
+           text-ardoise-900 placeholder:text-ardoise-400
+           focus:border-marine-500 focus:outline-none focus:ring-1 focus:ring-marine-500
+           disabled:bg-ardoise-100 disabled:text-ardoise-500;
+  }
+
+  .etiquette {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ardoise-500;
+  }
+
+  .bouton {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2
+           text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .bouton-principal {
+    @apply bouton bg-marine-600 text-white hover:bg-marine-700;
+  }
+
+  .bouton-fort {
+    @apply bouton bg-rose-600 text-white hover:bg-rose-700;
+  }
+
+  .bouton-discret {
+    @apply bouton border border-ardoise-300 bg-white text-ardoise-700 hover:bg-ardoise-50;
+  }
+
+  .carte {
+    @apply rounded-xl border border-ardoise-200 bg-white shadow-carte;
+  }
+}
