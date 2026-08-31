@@ -31,12 +31,19 @@ function Application() {
   if (!centre) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-ardoise-100 px-4">
-        <div className="carte max-w-md p-6 text-center">
+        <div className="carte max-w-lg p-6 text-center">
           <h1 className="text-base font-semibold text-ardoise-900">Compte non rattaché</h1>
           <p className="mt-2 text-sm text-ardoise-600">
-            Ce compte n'est associé à aucun centre. Ajoutez une ligne dans la table
-            <code className="mx-1 rounded bg-ardoise-100 px-1.5 py-0.5 text-xs">comptes_centre</code>
-            pour lui attribuer un centre, puis reconnectez-vous.
+            Ce compte de connexion n'est associé à aucune thérapeute. Exécutez ce SQL dans
+            Supabase, puis rechargez la page.
+          </p>
+          <pre className="mt-4 overflow-x-auto rounded-lg bg-ardoise-950 px-4 py-3 text-left text-xs leading-relaxed text-ardoise-100">{`update therapeutes t set user_id = u.id
+from auth.users u
+where lower(u.email) = lower(t.email)
+  and t.user_id is distinct from u.id;`}</pre>
+          <p className="mt-3 text-xs text-ardoise-400">
+            Le lien se fait sur l'adresse email : elle doit être identique dans
+            Authentication &gt; Users et dans la colonne email de la table therapeutes.
           </p>
         </div>
       </div>
