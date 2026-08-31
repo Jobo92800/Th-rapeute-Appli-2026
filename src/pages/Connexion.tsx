@@ -42,7 +42,7 @@ export default function Connexion() {
         <form onSubmit={connecter} className="carte space-y-4 p-6">
           <div>
             <label htmlFor="email" className="etiquette">
-              Compte du centre
+              Votre adresse
             </label>
             <input
               id="email"
@@ -52,7 +52,7 @@ export default function Connexion() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="champ"
-              placeholder="centre@mabeautyplus.fr"
+              placeholder="prenom@mabeautyplus.fr"
             />
           </div>
 

@@ -111,3 +111,160 @@ export interface Jeu {
   prioritaire: boolean;
   ordre: number;
 }
+
+// ---------------------------------------------------------------------------
+// Bilan Empreinte
+// ---------------------------------------------------------------------------
+
+export type StatutBilan = 'en_cours' | 'termine' | 'abandonne';
+export type Facturation = 'en_attente' | 'facture' | 'offert';
+
+export interface Bilan {
+  id: string;
+  cliente_id: string | null;
+  centre_id: string;
+  therapeute_id: string | null;
+  date_bilan: string;
+  statut: StatutBilan;
+  bareme_version: number;
+  reponses: Record<string, number>;
+  curseur: number;
+  texte_libre: string;
+  inbody: Record<string, unknown>;
+  scores: Record<string, number>;
+  profil_dominant: string | null;
+  terrain_dominant: string | null;
+  profils_secondaires: string[];
+  terrains_secondaires: string[];
+  facturation: Facturation;
+  montant_facture: number | null;
+  cree_le: string;
+  maj_le: string;
+}
+
+// ---------------------------------------------------------------------------
+// Programme et règlement
+// ---------------------------------------------------------------------------
+
+export type StatutProgramme = 'propose' | 'valide' | 'en_cours' | 'termine' | 'abandonne';
+export type ModeReglement = 'comptant' | '4x_maison' | '10x_alma';
+export type Technologie = 'luxo' | 'ishape' | 'presso' | 'dome';
+
+export interface Programme {
+  id: string;
+  cliente_id: string;
+  bilan_id: string | null;
+  centre_id: string;
+  therapeute_id: string | null;
+  numero: number;
+  statut: StatutProgramme;
+  electro: boolean;
+  guide: boolean;
+  prix_guide: number;
+  prix_tenue: number;
+  montant_total: number;
+  mode_reglement: ModeReglement;
+  frais_financement: number;
+  complement_recommande: string | null;
+  date_validation: string | null;
+  cree_le: string;
+  maj_le: string;
+}
+
+export interface LigneProgramme {
+  id: string;
+  programme_id: string;
+  technologie: Technologie;
+  seances_prevues: number;
+  prix_unitaire: number;
+}
+
+export type StatutEcheance = 'a_venir' | 'paye' | 'donne' | 'impaye';
+export type MoyenPaiement = 'cheque' | 'especes' | 'cb' | 'virement' | 'alma';
+
+export interface Echeance {
+  id: string;
+  programme_id: string;
+  type: 'acompte' | 'echeance';
+  rang: number;
+  montant: number;
+  date_prevue: string | null;
+  moyen: MoyenPaiement | null;
+  statut: StatutEcheance;
+  date_reglement: string | null;
+  note: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Séances et suivi
+// ---------------------------------------------------------------------------
+
+export interface Seance {
+  id: string;
+  programme_id: string;
+  cliente_id: string;
+  centre_id: string;
+  therapeute_id: string | null;
+  date_seance: string;
+  technologie: Technologie;
+  poids: number | null;
+  commentaire: string;
+  photo_prise: boolean;
+  jeu_code: string | null;
+  jeu_valide: boolean;
+  jeu_reponse: Record<string, unknown>;
+  cloturee: boolean;
+  cree_le: string;
+}
+
+export interface SuiviSeances {
+  programme_id: string;
+  cliente_id: string;
+  centre_id: string;
+  technologie: Technologie;
+  seances_prevues: number;
+  seances_faites: number;
+  seances_restantes: number;
+}
+
+export interface Mensuration {
+  id: string;
+  cliente_id: string;
+  programme_id: string | null;
+  centre_id: string;
+  date_mesure: string;
+  poitrine: number | null;
+  sous_poitrine: number | null;
+  taille: number | null;
+  ventre: number | null;
+  hanches: number | null;
+  bras_droit: number | null;
+  bras_gauche: number | null;
+  cuisse_droite: number | null;
+  cuisse_gauche: number | null;
+  mollet_droit: number | null;
+  mollet_gauche: number | null;
+  cree_le: string;
+}
+
+export type ProduitComplement = 'BURN' | 'SOS' | 'DETOX' | 'SKIN';
+
+export interface VenteComplement {
+  id: string;
+  cliente_id: string;
+  programme_id: string | null;
+  centre_id: string;
+  therapeute_id: string | null;
+  date_vente: string;
+  produit: ProduitComplement;
+  quantite: number;
+  prix_unitaire: number;
+  cree_le: string;
+}
+
+export interface Tarif {
+  code: string;
+  effet_le: string;
+  montant: number;
+  libelle: string;
+}

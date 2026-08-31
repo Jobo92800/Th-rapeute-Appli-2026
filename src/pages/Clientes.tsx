@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Search, UserPlus, X } from 'lucide-react';
+import { Search, UserPlus, X, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useCentre } from '../lib/session';
@@ -75,10 +75,16 @@ export default function Clientes() {
                 } — ${centre.nom}`}
           </p>
         </div>
-        <Link to="/clientes/nouvelle" className="bouton-fort">
-          <UserPlus className="h-4 w-4" />
-          Nouvelle cliente
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link to="/clientes/nouvelle" className="bouton-discret">
+            <UserPlus className="h-4 w-4" />
+            Fiche seule
+          </Link>
+          <Link to="/bilan" className="bouton-fort">
+            <Sparkles className="h-4 w-4" />
+            Nouveau bilan
+          </Link>
+        </div>
       </header>
 
       <div className="flex flex-wrap items-center gap-3">

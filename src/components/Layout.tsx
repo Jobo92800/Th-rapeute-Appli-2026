@@ -1,11 +1,12 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Package, LogOut, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Users, Package, LogOut, ChevronDown, Sparkles } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useSession } from '../lib/session';
 
 const LIENS = [
   { to: '/', libelle: 'Accueil', icone: LayoutDashboard, exact: true },
   { to: '/clientes', libelle: 'Clientes', icone: Users, exact: false },
+  { to: '/bilan', libelle: 'Nouveau bilan', icone: Sparkles, exact: false },
   { to: '/stock', libelle: 'Stock', icone: Package, exact: false },
 ];
 

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { UserPlus, ArrowRight, RefreshCw, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { UserPlus, ArrowRight, RefreshCw, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react';
 import { format, startOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useCentre } from '../lib/session';
@@ -44,10 +44,16 @@ export default function Accueil() {
             {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
           </p>
         </div>
-        <Link to="/clientes/nouvelle" className="bouton-fort">
-          <UserPlus className="h-4 w-4" />
-          Nouvelle cliente
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link to="/clientes/nouvelle" className="bouton-discret">
+            <UserPlus className="h-4 w-4" />
+            Fiche seule
+          </Link>
+          <Link to="/bilan" className="bouton-fort">
+            <Sparkles className="h-4 w-4" />
+            Nouveau bilan
+          </Link>
+        </div>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -73,9 +79,9 @@ export default function Accueil() {
         ) : dernieres.length === 0 ? (
           <div className="px-5 py-10 text-center">
             <p className="text-sm text-ardoise-500">Aucune cliente dans ce centre pour l'instant.</p>
-            <Link to="/clientes/nouvelle" className="bouton-principal mt-4">
-              <UserPlus className="h-4 w-4" />
-              Créer la première fiche
+            <Link to="/bilan" className="bouton-fort mt-4">
+              <Sparkles className="h-4 w-4" />
+              Démarrer le premier bilan
             </Link>
           </div>
         ) : (

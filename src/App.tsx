@@ -7,6 +7,7 @@ import Connexion from './pages/Connexion';
 import Accueil from './pages/Accueil';
 import Clientes from './pages/Clientes';
 import FicheCliente from './pages/FicheCliente';
+import NouveauBilan from './pages/NouveauBilan';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +49,7 @@ function Application() {
         <Route path="/" element={<Accueil />} />
         <Route path="/clientes" element={<Clientes />} />
         <Route path="/clientes/nouvelle" element={<FicheCliente />} />
+        <Route path="/bilan" element={<NouveauBilan />} />
         <Route path="/clientes/:id" element={<FicheCliente />} />
         <Route path="/stock" element={<AVenir titre="Stock" lot="lot 5" />} />
         <Route path="*" element={<Navigate to="/" replace />} />

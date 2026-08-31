@@ -1,56 +1,45 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save, AlertTriangle, Archive, RefreshCw, CheckCircle2 } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { differenceInYears, format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { useCentre, useSession } from '../lib/session';
-import { supabase } from '../lib/supabase';
+import { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
-  archiverCliente,
-  chercherHomonymes,
-  creerCliente,
-  lireCliente,
-  listerTherapeutes,
-  modifierCliente,
-} from '../services/clientes';
-import type { ClienteSaisie } from '../types/db';
+  AlertTriangle,
+  ArrowLeft,
+  CheckCircle2,
+  Fingerprint,
+  Ruler,
+  RefreshCw,
+  User,
+  Wallet,
+  Zap,
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { useCentre } from '../lib/session';
+import { supabase } from '../lib/supabase';
+import { lireCliente } from '../services/clientes';
+import { bilansDeLaCliente } from '../services/metier';
+import OngletCoordonnees from '../components/fiche/OngletCoordonnees';
+import OngletEmpreinte from '../components/fiche/OngletEmpreinte';
+import OngletProgramme from '../components/fiche/OngletProgramme';
+import OngletSeances from '../components/fiche/OngletSeances';
+import OngletMensurations from '../components/fiche/OngletMensurations';
+import type { AxeProfil } from '../domain/empreinte';
 
-const SOURCES = [
-  'Bouche à oreille',
-  'Facebook / Instagram',
-  'Google',
-  'Passage devant le centre',
-  'Parrainage',
-  'Presse / radio',
-  'Autre',
+type Onglet = 'coordonnees' | 'empreinte' | 'programme' | 'seances' | 'mensurations';
+
+const ONGLETS: { id: Onglet; libelle: string; icone: typeof User }[] = [
+  { id: 'coordonnees', libelle: 'Coordonnées', icone: User },
+  { id: 'empreinte', libelle: 'Empreinte', icone: Fingerprint },
+  { id: 'programme', libelle: 'Cure & règlement', icone: Wallet },
+  { id: 'seances', libelle: 'Séances', icone: Zap },
+  { id: 'mensurations', libelle: 'Mensurations', icone: Ruler },
 ];
-
-const VIDE: ClienteSaisie = {
-  prenom: '',
-  nom: '',
-  email: '',
-  telephone: '',
-  date_naissance: '',
-  age: null,
-  adresse: '',
-  code_postal: '',
-  ville: '',
-  source: '',
-  therapeutes: [],
-};
 
 export default function FicheCliente() {
   const { id } = useParams<{ id: string }>();
   const creation = !id;
   const centre = useCentre();
-  const { therapeute: moi } = useSession();
-  const navigate = useNavigate();
-  const qc = useQueryClient();
-
-  const [saisie, setSaisie] = useState<ClienteSaisie>(VIDE);
-  const [homonymes, setHomonymes] = useState<{ id: string; prenom: string; nom: string }[]>([]);
+  const [onglet, setOnglet] = useState<Onglet>('coordonnees');
 
   const { data: cliente, isLoading } = useQuery({
     queryKey: ['cliente', id],
@@ -58,9 +47,10 @@ export default function FicheCliente() {
     enabled: !creation,
   });
 
-  const { data: therapeutes = [] } = useQuery({
-    queryKey: ['therapeutes', centre.id],
-    queryFn: () => listerTherapeutes(centre.id),
+  const { data: bilans = [] } = useQuery({
+    queryKey: ['bilans', id],
+    queryFn: () => bilansDeLaCliente(id!),
+    enabled: !creation,
   });
 
   const { data: sync } = useQuery({
@@ -68,7 +58,7 @@ export default function FicheCliente() {
     queryFn: async () => {
       const { data } = await supabase
         .from('airtable_sync')
-        .select('statut, derniere_erreur, traite_le')
+        .select('statut, derniere_erreur')
         .eq('entite', 'cliente')
         .eq('entite_id', id!)
         .order('cree_le', { ascending: false })
@@ -80,90 +70,8 @@ export default function FicheCliente() {
     refetchInterval: 30_000,
   });
 
-  useEffect(() => {
-    if (!creation || !moi || moi.role === 'direction') return;
-    setSaisie((s) =>
-      s.therapeutes.length === 0 ? { ...s, therapeutes: [moi.prenom] } : s,
-    );
-  }, [creation, moi]);
-
-  useEffect(() => {
-    if (!cliente) return;
-    setSaisie({
-      prenom: cliente.prenom,
-      nom: cliente.nom,
-      email: cliente.email ?? '',
-      telephone: cliente.telephone ?? '',
-      date_naissance: cliente.date_naissance ?? '',
-      age: cliente.age,
-      adresse: cliente.adresse ?? '',
-      code_postal: cliente.code_postal ?? '',
-      ville: cliente.ville ?? '',
-      source: cliente.source ?? '',
-      therapeutes: cliente.therapeutes,
-    });
-  }, [cliente]);
-
-  // L'âge se déduit de la date de naissance, il n'est jamais saisi deux fois.
-  const age = useMemo(() => {
-    if (!saisie.date_naissance) return saisie.age;
-    const d = new Date(saisie.date_naissance);
-    if (Number.isNaN(d.getTime())) return saisie.age;
-    return differenceInYears(new Date(), d);
-  }, [saisie.date_naissance, saisie.age]);
-
-  const enregistrer = useMutation({
-    mutationFn: async () => {
-      const donnees = { ...saisie, age };
-      if (creation) return creerCliente(centre.id, donnees);
-      return modifierCliente(id!, donnees);
-    },
-    onSuccess: (c) => {
-      qc.invalidateQueries({ queryKey: ['clientes', centre.id] });
-      qc.invalidateQueries({ queryKey: ['cliente', c.id] });
-      toast.success(creation ? 'Fiche créée' : 'Fiche enregistrée');
-      if (creation) navigate(`/clientes/${c.id}`, { replace: true });
-    },
-    onError: () => toast.error("La fiche n'a pas pu être enregistrée. Réessayez."),
-  });
-
-  const archiver = useMutation({
-    mutationFn: () => archiverCliente(id!),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['clientes', centre.id] });
-      toast.success('Fiche archivée');
-      navigate('/clientes');
-    },
-    onError: () => toast.error("La fiche n'a pas pu être archivée."),
-  });
-
-  async function verifierHomonymes() {
-    if (!creation) return;
-    try {
-      const trouves = await chercherHomonymes(centre.id, saisie.prenom, saisie.nom);
-      setHomonymes(trouves);
-    } catch {
-      setHomonymes([]);
-    }
-  }
-
-  function soumettre(e: FormEvent) {
-    e.preventDefault();
-    if (!saisie.prenom.trim() || !saisie.nom.trim()) {
-      toast.error('Le nom et le prénom sont nécessaires.');
-      return;
-    }
-    enregistrer.mutate();
-  }
-
-  function basculerTherapeute(prenom: string) {
-    setSaisie((s) => ({
-      ...s,
-      therapeutes: s.therapeutes.includes(prenom)
-        ? s.therapeutes.filter((t) => t !== prenom)
-        : [...s.therapeutes, prenom],
-    }));
-  }
+  const profilDominant =
+    (bilans.find((b) => b.statut === 'termine')?.profil_dominant as AxeProfil | null) ?? null;
 
   if (!creation && isLoading) {
     return <p className="carte px-5 py-10 text-center text-sm text-ardoise-400">Chargement…</p>;
@@ -181,7 +89,7 @@ export default function FicheCliente() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link
@@ -200,226 +108,42 @@ export default function FicheCliente() {
             </p>
           )}
         </div>
-
         {!creation && <BadgeSynchro statut={sync?.statut} erreur={sync?.derniere_erreur} />}
       </header>
 
-      {homonymes.length > 0 && (
-        <div className="flex gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-          <div className="text-sm text-amber-900">
-            <p className="font-semibold">Une fiche porte déjà ce nom dans ce centre.</p>
-            <p className="mt-1">
-              {homonymes.map((h, i) => (
-                <span key={h.id}>
-                  {i > 0 && ' · '}
-                  <Link to={`/clientes/${h.id}`} className="underline">
-                    {h.prenom} {h.nom}
-                  </Link>
-                </span>
-              ))}
-              . Vérifiez qu'il ne s'agit pas de la même personne avant d'enregistrer.
-            </p>
-          </div>
-        </div>
-      )}
-
-      <form onSubmit={soumettre} className="space-y-5">
-        <section className="carte p-5">
-          <h2 className="mb-4 text-sm font-semibold text-ardoise-900">Coordonnées</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Champ
-              id="nom"
-              libelle="Nom"
-              valeur={saisie.nom}
-              onChange={(v) => setSaisie((s) => ({ ...s, nom: v }))}
-              onBlur={verifierHomonymes}
-              requis
-            />
-            <Champ
-              id="prenom"
-              libelle="Prénom"
-              valeur={saisie.prenom}
-              onChange={(v) => setSaisie((s) => ({ ...s, prenom: v }))}
-              onBlur={verifierHomonymes}
-              requis
-            />
-            <Champ
-              id="telephone"
-              libelle="Téléphone"
-              type="tel"
-              valeur={saisie.telephone ?? ''}
-              onChange={(v) => setSaisie((s) => ({ ...s, telephone: v }))}
-            />
-            <Champ
-              id="email"
-              libelle="Email"
-              type="email"
-              valeur={saisie.email ?? ''}
-              onChange={(v) => setSaisie((s) => ({ ...s, email: v }))}
-            />
-            <div>
-              <label htmlFor="naissance" className="etiquette">
-                Née le
-              </label>
-              <div className="flex gap-3">
-                <input
-                  id="naissance"
-                  type="date"
-                  value={saisie.date_naissance ?? ''}
-                  onChange={(e) => setSaisie((s) => ({ ...s, date_naissance: e.target.value }))}
-                  className="champ"
-                />
-                <div className="w-24 shrink-0">
-                  <div className="champ bg-ardoise-50 text-center text-ardoise-600">
-                    {age ?? '—'} {age ? 'ans' : ''}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div>
-              <label htmlFor="source" className="etiquette">
-                Comment nous a-t-elle connus ?
-              </label>
-              <select
-                id="source"
-                value={saisie.source ?? ''}
-                onChange={(e) => setSaisie((s) => ({ ...s, source: e.target.value }))}
-                className="champ"
-              >
-                <option value="">—</option>
-                {SOURCES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-4 sm:grid-cols-4">
-            <div className="sm:col-span-2">
-              <Champ
-                id="adresse"
-                libelle="Adresse"
-                valeur={saisie.adresse ?? ''}
-                onChange={(v) => setSaisie((s) => ({ ...s, adresse: v }))}
-              />
-            </div>
-            <Champ
-              id="cp"
-              libelle="Code postal"
-              valeur={saisie.code_postal ?? ''}
-              onChange={(v) => setSaisie((s) => ({ ...s, code_postal: v }))}
-            />
-            <Champ
-              id="ville"
-              libelle="Ville"
-              valeur={saisie.ville ?? ''}
-              onChange={(v) => setSaisie((s) => ({ ...s, ville: v }))}
-            />
-          </div>
-        </section>
-
-        <section className="carte p-5">
-          <h2 className="mb-1 text-sm font-semibold text-ardoise-900">Thérapeute</h2>
-          <p className="mb-4 text-xs text-ardoise-500">
-            Plusieurs choix possibles. Ces prénoms partent dans le champ Thérapeute d'Airtable.
-          </p>
-          {therapeutes.length === 0 ? (
-            <p className="text-sm text-ardoise-400">Aucune thérapeute enregistrée pour ce centre.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {therapeutes.map((t) => {
-                const choisie = saisie.therapeutes.includes(t.prenom);
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => basculerTherapeute(t.prenom)}
-                    aria-pressed={choisie}
-                    className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                      choisie
-                        ? 'border-marine-600 bg-marine-600 text-white'
-                        : 'border-ardoise-300 bg-white text-ardoise-700 hover:border-marine-400'
-                    }`}
-                  >
-                    {t.prenom}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <button type="submit" disabled={enregistrer.isPending} className="bouton-principal">
-            <Save className="h-4 w-4" />
-            {enregistrer.isPending
-              ? 'Enregistrement…'
-              : creation
-                ? 'Créer la fiche'
-                : 'Enregistrer'}
-          </button>
-
-          {!creation && (
-            <button
-              type="button"
-              onClick={() => {
-                if (confirm(`Archiver la fiche de ${cliente!.prenom} ${cliente!.nom} ?`)) {
-                  archiver.mutate();
-                }
-              }}
-              className="bouton-discret text-ardoise-500"
-            >
-              <Archive className="h-4 w-4" />
-              Archiver
-            </button>
-          )}
-        </div>
-      </form>
-
       {!creation && (
-        <p className="text-xs text-ardoise-400">
-          Le bilan, le programme et le suivi des séances arrivent avec les prochains lots.
-        </p>
+        <nav className="flex flex-wrap gap-1 border-b border-ardoise-200">
+          {ONGLETS.map(({ id: o, libelle, icone: Icone }) => {
+            const actif = onglet === o;
+            return (
+              <button
+                key={o}
+                onClick={() => setOnglet(o)}
+                className={`-mb-px flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+                  actif
+                    ? 'border-marine-600 text-marine-800'
+                    : 'border-transparent text-ardoise-500 hover:text-ardoise-800'
+                }`}
+              >
+                <Icone className="h-4 w-4" />
+                {libelle}
+              </button>
+            );
+          })}
+        </nav>
       )}
-    </div>
-  );
-}
 
-function Champ({
-  id,
-  libelle,
-  valeur,
-  onChange,
-  onBlur,
-  type = 'text',
-  requis = false,
-}: {
-  id: string;
-  libelle: string;
-  valeur: string;
-  onChange: (v: string) => void;
-  onBlur?: () => void;
-  type?: string;
-  requis?: boolean;
-}) {
-  return (
-    <div>
-      <label htmlFor={id} className="etiquette">
-        {libelle}
-        {requis && <span className="ml-1 text-rose-600">*</span>}
-      </label>
-      <input
-        id={id}
-        type={type}
-        value={valeur}
-        required={requis}
-        onChange={(e) => onChange(e.target.value)}
-        onBlur={onBlur}
-        className="champ"
-      />
+      {(creation || onglet === 'coordonnees') && (
+        <OngletCoordonnees centreId={centre.id} cliente={cliente ?? null} />
+      )}
+      {!creation && onglet === 'empreinte' && <OngletEmpreinte clienteId={id!} />}
+      {!creation && onglet === 'programme' && <OngletProgramme clienteId={id!} />}
+      {!creation && onglet === 'seances' && (
+        <OngletSeances clienteId={id!} centreId={centre.id} profilDominant={profilDominant} />
+      )}
+      {!creation && onglet === 'mensurations' && (
+        <OngletMensurations clienteId={id!} centreId={centre.id} />
+      )}
     </div>
   );
 }
