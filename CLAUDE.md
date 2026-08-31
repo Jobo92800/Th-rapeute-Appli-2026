@@ -38,6 +38,7 @@ cliquer. Ne jamais supposer qu'une étape technique est évidente.
 | Support | Ordinateur (90 % du temps). Seul le questionnaire du bilan est pensé pour la tablette. |
 | Stock | La quantité en rayon **ne se stocke pas** : elle se calcule (entrées − sorties), comme les séances restantes. La V1 recopiait un compteur, qui mentait au bout de quelques jours. Une vente de compléments **est** un mouvement de sortie, écrit par la base : les deux systèmes ne peuvent plus diverger. Le stock peut passer en négatif — c'est le signe qu'un comptage s'impose, pas une raison de refuser une vente réelle. Le guide et la tenue sortent du rayon **à la signature du contrat** : c'est le moment où la cliente repart avec. La taille de la tenue est demandée dans la fenêtre de signature, et la signature reste bloquée tant qu'elle n'est pas choisie. |
 | Parrainage | 2 séances offertes par filleule **qui a signé son contrat**, plafond 10 (5 filleules). Elles ne touchent jamais la cure en cours — déjà signée, réglée, facturée : ce sont des crédits pour **la cure suivante**, où elles s'ajoutent au décompte sans changer le montant. Un parrainage traverse les 5 centres. Rien de calculable n'est stocké : les filleules se lisent sur les fiches, « engagée » veut dire « a un contrat », les séances gagnées se calculent. Le seul fait écrit est « cette cure comporte N séances offertes ». |
+| Tableau de bord | **Réservé à la direction** : le lien n'apparaît pas aux thérapeutes, et la fonction SQL refuse de répondre à un autre rôle. Filtrable par centre ou sur les cinq. Deux notions d'argent à ne jamais confondre : l'**encaissé** (ce qui est rentré, à la date de règlement de chaque échéance) et le **signé** (ce que les cures validées représentent, encaissé plus tard, parfois sur dix mois). Un mois à gros signé et faible encaissé est normal. |
 | Suppression | **Archiver** est le geste courant : réversible, rien n'est perdu. **Supprimer** est définitif, emporte tout le dossier, exige de retaper le nom, et reste réservé à la direction. |
 
 ---
@@ -69,10 +70,10 @@ cliquer. Ne jamais supposer qu'une étape technique est évidente.
 
 ```
 src/domain/        règles métier pures (tarification, empreinte, jeuDuJour, reglement, contrat, stock, parrainage)
-src/services/      accès aux données (clientes, metier, stock, parrainage, contratPdf, consentementsPdf)
+src/services/      accès aux données (clientes, metier, stock, parrainage, tableauDeBord, contratPdf, consentementsPdf)
 src/lib/           supabase, session
-src/pages/         Accueil, Clientes, FicheCliente, NouveauBilan, Stock, Connexion
-src/components/    bilan/, contrat/, cure/, fiche/, stock/, Layout
+src/pages/         Accueil, Clientes, FicheCliente, NouveauBilan, Stock, TableauDeBord, Connexion
+src/components/    bilan/, contrat/, cure/, fiche/, stock/, tableau/, Layout
 supabase/migrations/   le schéma, numéroté, à exécuter dans l'ordre
 supabase/functions/    synchro-airtable, envoyer-contrat, acces-parcours-audio
 ```
@@ -121,8 +122,9 @@ contrats et consentements signés, avec lecture obligatoire avant signature ·
 synchronisation Airtable complète, PDF en pièces jointes compris ·
 archivage réversible et suppression définitive (direction) · accès au
 parcours audio avec mot de passe donné au comptoir · stock et ventes de
-compléments, la vente décomptant le rayon toute seule · **parrainage**, avec
-séances offertes reportées sur la cure suivante.
+compléments, la vente décomptant le rayon toute seule · parrainage, avec
+séances offertes reportées sur la cure suivante · **tableau de bord de la
+direction**, filtrable par centre.
 
 **Tout est vérifié en conditions réelles** : fiches, bilan, cure, contrat,
 consentements, synchro Airtable et parcours audio fonctionnent. Le stock,
@@ -146,9 +148,10 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
 - **Vente des cosmétiques KOS** : ils sont au stock, mais aucune interface ne
   les vend. Une vente se note en sortie manuelle (« Ça sort »). Seuls les
   compléments se vendent depuis la fiche cliente.
-- **Tableau de bord d'accueil** : aujourd'hui il ne montre que le nombre de
-  fiches et l'état de la synchro. Il devrait montrer les échéances du jour,
-  les retards, les séances à faire, les alertes de stock.
+- **L'écran d'accueil** reste maigre : nombre de fiches et état de la
+  synchro. Les chiffres vivent désormais dans le tableau de bord (direction) ;
+  l'accueil pourrait montrer à une thérapeute ce qui la concerne le jour même
+  — ses échéances à encaisser, ses séances à faire.
 - Migration éventuelle de l'historique Firestore.
 - Le dépôt est **public** : il contient le questionnaire Empreinte, les 60
   jeux, les textes de contrat et la grille tarifaire. À repasser en privé.
@@ -247,8 +250,8 @@ curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
-Migrations passées jusqu'à **019** incluse. La **020** (bouton « Écarter »
-sur les erreurs de synchro) est écrite et attend d'être collée.
+Migrations passées jusqu'à **020** incluse. La **021** (tableau de bord)
+est écrite et attend d'être collée.
 
 Les migrations SQL se collent dans l'éditeur SQL de Supabase, dans l'ordre
 des numéros. Elles sont rejouables sans risque.

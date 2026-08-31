@@ -1,13 +1,16 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Package, LogOut, ChevronDown, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Users, Package, LogOut, ChevronDown, Sparkles, BarChart3 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useSession } from '../lib/session';
 
 const LIENS = [
-  { to: '/', libelle: 'Accueil', icone: LayoutDashboard, exact: true },
-  { to: '/clientes', libelle: 'Clientes', icone: Users, exact: false },
-  { to: '/bilan', libelle: 'Nouveau bilan', icone: Sparkles, exact: false },
-  { to: '/stock', libelle: 'Stock', icone: Package, exact: false },
+  { to: '/', libelle: 'Accueil', icone: LayoutDashboard, exact: true, direction: false },
+  { to: '/clientes', libelle: 'Clientes', icone: Users, exact: false, direction: false },
+  { to: '/bilan', libelle: 'Nouveau bilan', icone: Sparkles, exact: false, direction: false },
+  { to: '/stock', libelle: 'Stock', icone: Package, exact: false, direction: false },
+  // Les chiffres ne concernent pas les thérapeutes : le lien ne leur est
+  // même pas montré, et la base refuserait de répondre.
+  { to: '/tableau-de-bord', libelle: 'Tableau de bord', icone: BarChart3, exact: false, direction: true },
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -15,6 +18,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [menuOuvert, setMenuOuvert] = useState(false);
   const plusieursCentres = centresAccessibles.length > 1;
+  const liens = LIENS.filter((l) => !l.direction || role === 'direction');
 
   return (
     <div className="flex min-h-screen">
@@ -29,7 +33,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="flex flex-1 flex-col gap-1 p-3">
-          {LIENS.map(({ to, libelle, icone: Icone, exact }) => (
+          {liens.map(({ to, libelle, icone: Icone, exact }) => (
             <NavLink
               key={to}
               to={to}
@@ -126,7 +130,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </header>
 
         <nav className="flex gap-1 border-b border-ardoise-200 bg-white px-3 py-2 lg:hidden">
-          {LIENS.map(({ to, libelle, exact }) => (
+          {liens.map(({ to, libelle, exact }) => (
             <NavLink
               key={to}
               to={to}

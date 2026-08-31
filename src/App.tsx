@@ -6,6 +6,7 @@ import Layout from './components/Layout';
 import Connexion from './pages/Connexion';
 import Accueil from './pages/Accueil';
 import Stock from './pages/Stock';
+import TableauDeBord from './pages/TableauDeBord';
 import Clientes from './pages/Clientes';
 import FicheCliente from './pages/FicheCliente';
 import NouveauBilan from './pages/NouveauBilan';
@@ -60,6 +61,7 @@ where lower(u.email) = lower(t.email)
         <Route path="/bilan" element={<NouveauBilan />} />
         <Route path="/clientes/:id" element={<FicheCliente />} />
         <Route path="/stock" element={<Stock />} />
+        <Route path="/tableau-de-bord" element={<TableauDeBord />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
