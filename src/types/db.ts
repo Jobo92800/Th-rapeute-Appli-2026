@@ -53,6 +53,8 @@ export interface Cliente {
   airtable_record_id: string | null;
   origine: 'v2' | 'import_v1';
   origine_ref: string | null;
+  parcours_audio: 'A' | 'B' | 'C' | null;
+  acces_audio_le: string | null;
   archivee_le: string | null;
   cree_le: string;
   maj_le: string;

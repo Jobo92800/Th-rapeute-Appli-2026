@@ -290,6 +290,8 @@ Deno.serve(async (req: Request) => {
     if (c.ville) champs['Ville'] = c.ville;
     if (c.source) champs['Comment nous avez-vous connu ?'] = c.source;
     if (c.therapeutes?.length) champs['Thérapeute'] = c.therapeutes.join(', ');
+    if (c.parcours_audio) champs['Parcours audio'] = c.parcours_audio;
+    if (c.acces_audio_le) champs['Accès audio'] = String(c.acces_audio_le).slice(0, 10);
 
     return { cliente: c, champs };
   }

@@ -500,3 +500,29 @@ export async function etatSynchro(): Promise<EtatSynchro> {
     })),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Parcours audio
+// ---------------------------------------------------------------------------
+
+/**
+ * Crée le compte de la cliente sur l'application « Mon Parcours » et
+ * déclenche son invitation par email. Le code d'accès de cette application
+ * vit côté serveur, jamais dans le navigateur.
+ */
+export async function donnerAccesParcours(
+  clienteId: string,
+  parcours: 'A' | 'B' | 'C',
+): Promise<{ dejaLa: boolean }> {
+  const { data, error } = await supabase.functions.invoke('acces-parcours-audio', {
+    body: { clienteId, parcours },
+  });
+
+  if (error) {
+    throw new Error(
+      (data as { error?: string })?.error ??
+        "L'accès au parcours audio n'a pas pu être créé.",
+    );
+  }
+  return { dejaLa: Boolean((data as { dejaLa?: boolean })?.dejaLa) };
+}

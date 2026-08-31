@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Eye, FileSignature, Loader2, X } from 'lucide-react';
+import { Check, Eye, FileSignature, Headphones, Loader2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Signature, { type SignatureHandle } from './Signature';
 import { ENGAGEMENTS, construireContrat, type ContractData } from '../../domain/contrat';
-import { enregistrerContrat } from '../../services/metier';
+import { donnerAccesParcours, enregistrerContrat } from '../../services/metier';
 import type { Centre, Cliente, Echeance, LigneProgramme, Programme } from '../../types/db';
 
 interface Props {
@@ -49,6 +49,7 @@ export default function ModaleContrat({
   const [photos, setPhotos] = useState(true);
   const [signatureVide, setSignatureVide] = useState(true);
   const [enCours, setEnCours] = useState(false);
+  const [parcoursAudio, setParcoursAudio] = useState<'A' | 'B' | 'C' | null>('A');
 
   const [documents, setDocuments] = useState<DocumentAffiche[]>([]);
   const [docActif, setDocActif] = useState<string | null>(null);
@@ -178,6 +179,26 @@ export default function ModaleContrat({
           ? `Contrat signé et ${consentements.length} consentement${consentements.length > 1 ? 's' : ''} enregistré${consentements.length > 1 ? 's' : ''}`
           : 'Contrat signé et enregistré',
       );
+
+      // L'accès au parcours audio ne doit jamais faire échouer le contrat :
+      // il est signé, il est enregistré. On signale l'échec, c'est tout.
+      if (parcoursAudio && cliente.email) {
+        try {
+          const { dejaLa } = await donnerAccesParcours(cliente.id, parcoursAudio);
+          toast.success(
+            dejaLa
+              ? `Parcours audio ${parcoursAudio} — la cliente avait déjà un compte`
+              : `Parcours audio ${parcoursAudio} — invitation envoyée à ${cliente.email}`,
+          );
+        } catch (e) {
+          toast.error(
+            e instanceof Error
+              ? e.message
+              : "Le contrat est enregistré, mais l'accès au parcours audio a échoué.",
+          );
+        }
+      }
+
       onSigne();
     } catch (e) {
       console.error(e);
@@ -325,6 +346,61 @@ export default function ModaleContrat({
                 </label>
               ))}
             </div>
+          </section>
+
+          {/* Parcours audio --------------------------------------------- */}
+          <section>
+            <h3 className="mb-2 flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
+              <Headphones className="h-3.5 w-3.5" />
+              Parcours audio
+            </h3>
+
+            {cliente.email ? (
+              <>
+                <div className="flex flex-wrap gap-2">
+                  {(['A', 'B', 'C'] as const).map((p) => {
+                    const actif = parcoursAudio === p;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setParcoursAudio(p)}
+                        aria-pressed={actif}
+                        className={`rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
+                          actif
+                            ? 'border-marine-600 bg-marine-600 text-white'
+                            : 'border-ardoise-300 bg-white text-ardoise-700 hover:border-marine-400'
+                        }`}
+                      >
+                        Parcours {p}
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => setParcoursAudio(null)}
+                    aria-pressed={parcoursAudio === null}
+                    className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                      parcoursAudio === null
+                        ? 'border-ardoise-500 bg-ardoise-100 text-ardoise-800'
+                        : 'border-ardoise-300 bg-white text-ardoise-500 hover:border-ardoise-400'
+                    }`}
+                  >
+                    Aucun accès
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-ardoise-500">
+                  {parcoursAudio
+                    ? `À la signature, ${cliente.prenom} recevra une invitation à ${cliente.email} pour créer son mot de passe.`
+                    : "Aucun compte ne sera créé. L'accès pourra être donné plus tard."}
+                </p>
+              </>
+            ) : (
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                Cette cliente n'a pas d'adresse email : l'invitation ne peut pas partir.
+                Renseignez-la dans l'onglet Coordonnées pour lui donner accès au parcours audio.
+              </p>
+            )}
           </section>
 
           {/* Signature -------------------------------------------------- */}

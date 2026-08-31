@@ -34,6 +34,7 @@ cliquer. Ne jamais supposer qu'une étape technique est évidente.
 | Règlement | 4× sans frais (maison) ou 10× Alma (taux repris de la V1, constante empirique comprise). |
 | Connexion | **Un compte par thérapeute**, pas par centre. Cloisonnement par centre en RLS. Un compte `direction` voit les 5 centres. |
 | Airtable | Reste le CRM et le moteur des automatisations. La V2 y écrit via une fonction Edge, jamais depuis le navigateur. |
+| Parcours audio | L'application « Mon Parcours » (`Jobo92800/Applipodcast`) reste **séparée** : son projet Supabase, son site Netlify, ses fonctions. La V2 se contente de créer le compte de la cliente au moment de la signature du contrat, avec le parcours A/B/C **choisi par la thérapeute**. Il n'y a plus de lien personnel : la cliente reçoit une invitation par email et choisit son mot de passe. |
 | Support | Ordinateur (90 % du temps). Seul le questionnaire du bilan est pensé pour la tablette. |
 | Suppression | **Archiver** est le geste courant : réversible, rien n'est perdu. **Supprimer** est définitif, emporte tout le dossier, exige de retaper le nom, et reste réservé à la direction. |
 
@@ -71,7 +72,7 @@ src/lib/           supabase, session
 src/pages/         Accueil, Clientes, FicheCliente, NouveauBilan, Connexion
 src/components/    bilan/, contrat/, fiche/, Layout
 supabase/migrations/   le schéma, numéroté, à exécuter dans l'ordre
-supabase/functions/    synchro-airtable, envoyer-contrat
+supabase/functions/    synchro-airtable, envoyer-contrat, acces-parcours-audio
 ```
 
 Le questionnaire Empreinte **n'est pas dans le code** : il est stocké en base
