@@ -60,7 +60,13 @@ COMMENT ON COLUMN programme_lignes.seances_offertes IS
   'Séances gagnées par parrainage, posées sur cette technologie. Comptées dans le suivi, jamais dans le montant.';
 
 -- Le suivi doit les compter : ce sont des séances dues à la cliente.
-CREATE OR REPLACE VIEW suivi_seances WITH (security_invoker = true) AS
+--
+-- On supprime la vue avant de la refaire : PostgreSQL refuse qu'un
+-- CREATE OR REPLACE insère une colonne ailleurs qu'à la fin, et la place de
+-- seances_offertes est au milieu, à côté des séances prévues.
+DROP VIEW IF EXISTS suivi_seances;
+
+CREATE VIEW suivi_seances WITH (security_invoker = true) AS
 SELECT
   p.id                                              AS programme_id,
   p.cliente_id,
