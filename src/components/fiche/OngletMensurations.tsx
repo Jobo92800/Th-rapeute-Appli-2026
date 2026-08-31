@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Ruler } from 'lucide-react';
+import { LineChart, Plus, Ruler } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { ajouterMensuration, mensurationsDeLaCliente } from '../../services/metier';
 import type { Mensuration } from '../../types/db';
+import CourbeMensurations from './CourbeMensurations';
 
 const MESURES = [
   { cle: 'poitrine', libelle: 'Poitrine' },
@@ -187,6 +188,25 @@ export default function OngletMensurations({
           </div>
         )}
       </section>
+
+      {mesures.length > 0 && (
+        <section className="carte">
+          <div className="border-b border-ardoise-100 px-5 py-3.5">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-ardoise-900">
+              <LineChart className="h-4 w-4 text-ardoise-400" />
+              Évolution
+            </h2>
+            <p className="text-xs text-ardoise-500">
+              En centimètres. Une baisse s'affiche en vert.
+            </p>
+          </div>
+          <CourbeMensurations
+            mesures={mesures}
+            definitions={MESURES}
+            parDefaut={['taille', 'ventre', 'hanches']}
+          />
+        </section>
+      )}
     </div>
   );
 }
