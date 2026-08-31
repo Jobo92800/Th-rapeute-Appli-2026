@@ -32,6 +32,7 @@ export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
   const qc = useQueryClient();
   const [signature, setSignature] = useState(false);
   const [consentsOuverts, setConsentsOuverts] = useState<string | null>(null);
+  const [cureChoisie, setCureChoisie] = useState<string | null>(null);
 
   const { data: programmes = [] } = useQuery({
     queryKey: ['programmes', cliente.id],
@@ -49,7 +50,16 @@ export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
     enabled: Boolean(consentsOuverts),
   });
 
-  const actif = programmes.filter((p) => p.programme.statut !== 'abandonne').at(-1) ?? null;
+  const eligibles = programmes.filter((p) => p.programme.statut !== 'abandonne');
+
+  // Par défaut la dernière cure, mais la thérapeute peut en choisir une autre :
+  // une cliente qui revient a plusieurs cures, chacune son contrat.
+  const actif =
+    eligibles.find((p) => p.programme.id === cureChoisie) ?? eligibles.at(-1) ?? null;
+
+  const numeroParProgramme = new Map(
+    programmes.map((p) => [p.programme.id, p.programme.numero]),
+  );
 
   async function telechargerContrat(id: string, nom: string) {
     try {
@@ -71,18 +81,37 @@ export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
           <div>
             <h2 className="text-sm font-semibold text-ardoise-900">Contrat de prestation</h2>
             <p className="text-xs text-ardoise-500">
-              Le contrat et les consentements sont signés au doigt, puis conservés ici.
+              {eligibles.length > 1
+                ? 'Choisissez la cure à contractualiser, puis établissez le contrat.'
+                : 'Le contrat et les consentements sont signés au doigt, puis conservés ici.'}
             </p>
           </div>
-          <button
-            onClick={() => setSignature(true)}
-            disabled={!actif}
-            title={actif ? undefined : "Il faut d'abord valider une cure"}
-            className="bouton-fort"
-          >
-            <FileSignature className="h-4 w-4" />
-            Établir le contrat
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {eligibles.length > 1 && (
+              <select
+                value={actif?.programme.id ?? ''}
+                onChange={(e) => setCureChoisie(e.target.value)}
+                aria-label="Cure à contractualiser"
+                className="champ w-auto"
+              >
+                {eligibles.map((p) => (
+                  <option key={p.programme.id} value={p.programme.id}>
+                    Cure {p.programme.numero} —{' '}
+                    {Number(p.programme.montant_total).toLocaleString('fr-FR')} €
+                  </option>
+                ))}
+              </select>
+            )}
+            <button
+              onClick={() => setSignature(true)}
+              disabled={!actif}
+              title={actif ? undefined : "Il faut d'abord valider une cure"}
+              className="bouton-fort"
+            >
+              <FileSignature className="h-4 w-4" />
+              Établir le contrat
+            </button>
+          </div>
         </div>
 
         {!actif && (
@@ -112,6 +141,9 @@ export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
                           {format(new Date(c.signe_le), 'd MMMM yyyy', { locale: fr })}
                         </p>
                         <p className="mt-0.5 text-xs text-ardoise-500">
+                          {c.programme_id && numeroParProgramme.has(c.programme_id) && (
+                            <>Cure {numeroParProgramme.get(c.programme_id)} · </>
+                          )}
                           {c.montant && <>{c.montant} · </>}
                           {c.therapeute && <>signé avec {c.therapeute} · </>}
                           {c.nb_consentements} consentement{c.nb_consentements > 1 ? 's' : ''}

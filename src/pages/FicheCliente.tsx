@@ -175,7 +175,7 @@ export default function FicheCliente() {
       )}
       {!creation && onglet === 'empreinte' && <OngletEmpreinte clienteId={id!} />}
       {!creation && onglet === 'programme' && (
-        <OngletProgramme clienteId={id!} centreId={centre.id} />
+        <OngletProgramme cliente={cliente!} centreId={centre.id} />
       )}
       {!creation && onglet === 'seances' && (
         <OngletSeances clienteId={id!} centreId={centre.id} profilDominant={profilDominant} />

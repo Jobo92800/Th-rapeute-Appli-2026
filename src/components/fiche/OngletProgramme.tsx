@@ -1,13 +1,15 @@
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Sparkles, Wallet } from 'lucide-react';
+import { Plus, Sparkles, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { majEcheance, programmesDeLaCliente } from '../../services/metier';
 import { LIBELLES_TECHNOLOGIE, formaterEuros } from '../../domain/tarification';
 import { STATUT_SUIVANT, etatEcheance } from '../../domain/reglement';
-import type { Echeance } from '../../types/db';
+import ModaleNouvelleCure from '../cure/ModaleNouvelleCure';
+import type { Cliente, Echeance } from '../../types/db';
 
 const LIBELLE_MODE: Record<string, string> = {
   comptant: 'Comptant',
@@ -16,13 +18,15 @@ const LIBELLE_MODE: Record<string, string> = {
 };
 
 export default function OngletProgramme({
-  clienteId,
+  cliente,
   centreId,
 }: {
-  clienteId: string;
+  cliente: Cliente;
   centreId: string;
 }) {
+  const clienteId = cliente.id;
   const qc = useQueryClient();
+  const [nouvelleCure, setNouvelleCure] = useState(false);
 
   const { data: programmes = [], isLoading } = useQuery({
     queryKey: ['programmes', clienteId],
@@ -73,16 +77,49 @@ export default function OngletProgramme({
         <p className="mt-1 text-xs text-ardoise-400">
           Une cure se crée à la fin d'un Bilan Empreinte.
         </p>
-        <Link to="/bilan" className="bouton-fort mt-5">
-          <Sparkles className="h-4 w-4" />
-          Démarrer un bilan
-        </Link>
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
+          <Link to="/bilan" className="bouton-fort">
+            <Sparkles className="h-4 w-4" />
+            Démarrer un bilan
+          </Link>
+          <button onClick={() => setNouvelleCure(true)} className="bouton-discret">
+            <Plus className="h-4 w-4" />
+            Créer une cure sans bilan
+          </button>
+        </div>
+
+        {nouvelleCure && (
+          <ModaleNouvelleCure
+            cliente={cliente}
+            centreId={centreId}
+            numero={1}
+            onFerme={() => setNouvelleCure(false)}
+            onCreee={() => {
+              setNouvelleCure(false);
+              qc.invalidateQueries({ queryKey: ['programmes', clienteId] });
+              qc.invalidateQueries({ queryKey: ['situations', centreId] });
+            }}
+          />
+        )}
       </div>
     );
   }
 
+  const prochainNumero = Math.max(0, ...programmes.map((p) => p.programme.numero)) + 1;
+
   return (
     <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-ardoise-500">
+          {programmes.length} cure{programmes.length > 1 ? 's' : ''} enregistrée
+          {programmes.length > 1 ? 's' : ''}
+        </p>
+        <button onClick={() => setNouvelleCure(true)} className="bouton-fort">
+          <Plus className="h-4 w-4" />
+          Nouvelle cure
+        </button>
+      </div>
+
       {programmes.map(({ programme: p, lignes, echeances, suivi }) => {
         const totalPrevu = suivi.reduce((n, s) => n + s.seances_prevues, 0);
         const totalFait = suivi.reduce((n, s) => n + s.seances_faites, 0);
@@ -242,6 +279,20 @@ export default function OngletProgramme({
           </section>
         );
       })}
+
+      {nouvelleCure && (
+        <ModaleNouvelleCure
+          cliente={cliente}
+          centreId={centreId}
+          numero={prochainNumero}
+          onFerme={() => setNouvelleCure(false)}
+          onCreee={() => {
+            setNouvelleCure(false);
+            qc.invalidateQueries({ queryKey: ['programmes', clienteId] });
+            qc.invalidateQueries({ queryKey: ['situations', centreId] });
+          }}
+        />
+      )}
     </div>
   );
 }
