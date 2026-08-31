@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FileSignature, Loader2, X } from 'lucide-react';
+import { Check, Eye, FileSignature, Loader2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Signature, { type SignatureHandle } from './Signature';
 import { ENGAGEMENTS, construireContrat, type ContractData } from '../../domain/contrat';
@@ -16,6 +16,25 @@ interface Props {
   onSigne: () => void;
 }
 
+interface DocumentAffiche {
+  cle: string;
+  titre: string;
+  url: string;
+}
+
+function urlDepuisBase64(base64: string): string {
+  const binaire = atob(base64);
+  const octets = new Uint8Array(binaire.length);
+  for (let i = 0; i < binaire.length; i++) octets[i] = binaire.charCodeAt(i);
+  return URL.createObjectURL(new Blob([octets], { type: 'application/pdf' }));
+}
+
+const TITRE_CONSENTEMENT: Record<string, string> = {
+  'luxo-pdp': 'Consentement Luxothérapie',
+  ishape: 'Consentement Électrostimulation',
+  presso: 'Consentement Pressodynamie',
+};
+
 export default function ModaleContrat({
   cliente,
   centre,
@@ -31,9 +50,69 @@ export default function ModaleContrat({
   const [signatureVide, setSignatureVide] = useState(true);
   const [enCours, setEnCours] = useState(false);
 
+  const [documents, setDocuments] = useState<DocumentAffiche[]>([]);
+  const [docActif, setDocActif] = useState<string | null>(null);
+  const [vus, setVus] = useState<Set<string>>(new Set());
+  const [preparation, setPreparation] = useState(true);
+
   const contrat: ContractData = construireContrat({ cliente, centre, programme, lignes, echeances });
-  const tousCoches = coches.every(Boolean);
-  const pret = tousCoches && !signatureVide && !enCours;
+
+  /*
+    Les documents sont générés à l'ouverture, sans signature, pour être lus
+    avec la cliente. Tant qu'un document n'a pas été ouvert, la signature
+    reste bloquée : signer un texte qu'on n'a pas présenté n'a aucune valeur.
+  */
+  useEffect(() => {
+    let annule = false;
+    const urls: string[] = [];
+
+    (async () => {
+      try {
+        const [{ generateSignedContractPdf }, { generateSignedConsents }] = await Promise.all([
+          import('../../services/contratPdf'),
+          import('../../services/consentementsPdf'),
+        ]);
+
+        const pdfContrat = await generateSignedContractPdf(contrat, '', []);
+        const consentements = generateSignedConsents(
+          contrat.activeServiceIds,
+          cliente.prenom,
+          cliente.nom,
+          '',
+          contrat.signatureDate,
+          contrat.activeServiceIds.map(() => true),
+        );
+
+        if (annule) return;
+
+        const liste: DocumentAffiche[] = [
+          { cle: 'contrat', titre: 'Contrat de prestation', url: urlDepuisBase64(pdfContrat) },
+          ...consentements.map((c) => ({
+            cle: c.serviceId,
+            titre: TITRE_CONSENTEMENT[c.serviceId] ?? c.filename.replace(/\.pdf$/, ''),
+            url: urlDepuisBase64(c.pdfBase64),
+          })),
+        ];
+
+        liste.forEach((d) => urls.push(d.url));
+        setDocuments(liste);
+        setDocActif(liste[0]?.cle ?? null);
+        setVus(new Set(liste.length > 0 ? [liste[0].cle] : []));
+      } catch (e) {
+        console.error(e);
+        toast.error("Les documents n'ont pas pu être préparés.");
+      } finally {
+        if (!annule) setPreparation(false);
+      }
+    })();
+
+    return () => {
+      annule = true;
+      urls.forEach((u) => URL.revokeObjectURL(u));
+    };
+    // Générés une seule fois à l'ouverture.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const echap = (e: KeyboardEvent) => e.key === 'Escape' && !enCours && onFerme();
@@ -45,6 +124,21 @@ export default function ModaleContrat({
     };
   }, [onFerme, enCours]);
 
+  const tousLus = documents.length > 0 && vus.size >= documents.length;
+  const tousCoches = coches.every(Boolean);
+  const pret = tousLus && tousCoches && !signatureVide && !enCours;
+  const restants = documents.length - vus.size;
+
+  const manque = preparation
+    ? 'Préparation des documents…'
+    : !tousLus
+      ? `Il reste ${restants} document${restants > 1 ? 's' : ''} à ouvrir.`
+      : !tousCoches
+        ? 'Cochez les quatre engagements pour continuer.'
+        : signatureVide
+          ? 'Il manque la signature.'
+          : 'Prêt à signer.';
+
   async function signer() {
     const trace = signature.current?.lire();
     if (!trace) {
@@ -54,15 +148,12 @@ export default function ModaleContrat({
 
     setEnCours(true);
     try {
-      // jsPDF pèse près d'un mégaoctet : on ne le charge qu'au moment de signer,
-      // pas au démarrage de l'application.
       const [{ generateSignedContractPdf }, { generateSignedConsents }] = await Promise.all([
         import('../../services/contratPdf'),
         import('../../services/consentementsPdf'),
       ]);
 
       const pdf = await generateSignedContractPdf(contrat, trace, coches);
-
       const consentements = generateSignedConsents(
         contrat.activeServiceIds,
         cliente.prenom,
@@ -95,13 +186,15 @@ export default function ModaleContrat({
     }
   }
 
+  const doc = documents.find((d) => d.cle === docActif) ?? null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ardoise-950/40 p-4">
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Signature du contrat"
-        className="my-4 w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-carte"
+        className="my-4 w-full max-w-3xl overflow-hidden rounded-xl bg-white shadow-carte"
       >
         <div className="flex items-center justify-between border-b border-ardoise-200 px-5 py-3.5">
           <div>
@@ -124,80 +217,109 @@ export default function ModaleContrat({
         </div>
 
         <div className="space-y-5 p-5">
-          {/* Ce que la cliente signe */}
+          {/* Lecture des documents ------------------------------------- */}
           <section>
-            <h3 className="mb-2 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
-              Prestations au contrat
-            </h3>
-            <div className="rounded-xl border border-ardoise-200">
-              {contrat.careItems
-                .filter((c) => c.checked)
-                .map((c) => (
-                  <div
-                    key={c.label}
-                    className="flex items-center justify-between border-b border-ardoise-100 px-4 py-2 text-sm last:border-0"
-                  >
-                    <span className="text-ardoise-800">{c.label}</span>
-                    <span className="chiffres text-ardoise-500">{c.sessions} séances</span>
-                  </div>
-                ))}
+            <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+              <h3 className="text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
+                À lire avec la cliente
+              </h3>
+              <span
+                className={`text-xs font-medium ${tousLus ? 'text-emerald-700' : 'text-ardoise-500'}`}
+              >
+                {vus.size} / {documents.length || '…'} ouvert{vus.size > 1 ? 's' : ''}
+              </span>
             </div>
-          </section>
 
-          <section>
-            <h3 className="mb-2 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
-              Échéancier
-            </h3>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {contrat.deposit && (
-                <Case libelle="Acompte" montant={contrat.deposit.amount} date={contrat.deposit.date} />
-              )}
-              {contrat.installments.map((e) => (
-                <Case key={e.label} libelle={e.label} montant={e.amount} date={e.date} />
-              ))}
-            </div>
+            {preparation ? (
+              <div className="flex h-96 items-center justify-center rounded-xl border border-ardoise-200 bg-ardoise-50">
+                <span className="flex items-center gap-2 text-sm text-ardoise-500">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Préparation des documents…
+                </span>
+              </div>
+            ) : (
+              <>
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  {documents.map((d) => {
+                    const actif = d.cle === docActif;
+                    const lu = vus.has(d.cle);
+                    return (
+                      <button
+                        key={d.cle}
+                        type="button"
+                        onClick={() => {
+                          setDocActif(d.cle);
+                          setVus((v) => new Set(v).add(d.cle));
+                        }}
+                        className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                          actif
+                            ? 'border-marine-600 bg-marine-50 text-marine-900'
+                            : 'border-ardoise-300 bg-white text-ardoise-600 hover:border-marine-400'
+                        }`}
+                      >
+                        {lu ? (
+                          <Check className="h-3.5 w-3.5 text-emerald-600" strokeWidth={3} />
+                        ) : (
+                          <Eye className="h-3.5 w-3.5 text-ardoise-400" />
+                        )}
+                        {d.titre}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {doc && (
+                  <iframe
+                    key={doc.cle}
+                    src={`${doc.url}#view=FitH`}
+                    title={doc.titre}
+                    className="h-96 w-full rounded-xl border border-ardoise-300 bg-ardoise-50"
+                  />
+                )}
+
+                <p className="mt-2 text-xs text-ardoise-500">
+                  Parcourez chaque document avec la cliente. Tant qu'un document n'a pas été
+                  ouvert, la signature reste bloquée.
+                </p>
+              </>
+            )}
           </section>
 
           {contrat.activeServiceIds.length > 0 && (
-            <section className="rounded-xl bg-ardoise-50 px-4 py-3">
-              <p className="text-sm text-ardoise-700">
-                <strong className="font-semibold">
-                  {contrat.activeServiceIds.length} consentement
-                  {contrat.activeServiceIds.length > 1 ? 's' : ''}
-                </strong>{' '}
-                {contrat.activeServiceIds.length > 1 ? 'seront générés' : 'sera généré'} avec la même
-                signature, selon les technologies prescrites.
-              </p>
-              <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-ardoise-700">
-                <input
-                  type="checkbox"
-                  checked={photos}
-                  onChange={(e) => setPhotos(e.target.checked)}
-                  className="h-4 w-4 rounded border-ardoise-300 text-marine-600 focus:ring-marine-500"
-                />
-                La cliente autorise la diffusion de ses photos sur les réseaux du centre
-              </label>
-            </section>
+            <label className="flex cursor-pointer items-center gap-2 rounded-xl bg-ardoise-50 px-4 py-3 text-sm text-ardoise-700">
+              <input
+                type="checkbox"
+                checked={photos}
+                onChange={(e) => setPhotos(e.target.checked)}
+                className="h-4 w-4 rounded border-ardoise-300 text-marine-600 focus:ring-marine-500"
+              />
+              La cliente autorise la diffusion de ses photos sur les réseaux du centre
+            </label>
           )}
 
-          {/* Engagements */}
+          {/* Engagements ------------------------------------------------ */}
           <section>
             <h3 className="mb-2 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
-              À lire et cocher avec la cliente
+              À cocher avec la cliente
             </h3>
             <div className="space-y-2">
               {ENGAGEMENTS.map((texte, i) => (
                 <label
                   key={i}
-                  className="flex cursor-pointer gap-2.5 rounded-lg border border-ardoise-200 px-3 py-2.5 text-sm text-ardoise-700 hover:bg-ardoise-50"
+                  className={`flex gap-2.5 rounded-lg border px-3 py-2.5 text-sm ${
+                    tousLus
+                      ? 'cursor-pointer border-ardoise-200 text-ardoise-700 hover:bg-ardoise-50'
+                      : 'cursor-not-allowed border-ardoise-100 text-ardoise-400'
+                  }`}
                 >
                   <input
                     type="checkbox"
                     checked={coches[i]}
+                    disabled={!tousLus}
                     onChange={(e) =>
                       setCoches((c) => c.map((v, k) => (k === i ? e.target.checked : v)))
                     }
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-ardoise-300 text-marine-600 focus:ring-marine-500"
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-ardoise-300 text-marine-600 focus:ring-marine-500 disabled:opacity-40"
                   />
                   <span>{texte}</span>
                 </label>
@@ -205,7 +327,7 @@ export default function ModaleContrat({
             </div>
           </section>
 
-          {/* Signature */}
+          {/* Signature -------------------------------------------------- */}
           <section>
             <h3 className="mb-2 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
               Signature — « Lu et approuvé »
@@ -215,13 +337,7 @@ export default function ModaleContrat({
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ardoise-200 px-5 py-4">
-          <p className="text-xs text-ardoise-500">
-            {!tousCoches
-              ? 'Cochez les quatre engagements pour continuer.'
-              : signatureVide
-                ? 'Il manque la signature.'
-                : 'Prêt à signer.'}
-          </p>
+          <p className={`text-xs ${pret ? 'text-emerald-700' : 'text-ardoise-500'}`}>{manque}</p>
           <div className="flex gap-3">
             <button onClick={onFerme} disabled={enCours} className="bouton-discret">
               Annuler
@@ -237,18 +353,6 @@ export default function ModaleContrat({
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Case({ libelle, montant, date }: { libelle: string; montant: string; date: string }) {
-  return (
-    <div className="rounded-lg border border-ardoise-200 bg-ardoise-50 px-3 py-2">
-      <div className="text-2xs font-semibold uppercase tracking-wide text-ardoise-400">
-        {libelle}
-      </div>
-      <div className="chiffres text-sm font-bold text-ardoise-900">{montant}</div>
-      {date && <div className="text-2xs text-ardoise-400">le {date}</div>}
     </div>
   );
 }

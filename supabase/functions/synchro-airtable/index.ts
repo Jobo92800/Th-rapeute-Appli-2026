@@ -420,6 +420,9 @@ Deno.serve(async (req: Request) => {
 
     let traitees = 0;
     let echecs = 0;
+    // Les messages sont renvoyés dans la réponse : sans ça, diagnostiquer un
+    // échec oblige à aller fouiller la base ou les journaux.
+    const erreurs: Array<{ entite: string; message: string }> = [];
 
     for (const t of taches as Array<{ id: string; entite: string; entite_id: string; tentatives: number }>) {
       try {
@@ -431,6 +434,7 @@ Deno.serve(async (req: Request) => {
         traitees++;
       } catch (err) {
         echecs++;
+        erreurs.push({ entite: t.entite, message: String(err).slice(0, 300) });
         await db
           .from('airtable_sync')
           .update({
@@ -445,7 +449,7 @@ Deno.serve(async (req: Request) => {
       await new Promise((r) => setTimeout(r, 220));
     }
 
-    return json({ traitees, echecs });
+    return json({ traitees, echecs, erreurs });
   } catch (err) {
     return json({ error: String(err) }, 500);
   }
