@@ -106,11 +106,16 @@ Secrets de la fonction : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`, `AIRTABLE_TABLE`.
 ## Où on en est
 
 **Fait** — socle et connexion · fiches clientes · Bilan Empreinte complet ·
-programme et prix · échéancier daté avec états de retard · séances et moteur
-du jeu du jour · mensurations avec courbe · notes entre thérapeutes ·
-contrats et consentements signés · synchronisation Airtable, y compris
-l'envoi des PDF en pièces jointes · lecture obligatoire des documents avant
-signature · archivage réversible et suppression définitive (direction).
+programme et prix · cures successives avec guide et tenue facultatifs ·
+échéancier daté avec états de retard, visibles sur la liste · séances et
+moteur du jeu du jour · mensurations avec courbe · notes entre thérapeutes ·
+contrats et consentements signés, avec lecture obligatoire avant signature ·
+synchronisation Airtable complète, PDF en pièces jointes compris ·
+archivage réversible et suppression définitive (direction) · accès au
+parcours audio avec mot de passe donné au comptoir.
+
+**Tout est vérifié en conditions réelles** : fiches, bilan, cure, contrat,
+consentements, synchro Airtable et parcours audio fonctionnent.
 
 **Reste à faire**
 
@@ -119,10 +124,21 @@ signature · archivage réversible et suppression définitive (direction).
   secret `RESEND_API_KEY`. **À arbitrer** : les documents arrivant désormais
   en pièces jointes dans Airtable, l'envoi peut aussi se faire depuis les
   automatisations Airtable — c'est peut-être plus simple que Resend.
-- Écran Stock (lot 5) : à reprendre du modèle Supabase de la V1.
-- Ventes de compléments reliées au décompte de stock.
-- Tableau de bord d'accueil : échéances du jour, séances à faire.
+- **Écran Stock** : le lien du menu existe mais mène à un écran vide. Le
+  modèle Supabase de la V1 (`stock_products`, `stock_levels`,
+  `stock_movements`) est bon, à reprendre tel quel dans le projet V2.
+- **Ventes de compléments** reliées au décompte de stock : la table
+  `ventes_complements` existe et n'a aucune interface. Les deux systèmes
+  s'ignoraient dans la V1, ne pas refaire cette erreur.
+- **Tableau de bord d'accueil** : aujourd'hui il ne montre que le nombre de
+  fiches et l'état de la synchro. Il devrait montrer les échéances du jour,
+  les retards, les séances à faire, les alertes de stock.
+- **Compte à rebours des compléments** : règles d'épuisement reprises de la
+  V1 (BURN et DETOX 15 jours par boîte, SKIN 30, SOS pas de calcul).
 - Migration éventuelle de l'historique Firestore.
+- Le dépôt est **public** : il contient le questionnaire Empreinte, les 60
+  jeux, les textes de contrat et la grille tarifaire. À repasser en privé.
+- `ADMIN_CODE` du podcast toujours à `0000`.
 
 **Questions ouvertes**
 
@@ -162,6 +178,18 @@ signature · archivage réversible et suppression définitive (direction).
 
 ---
 
+## Les deux dépôts
+
+| Dépôt | Rôle |
+|---|---|
+| `Jobo92800/Th-rapeute-Appli-2026` | la V2, ce dossier |
+| `Jobo92800/Applipodcast` | « Mon Parcours », l'application audio des clientes |
+
+Le second est **modifié aussi** depuis cette collaboration : l'action `creer`
+de son API thérapeute accepte un `motDePasse`, ce qui crée le compte avec
+l'email déjà confirmé. Son banc d'essai (`node tests/run.mjs`, 52 contrôles)
+doit rester vert après toute modification.
+
 ## Déploiement
 
 Dépôt : `Jobo92800/Th-rapeute-Appli-2026` (public pour l'instant — contient
@@ -172,14 +200,26 @@ poussée. Variables à définir côté Netlify : `VITE_SUPABASE_URL` et
 
 ## Commandes
 
+Trois choses ne passent **pas** par GitHub et se déploient à la main :
+les migrations SQL, les fonctions Edge, et les champs Airtable.
+
 ```bash
 npm run dev                     # développement
 npm run build                   # vérification avant livraison
 npx --no-install tsc --noEmit   # typage seul
 
-# déployer la fonction de synchro (après un `npx supabase login`)
-npx --yes supabase functions deploy synchro-airtable --project-ref kefvxglmybbbcdcautcm
+# déployer une fonction Edge (après un `npx supabase login`, une seule fois)
+npx --yes supabase functions deploy synchro-airtable      --project-ref kefvxglmybbbcdcautcm
+npx --yes supabase functions deploy acces-parcours-audio  --project-ref kefvxglmybbbcdcautcm
+
+# diagnostiquer la synchro Airtable : elle renvoie ses erreurs
+curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $ANON"
 ```
+
+Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
+`AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
+
+Migrations passées jusqu'à **013** incluse.
 
 Les migrations SQL se collent dans l'éditeur SQL de Supabase, dans l'ordre
 des numéros. Elles sont rejouables sans risque.
