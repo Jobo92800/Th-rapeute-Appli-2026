@@ -67,6 +67,10 @@ const NOM_TERRAIN: Record<string, string> = {
   T5: 'Digestif',
 };
 
+/** Champs pièces jointes de la table Clients. */
+const CHAMP_CONTRAT = 'fldxJHrZBuFN75wMr';
+const CHAMP_CONSENTEMENTS = 'fldn4f3NScLrXj31C';
+
 /** « Montant Cure » pour la première, « Montant cure N » ensuite. */
 function champMontantCure(numero: number): string {
   return numero <= 1 ? 'Montant Cure' : `Montant cure ${Math.min(numero, 9)}`;
@@ -116,6 +120,94 @@ Deno.serve(async (req: Request) => {
       );
     }
     return corps;
+  }
+
+  /**
+   * Dépose un PDF dans un champ pièce jointe.
+   *
+   * L'API de contenu d'Airtable accepte le fichier en base64 : pas besoin
+   * d'exposer le document derrière une URL publique. Chaque appel ajoute
+   * une pièce jointe, il n'écrase pas les précédentes.
+   */
+  async function joindrePdf(
+    recordId: string,
+    champId: string,
+    nomFichier: string,
+    pdfBase64: string,
+  ) {
+    const r = await fetch(
+      `https://content.airtable.com/v0/${base}/${recordId}/${champId}/uploadAttachment`,
+      {
+        method: 'POST',
+        headers: enTetesAirtable,
+        body: JSON.stringify({
+          contentType: 'application/pdf',
+          filename: nomFichier,
+          file: pdfBase64,
+        }),
+      },
+    );
+
+    const corps = await r.json();
+    if (!r.ok) {
+      throw new Error(
+        `Airtable pièce jointe ${r.status} : ${corps?.error?.message ?? JSON.stringify(corps).slice(0, 200)}`,
+      );
+    }
+  }
+
+  /**
+   * Envoie le contrat signé et ses consentements.
+   *
+   * La fiche cliente doit déjà exister dans Airtable : sinon on renvoie la
+   * tâche en file, elle passera après la création.
+   */
+  async function traiterContrat(contratId: string) {
+    const { data: c } = await db
+      .from('contrats')
+      .select('id, cliente_id, nom_cliente, pdf_base64, airtable_le')
+      .eq('id', contratId)
+      .maybeSingle();
+
+    if (!c) throw new Error('Contrat introuvable.');
+    if (c.airtable_le) return; // déjà envoyé
+
+    const { data: cliente } = await db
+      .from('clientes')
+      .select('prenom, nom, airtable_record_id')
+      .eq('id', c.cliente_id)
+      .maybeSingle();
+
+    if (!cliente) throw new Error('Cliente introuvable.');
+    if (!cliente.airtable_record_id) {
+      throw new Error("La fiche cliente n'est pas encore dans Airtable, nouvelle tentative plus tard.");
+    }
+
+    const suffixe = `${cliente.nom}_${cliente.prenom}`.replace(/[^\w\-]+/g, '_');
+    await joindrePdf(
+      cliente.airtable_record_id,
+      CHAMP_CONTRAT,
+      `Contrat_${suffixe}.pdf`,
+      c.pdf_base64,
+    );
+
+    const { data: consentements } = await db
+      .from('consentements')
+      .select('nom_fichier, pdf_base64')
+      .eq('contrat_id', contratId)
+      .order('nom_fichier');
+
+    for (const cs of consentements ?? []) {
+      await new Promise((r) => setTimeout(r, 220));
+      await joindrePdf(
+        cliente.airtable_record_id,
+        CHAMP_CONSENTEMENTS,
+        cs.nom_fichier,
+        cs.pdf_base64,
+      );
+    }
+
+    await db.from('contrats').update({ airtable_le: new Date().toISOString() }).eq('id', contratId);
   }
 
   // ---------------------------------------------------------------------------
@@ -221,6 +313,13 @@ Deno.serve(async (req: Request) => {
   // ---------------------------------------------------------------------------
 
   async function traiter(tache: { id: string; entite: string; entite_id: string }) {
+    // Les contrats suivent un chemin à part : ce sont des pièces jointes,
+    // pas des champs de la fiche.
+    if (tache.entite === 'contrat') {
+      await traiterContrat(tache.entite_id);
+      return;
+    }
+
     let clienteId: string;
     let champs: Record<string, unknown>;
 
