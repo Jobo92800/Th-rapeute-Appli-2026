@@ -201,7 +201,9 @@ export default function Clientes() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-ardoise-200 bg-ardoise-50 text-left">
-                <Entete>Cliente</Entete>
+                <th className="border-l-4 border-transparent px-4 py-2.5 text-2xs font-semibold uppercase tracking-widest text-ardoise-500">
+                  Cliente
+                </th>
                 <Entete>Contact</Entete>
                 <Entete>Thérapeute</Entete>
                 <Entete>Règlement</Entete>
@@ -209,13 +211,31 @@ export default function Clientes() {
               </tr>
             </thead>
             <tbody className="divide-y divide-ardoise-100">
-              {filtrees.map((c) => (
-                <tr key={c.id} className="hover:bg-ardoise-50">
-                  <td className="px-4 py-2.5">
+              {filtrees.map((c) => {
+                const situation = parCliente.get(c.id!);
+                const enRetard = (situation?.nb_en_retard ?? 0) > 0;
+                return (
+                <tr
+                  key={c.id}
+                  className={enRetard ? 'bg-rose-50/70 hover:bg-rose-50' : 'hover:bg-ardoise-50'}
+                >
+                  {/* Le bandeau rouge court sur toute la ligne : le retard se
+                      repère en balayant la liste, sans lire la colonne. */}
+                  <td
+                    className={`border-l-4 px-4 py-2.5 ${
+                      enRetard ? 'border-rose-600' : 'border-transparent'
+                    }`}
+                  >
                     <Link
                       to={`/clientes/${c.id}`}
-                      className="font-semibold text-ardoise-900 hover:text-marine-700"
+                      className="flex items-center gap-1.5 font-semibold text-ardoise-900 hover:text-marine-700"
                     >
+                      {enRetard && (
+                        <AlertTriangle
+                          className="h-3.5 w-3.5 shrink-0 text-rose-600"
+                          aria-label="Règlement en retard"
+                        />
+                      )}
                       {c.prenom} {c.nom}
                     </Link>
                     {c.ville && <div className="text-xs text-ardoise-400">{c.ville}</div>}
@@ -228,13 +248,14 @@ export default function Clientes() {
                     {c.therapeutes.length > 0 ? c.therapeutes.join(', ') : '—'}
                   </td>
                   <td className="px-4 py-2.5">
-                    <CelluleReglement situation={parCliente.get(c.id!)} />
+                    <CelluleReglement situation={situation} />
                   </td>
                   <td className="px-4 py-2.5 text-ardoise-500">
                     {format(new Date(c.cree_le), 'd MMM yyyy', { locale: fr })}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
