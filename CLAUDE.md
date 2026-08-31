@@ -159,6 +159,11 @@ consentements, synchro Airtable et parcours audio fonctionnent.
   (« Le Cr√®s »). Toujours préfixer par `LC_ALL=en_US.UTF-8`.
 - **Collage tronqué.** Un fichier de plus de 100 lignes collé dans l'éditeur
   web de Supabase se coupe. Déployer la fonction par la CLI.
+- **Le bon projet Supabase.** Il y en a plusieurs sur ce compte. Le SQL de la
+  V2 va dans **MAbeautyplus V2** (`kefvxglmybbbcdcautcm`), jamais dans
+  Appli-Podcast, MB Nutrition ou Smooth Ticket. L'éditeur ne prévient pas :
+  il répond « Success » en ayant créé l'objet dans le mauvais projet. Au
+  moindre doute, vérifier via l'API que l'objet existe vraiment.
 - **Ordre des opérations.** Toujours passer la migration SQL *avant* de
   redéployer la fonction Edge, sinon elle appelle des fonctions absentes.
 - **Diagnostiquer la synchro.** La fonction renvoie ses messages d'erreur
