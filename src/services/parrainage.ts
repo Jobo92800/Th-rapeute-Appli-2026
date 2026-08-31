@@ -83,3 +83,23 @@ export async function definirParrainLibre(clienteId: string, nom: string): Promi
 
   if (error) throw error;
 }
+
+/**
+ * Les crédits de tout un centre en un seul aller-retour, pour la pastille de
+ * la liste. La base ne renvoie que des compteurs — la règle des 2 séances
+ * par filleule vit dans le domaine, avec les autres règles métier.
+ */
+export interface CreditsCliente {
+  cliente_id: string;
+  filleules_engagees: number;
+  seances_utilisees: number;
+}
+
+export async function creditsDuCentre(centreId: string): Promise<CreditsCliente[]> {
+  const { data, error } = await supabase.rpc('credits_parrainage_du_centre', {
+    p_centre: centreId,
+  });
+
+  if (error) throw error;
+  return (data ?? []) as CreditsCliente[];
+}

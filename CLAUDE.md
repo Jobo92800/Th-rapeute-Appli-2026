@@ -240,8 +240,9 @@ curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
-Migrations passées jusqu'à **016** incluse. La **017** (parrainage) est
-écrite et attend d'être collée dans l'éditeur SQL.
+Migrations passées jusqu'à **016** incluse. Les **017** (parrainage) et
+**018** (pastille de crédits sur la liste) sont écrites et attendent d'être
+collées dans l'éditeur SQL, dans cet ordre.
 
 Les migrations SQL se collent dans l'éditeur SQL de Supabase, dans l'ordre
 des numéros. Elles sont rejouables sans risque.

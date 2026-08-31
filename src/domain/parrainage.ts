@@ -37,11 +37,19 @@ export interface SoldeParrainage {
 
 export function calculerSolde(filleules: Filleule[], utilisees: number): SoldeParrainage {
   const engagees = filleules.filter((f) => f.engagee_le !== null).length;
+  return { ...soldeDepuisCompteurs(engagees, utilisees), total: filleules.length };
+}
+
+/**
+ * Même calcul, à partir des seuls compteurs : c'est ce que renvoie la base
+ * pour la liste des clientes, où l'on ne charge pas le détail des filleules.
+ */
+export function soldeDepuisCompteurs(engagees: number, utilisees: number): SoldeParrainage {
   const brut = engagees * SEANCES_PAR_FILLEULE;
   const gagnees = Math.min(brut, PLAFOND_SEANCES);
 
   return {
-    total: filleules.length,
+    total: engagees,
     engagees,
     gagnees,
     utilisees,

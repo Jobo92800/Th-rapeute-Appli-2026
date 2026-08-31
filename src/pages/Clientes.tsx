@@ -14,6 +14,9 @@ import {
   restaurerCliente,
 } from '../services/clientes';
 import { resumeNotesDuCentre, situationsDuCentre } from '../services/metier';
+import { creditsDuCentre } from '../services/parrainage';
+import PastilleCredits from '../components/PastilleCredits';
+import { soldeDepuisCompteurs } from '../domain/parrainage';
 import { etatCliente, type SituationReglement } from '../domain/reglement';
 import ModaleNotes from '../components/ModaleNotes';
 import ModaleSuppression from '../components/fiche/ModaleSuppression';
@@ -79,6 +82,24 @@ export default function Clientes() {
     queryFn: () => situationsDuCentre(centre.id),
     retry: false,
   });
+
+  // Les crédits de parrainage du centre, en un seul appel : une filleule
+  // peut être suivie ailleurs, la liste ne saurait pas les compter.
+  const { data: credits = [] } = useQuery({
+    queryKey: ['credits-parrainage', centre.id],
+    queryFn: () => creditsDuCentre(centre.id),
+  });
+
+  const creditsParCliente = useMemo(
+    () =>
+      new Map(
+        credits.map((c) => [
+          c.cliente_id,
+          soldeDepuisCompteurs(c.filleules_engagees, c.seances_utilisees).disponibles,
+        ]),
+      ),
+    [credits],
+  );
 
   const { data: resumeNotes = [] } = useQuery({
     queryKey: ['resume-notes', centre.id],
@@ -324,6 +345,7 @@ export default function Clientes() {
                         />
                       )}
                       {c.prenom} {c.nom}
+                      <PastilleCredits nombre={creditsParCliente.get(c.id!) ?? 0} />
                     </Link>
                     {c.ville && <div className="text-xs text-ardoise-400">{c.ville}</div>}
                   </td>
