@@ -15,7 +15,12 @@ import {
 /** Ce qu'une composition validée transmet à l'enregistrement. */
 export interface Prescription {
   lignes: Array<{ technologie: Technologie; seances: number; prixUnitaire: number }>;
+  /** La prescription contient de l'I-Shape. */
   electro: boolean;
+  /** La tenue est facturée. Décochée si la cliente en a déjà une. */
+  tenue: boolean;
+  /** Le guide est facturé. Décoché si la cliente l'a déjà. */
+  guide: boolean;
   montantTotal: number;
   modeReglement: ModeReglement;
   frais: number;
@@ -28,6 +33,11 @@ interface Props {
   complement?: { nom: string; raison: string } | null;
   /** Séances de départ. 16 séances de luxothérapie par défaut. */
   seancesInitiales?: Partial<Record<Technologie, number>>;
+  /**
+   * Laisse décocher le guide et la tenue. À activer pour les cures
+   * suivantes : la cliente les a déjà, on ne les lui revend pas.
+   */
+  optionsModifiables?: boolean;
   onChange: (p: Prescription, totalSeances: number) => void;
 }
 
@@ -49,6 +59,7 @@ export default function CompositionCure({
   grille,
   complement,
   seancesInitiales,
+  optionsModifiables = false,
   onChange,
 }: Props) {
   const [seances, setSeances] = useState<Record<Technologie, number>>({
@@ -59,10 +70,13 @@ export default function CompositionCure({
   });
   const [domeVisible, setDomeVisible] = useState((seancesInitiales?.dome ?? 0) > 0);
   const [mode, setMode] = useState<ModeReglement>('4x_maison');
+  const [guide, setGuide] = useState(true);
+  // Tant que la thérapeute n'a pas décidé elle-même, la tenue suit la
+  // prescription : elle s'ajoute dès qu'il y a de l'I-Shape.
+  const [tenueChoisie, setTenueChoisie] = useState<boolean | null>(null);
 
-  // L'électrostimulation n'est pas une case à cocher : elle découle de la
-  // prescription. Dès qu'il y a de l'I-Shape, la tenue à 60 € s'ajoute.
   const electro = seances.ishape > 0;
+  const tenue = tenueChoisie ?? electro;
 
   const lignes = useMemo(
     () =>
@@ -75,8 +89,8 @@ export default function CompositionCure({
   );
 
   const detail = useMemo(
-    () => calculerMontant(lignes, { electro }, grille),
-    [lignes, electro, grille],
+    () => calculerMontant(lignes, { tenue, guide }, grille),
+    [lignes, tenue, guide, grille],
   );
 
   const echeancier = useMemo(
@@ -89,6 +103,8 @@ export default function CompositionCure({
       {
         lignes,
         electro,
+        tenue,
+        guide,
         montantTotal: detail.total,
         modeReglement: mode,
         frais: echeancier.frais,
@@ -98,7 +114,7 @@ export default function CompositionCure({
     );
     // onChange est recréée à chaque rendu du parent : on ne l'observe pas.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lignes, electro, detail, mode, echeancier]);
+  }, [lignes, electro, tenue, guide, detail, mode, echeancier]);
 
   function ajuster(t: Technologie, delta: number) {
     setSeances((s) => ({ ...s, [t]: Math.max(0, s[t] + delta) }));
@@ -145,15 +161,42 @@ export default function CompositionCure({
         </div>
 
         <div className="space-y-1.5 border-t border-ardoise-100 bg-ardoise-50/60 px-5 py-4 text-sm">
-          <Inclus>Guide de rééquilibrage alimentaire — 4 phases sur 4 semaines</Inclus>
-          {electro && <Inclus>Sous-tenue I-Shape fournie</Inclus>}
-          {complement && (
-            <Inclus>
-              <strong className="font-semibold">{complement.nom}</strong> — {complement.raison}
-            </Inclus>
+          {optionsModifiables ? (
+            <>
+              <p className="mb-1 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
+                À facturer — décochez ce que la cliente a déjà
+              </p>
+              <Option
+                coche={guide}
+                onChange={setGuide}
+                libelle="Guide de rééquilibrage alimentaire"
+                prix={formaterEuros(grille.guide)}
+              />
+              <Option
+                coche={tenue}
+                onChange={(v) => setTenueChoisie(v)}
+                libelle="Sous-tenue I-Shape"
+                prix={formaterEuros(grille.tenue)}
+                note={!electro ? 'Aucune électrostimulation prescrite' : undefined}
+              />
+              <div className="pt-1.5">
+                <Inclus>Bilans mensuels sur balance médicale et suivi hebdomadaire</Inclus>
+                <Inclus>Application podcasts et expérience ludique à chaque séance</Inclus>
+              </div>
+            </>
+          ) : (
+            <>
+              <Inclus>Guide de rééquilibrage alimentaire — 4 phases sur 4 semaines</Inclus>
+              {electro && <Inclus>Sous-tenue I-Shape fournie</Inclus>}
+              {complement && (
+                <Inclus>
+                  <strong className="font-semibold">{complement.nom}</strong> — {complement.raison}
+                </Inclus>
+              )}
+              <Inclus>Bilans mensuels sur balance médicale et suivi hebdomadaire nutrition</Inclus>
+              <Inclus>Application podcasts et expérience ludique à chaque séance</Inclus>
+            </>
           )}
-          <Inclus>Bilans mensuels sur balance médicale et suivi hebdomadaire nutrition</Inclus>
-          <Inclus>Application podcasts et expérience ludique à chaque séance</Inclus>
         </div>
       </section>
 
@@ -184,10 +227,10 @@ export default function CompositionCure({
 
         <div className="grid grid-cols-3 gap-px bg-marine-800 text-center text-xs">
           <Detail libelle="Séances" valeur={formaterEuros(detail.montantSeances)} />
-          <Detail libelle="Guide" valeur={formaterEuros(detail.montantGuide)} />
+          <Detail libelle="Guide" valeur={guide ? formaterEuros(detail.montantGuide) : '—'} />
           <Detail
             libelle="Tenue I-Shape"
-            valeur={electro ? formaterEuros(detail.montantTenue) : '—'}
+            valeur={tenue ? formaterEuros(detail.montantTenue) : '—'}
           />
         </div>
       </section>
@@ -290,6 +333,42 @@ function LigneSeances({
         </button>
       </div>
     </div>
+  );
+}
+
+function Option({
+  coche,
+  onChange,
+  libelle,
+  prix,
+  note,
+}: {
+  coche: boolean;
+  onChange: (v: boolean) => void;
+  libelle: string;
+  prix: string;
+  note?: string;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2.5 rounded-lg bg-white px-3 py-2">
+      <input
+        type="checkbox"
+        checked={coche}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-4 w-4 shrink-0 rounded border-ardoise-300 text-marine-600 focus:ring-marine-500"
+      />
+      <span className="min-w-0 flex-1">
+        <span className={coche ? 'text-ardoise-800' : 'text-ardoise-400 line-through'}>
+          {libelle}
+        </span>
+        {note && <span className="block text-2xs text-ardoise-400">{note}</span>}
+      </span>
+      <span
+        className={`chiffres shrink-0 text-sm font-semibold ${coche ? 'text-ardoise-900' : 'text-ardoise-300'}`}
+      >
+        {prix}
+      </span>
+    </label>
   );
 }
 

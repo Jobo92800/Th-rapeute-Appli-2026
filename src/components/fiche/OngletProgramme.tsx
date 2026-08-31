@@ -186,7 +186,7 @@ export default function OngletProgramme({
                     </div>
                   );
                 })}
-                {p.guide && (
+                {Number(p.prix_guide) > 0 && (
                   <div className="flex items-center justify-between py-1.5 text-sm">
                     <span className="text-ardoise-700">Guide de rééquilibrage</span>
                     <span className="chiffres text-ardoise-500">
@@ -194,7 +194,7 @@ export default function OngletProgramme({
                     </span>
                   </div>
                 )}
-                {p.electro && (
+                {Number(p.prix_tenue) > 0 && (
                   <div className="flex items-center justify-between py-1.5 text-sm">
                     <span className="text-ardoise-700">Tenue I-Shape</span>
                     <span className="chiffres text-ardoise-500">

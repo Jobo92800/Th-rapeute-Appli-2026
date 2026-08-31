@@ -171,6 +171,8 @@ export default function NouveauBilan() {
           centreId: centre.id,
           lignes: prescription.lignes,
           electro: prescription.electro,
+          guide: prescription.guide,
+          tenue: prescription.tenue,
           prixGuide: grille.guide,
           prixTenue: grille.tenue,
           montantTotal: prescription.montantTotal,

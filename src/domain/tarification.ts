@@ -50,16 +50,19 @@ export interface DetailMontant {
  * Le total de séances additionne toutes les technologies prescrites.
  * Exemple de la présentation : 20 Luxo + 15 électro = 35 séances
  * → 2 065 € + 29 € de guide + 60 € de tenue = 2 094 €.
+ *
+ * Le guide et la tenue se facturent séparément : sur une cure suivante, la
+ * cliente les a déjà et on ne les lui revend pas.
  */
 export function calculerMontant(
   lignes: LigneProgramme[],
-  options: { electro: boolean; guide?: boolean },
+  options: { tenue: boolean; guide: boolean },
   grille: GrilleTarifaire,
 ): DetailMontant {
   const totalSeances = lignes.reduce((n, l) => n + Math.max(0, l.seances), 0);
   const montantSeances = lignes.reduce((n, l) => n + Math.max(0, l.seances) * l.prixUnitaire, 0);
-  const montantGuide = options.guide === false ? 0 : grille.guide;
-  const montantTenue = options.electro ? grille.tenue : 0;
+  const montantGuide = options.guide ? grille.guide : 0;
+  const montantTenue = options.tenue ? grille.tenue : 0;
 
   return {
     totalSeances,

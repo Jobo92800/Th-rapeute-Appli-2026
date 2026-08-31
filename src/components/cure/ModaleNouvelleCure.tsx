@@ -60,6 +60,8 @@ export default function ModaleNouvelleCure({
         centreId,
         lignes: prescription.lignes,
         electro: prescription.electro,
+        guide: prescription.guide,
+        tenue: prescription.tenue,
         prixGuide: grille?.guide ?? 0,
         prixTenue: grille?.tenue ?? 0,
         montantTotal: prescription.montantTotal,
@@ -110,6 +112,7 @@ export default function ModaleNouvelleCure({
           ) : (
             <CompositionCure
               grille={grille}
+              optionsModifiables
               onChange={(p, n) => {
                 setPrescription(p);
                 setTotalSeances(n);

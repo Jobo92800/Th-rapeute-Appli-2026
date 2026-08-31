@@ -135,6 +135,9 @@ export interface NouveauProgramme {
   centreId: string;
   lignes: Array<{ technologie: Technologie; seances: number; prixUnitaire: number }>;
   electro: boolean;
+  /** Le guide et la tenue sont-ils facturés sur cette cure ? */
+  guide: boolean;
+  tenue: boolean;
   prixGuide: number;
   prixTenue: number;
   montantTotal: number;
@@ -160,9 +163,9 @@ export async function creerProgramme(n: NouveauProgramme): Promise<Programme> {
       numero: (count ?? 0) + 1,
       statut: 'valide',
       electro: n.electro,
-      guide: true,
-      prix_guide: n.prixGuide,
-      prix_tenue: n.electro ? n.prixTenue : 0,
+      guide: n.guide,
+      prix_guide: n.guide ? n.prixGuide : 0,
+      prix_tenue: n.tenue ? n.prixTenue : 0,
       montant_total: n.montantTotal,
       mode_reglement: n.modeReglement,
       frais_financement: n.fraisFinancement,
