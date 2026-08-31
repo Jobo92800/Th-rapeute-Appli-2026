@@ -9,6 +9,8 @@ import {
   Ruler,
   RefreshCw,
   User,
+  MessageSquare,
+  Pin,
   Wallet,
   Zap,
 } from 'lucide-react';
@@ -17,15 +19,16 @@ import { fr } from 'date-fns/locale';
 import { useCentre } from '../lib/session';
 import { supabase } from '../lib/supabase';
 import { lireCliente } from '../services/clientes';
-import { bilansDeLaCliente } from '../services/metier';
+import { bilansDeLaCliente, notesDeLaCliente } from '../services/metier';
 import OngletCoordonnees from '../components/fiche/OngletCoordonnees';
 import OngletEmpreinte from '../components/fiche/OngletEmpreinte';
 import OngletProgramme from '../components/fiche/OngletProgramme';
 import OngletSeances from '../components/fiche/OngletSeances';
 import OngletMensurations from '../components/fiche/OngletMensurations';
+import Notes from '../components/fiche/Notes';
 import type { AxeProfil } from '../domain/empreinte';
 
-type Onglet = 'coordonnees' | 'empreinte' | 'programme' | 'seances' | 'mensurations';
+type Onglet = 'coordonnees' | 'empreinte' | 'programme' | 'seances' | 'mensurations' | 'notes';
 
 const ONGLETS: { id: Onglet; libelle: string; icone: typeof User }[] = [
   { id: 'coordonnees', libelle: 'Coordonnées', icone: User },
@@ -33,6 +36,7 @@ const ONGLETS: { id: Onglet; libelle: string; icone: typeof User }[] = [
   { id: 'programme', libelle: 'Cure & règlement', icone: Wallet },
   { id: 'seances', libelle: 'Séances', icone: Zap },
   { id: 'mensurations', libelle: 'Mensurations', icone: Ruler },
+  { id: 'notes', libelle: 'Notes', icone: MessageSquare },
 ];
 
 export default function FicheCliente() {
@@ -50,6 +54,12 @@ export default function FicheCliente() {
   const { data: bilans = [] } = useQuery({
     queryKey: ['bilans', id],
     queryFn: () => bilansDeLaCliente(id!),
+    enabled: !creation,
+  });
+
+  const { data: notes = [] } = useQuery({
+    queryKey: ['notes', id],
+    queryFn: () => notesDeLaCliente(id!),
     enabled: !creation,
   });
 
@@ -127,11 +137,35 @@ export default function FicheCliente() {
               >
                 <Icone className="h-4 w-4" />
                 {libelle}
+                {o === 'notes' && notes.length > 0 && (
+                  <span className="chiffres rounded-full bg-ardoise-200 px-1.5 text-2xs font-bold text-ardoise-700">
+                    {notes.length}
+                  </span>
+                )}
               </button>
             );
           })}
         </nav>
       )}
+
+      {!creation &&
+        notes
+          .filter((n) => n.epinglee)
+          .map((n) => (
+            <div
+              key={n.id}
+              className="flex gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3"
+            >
+              <Pin className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+              <div className="min-w-0 text-sm text-amber-900">
+                <p className="whitespace-pre-wrap leading-relaxed">{n.texte}</p>
+                <p className="mt-1 text-xs text-amber-700">
+                  {n.auteur || 'Thérapeute'} ·{' '}
+                  {format(new Date(n.cree_le), 'd MMM yyyy', { locale: fr })}
+                </p>
+              </div>
+            </div>
+          ))}
 
       {(creation || onglet === 'coordonnees') && (
         <OngletCoordonnees centreId={centre.id} cliente={cliente ?? null} />
@@ -146,6 +180,7 @@ export default function FicheCliente() {
       {!creation && onglet === 'mensurations' && (
         <OngletMensurations clienteId={id!} centreId={centre.id} />
       )}
+      {!creation && onglet === 'notes' && <Notes clienteId={id!} centreId={centre.id} />}
     </div>
   );
 }

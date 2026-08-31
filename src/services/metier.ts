@@ -6,7 +6,9 @@ import type {
   Jeu,
   LigneProgramme,
   Mensuration,
+  NoteCliente,
   Programme,
+  ResumeNotes,
   Seance,
   SuiviSeances,
   Technologie,
@@ -306,4 +308,58 @@ export async function ventesDeLaCliente(clienteId: string): Promise<VenteComplem
 export async function ajouterVente(v: Partial<VenteComplement>): Promise<void> {
   const { error } = await supabase.from('ventes_complements').insert(v);
   if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// Notes entre thérapeutes
+// ---------------------------------------------------------------------------
+
+export async function notesDeLaCliente(clienteId: string): Promise<NoteCliente[]> {
+  const { data, error } = await supabase
+    .from('notes_cliente')
+    .select('*')
+    .eq('cliente_id', clienteId)
+    .order('epinglee', { ascending: false })
+    .order('cree_le', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as NoteCliente[];
+}
+
+export async function ajouterNote(n: {
+  clienteId: string;
+  centreId: string;
+  auteur: string;
+  texte: string;
+  epinglee: boolean;
+}): Promise<void> {
+  const { error } = await supabase.from('notes_cliente').insert({
+    cliente_id: n.clienteId,
+    centre_id: n.centreId,
+    auteur: n.auteur,
+    texte: n.texte.trim(),
+    epinglee: n.epinglee,
+  });
+  if (error) throw error;
+}
+
+export async function epinglerNote(id: string, epinglee: boolean): Promise<void> {
+  const { error } = await supabase.from('notes_cliente').update({ epinglee }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function supprimerNote(id: string): Promise<void> {
+  const { error } = await supabase.from('notes_cliente').delete().eq('id', id);
+  if (error) throw error;
+}
+
+/** Compteurs pour le bouton de la liste des clientes. */
+export async function resumeNotesDuCentre(centreId: string): Promise<ResumeNotes[]> {
+  const { data, error } = await supabase
+    .from('notes_resume')
+    .select('*')
+    .eq('centre_id', centreId);
+
+  if (error) throw error;
+  return (data ?? []) as ResumeNotes[];
 }

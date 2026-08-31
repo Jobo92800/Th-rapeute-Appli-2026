@@ -268,3 +268,26 @@ export interface Tarif {
   montant: number;
   libelle: string;
 }
+
+// ---------------------------------------------------------------------------
+// Notes entre thérapeutes
+// ---------------------------------------------------------------------------
+
+export interface NoteCliente {
+  id: string;
+  cliente_id: string;
+  centre_id: string;
+  therapeute_id: string | null;
+  auteur: string;
+  texte: string;
+  epinglee: boolean;
+  cree_le: string;
+}
+
+export interface ResumeNotes {
+  cliente_id: string;
+  centre_id: string;
+  nb: number;
+  derniere_le: string;
+  a_epinglee: boolean;
+}

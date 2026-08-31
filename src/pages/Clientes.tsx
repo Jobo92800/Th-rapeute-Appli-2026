@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Search, UserPlus, X, Sparkles, AlertTriangle } from 'lucide-react';
+import { Search, UserPlus, X, Sparkles, AlertTriangle, MessageSquare, Pin } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useCentre } from '../lib/session';
 import { listerClientes, listerTherapeutes } from '../services/clientes';
-import { situationsDuCentre } from '../services/metier';
+import { resumeNotesDuCentre, situationsDuCentre } from '../services/metier';
 import { etatCliente, type SituationReglement } from '../domain/reglement';
+import ModaleNotes from '../components/ModaleNotes';
+import type { Cliente } from '../types/db';
 import { formaterEuros } from '../domain/tarification';
 
 type Tri = 'recent' | 'ancien' | 'az' | 'za';
@@ -25,6 +27,7 @@ export default function Clientes() {
   const [tri, setTri] = useState<Tri>('recent');
   const [therapeute, setTherapeute] = useState('');
   const [retardsSeuls, setRetardsSeuls] = useState(false);
+  const [notesOuvertes, setNotesOuvertes] = useState<Cliente | null>(null);
 
   const { data: clientes = [], isLoading, error } = useQuery({
     queryKey: ['clientes', centre.id],
@@ -41,6 +44,17 @@ export default function Clientes() {
     queryFn: () => situationsDuCentre(centre.id),
     retry: false,
   });
+
+  const { data: resumeNotes = [] } = useQuery({
+    queryKey: ['resume-notes', centre.id],
+    queryFn: () => resumeNotesDuCentre(centre.id),
+    retry: false,
+  });
+
+  const notesParCliente = useMemo(
+    () => new Map(resumeNotes.map((r) => [r.cliente_id, r])),
+    [resumeNotes],
+  );
 
   const parCliente = useMemo(
     () => new Map(situations.map((s) => [s.cliente_id, s])),
@@ -224,6 +238,7 @@ export default function Clientes() {
                 <Entete>Contact</Entete>
                 <Entete>Thérapeute</Entete>
                 <Entete>Règlement</Entete>
+                <Entete>Notes</Entete>
                 <Entete>Créée le</Entete>
               </tr>
             </thead>
@@ -267,6 +282,12 @@ export default function Clientes() {
                   <td className="px-4 py-2.5">
                     <CelluleReglement situation={situation} />
                   </td>
+                  <td className="px-4 py-2.5">
+                    <BoutonNotes
+                      resume={notesParCliente.get(c.id!)}
+                      onOuvrir={() => setNotesOuvertes(c)}
+                    />
+                  </td>
                   <td className="px-4 py-2.5 text-ardoise-500">
                     {format(new Date(c.cree_le), 'd MMM yyyy', { locale: fr })}
                   </td>
@@ -277,7 +298,46 @@ export default function Clientes() {
           </table>
         </div>
       )}
+
+      {notesOuvertes && (
+        <ModaleNotes
+          clienteId={notesOuvertes.id!}
+          centreId={centre.id}
+          nomCliente={`${notesOuvertes.prenom} ${notesOuvertes.nom}`}
+          onFermer={() => setNotesOuvertes(null)}
+        />
+      )}
     </div>
+  );
+}
+
+function BoutonNotes({
+  resume,
+  onOuvrir,
+}: {
+  resume: { nb: number; a_epinglee: boolean } | undefined;
+  onOuvrir: () => void;
+}) {
+  const nb = resume?.nb ?? 0;
+  const epinglee = resume?.a_epinglee ?? false;
+
+  return (
+    <button
+      type="button"
+      onClick={onOuvrir}
+      aria-label={nb === 0 ? 'Ajouter une note' : `Voir les ${nb} notes`}
+      title={nb === 0 ? 'Ajouter une note' : `${nb} note${nb > 1 ? 's' : ''}`}
+      className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+        epinglee
+          ? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
+          : nb > 0
+            ? 'border-ardoise-300 bg-white text-ardoise-700 hover:bg-ardoise-50'
+            : 'border-ardoise-200 bg-white text-ardoise-400 hover:border-ardoise-300 hover:text-ardoise-700'
+      }`}
+    >
+      {epinglee ? <Pin className="h-3.5 w-3.5" /> : <MessageSquare className="h-3.5 w-3.5" />}
+      {nb > 0 ? nb : '+'}
+    </button>
   );
 }
 
