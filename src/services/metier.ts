@@ -13,6 +13,7 @@ import type {
   VenteComplement,
 } from '../types/db';
 import type { GrilleTarifaire } from '../domain/tarification';
+import { datesEcheancier, type SituationReglement } from '../domain/reglement';
 
 // ---------------------------------------------------------------------------
 // Tarifs et barème
@@ -183,18 +184,30 @@ export async function creerProgramme(n: NouveauProgramme): Promise<Programme> {
   }
 
   if (n.echeances.length > 0) {
+    const dates = datesEcheancier(new Date(), n.echeances.length);
     const { error: e } = await supabase.from('echeances').insert(
-      n.echeances.map((ech) => ({
+      n.echeances.map((ech, i) => ({
         programme_id: programme.id,
         type: 'echeance' as const,
         rang: ech.rang,
         montant: ech.montant,
+        date_prevue: dates[i],
       })),
     );
     if (e) throw e;
   }
 
   return programme as Programme;
+}
+
+export async function situationsDuCentre(centreId: string): Promise<SituationReglement[]> {
+  const { data, error } = await supabase
+    .from('situation_reglement')
+    .select('*')
+    .eq('centre_id', centreId);
+
+  if (error) throw error;
+  return (data ?? []) as SituationReglement[];
 }
 
 export async function majEcheance(id: string, patch: Partial<Echeance>): Promise<void> {

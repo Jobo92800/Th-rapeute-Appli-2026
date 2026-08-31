@@ -1,11 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Search, UserPlus, X, Sparkles } from 'lucide-react';
+import { Search, UserPlus, X, Sparkles, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useCentre } from '../lib/session';
 import { listerClientes, listerTherapeutes } from '../services/clientes';
+import { situationsDuCentre } from '../services/metier';
+import { etatCliente, type SituationReglement } from '../domain/reglement';
+import { formaterEuros } from '../domain/tarification';
 
 type Tri = 'recent' | 'ancien' | 'az' | 'za';
 
@@ -21,6 +24,7 @@ export default function Clientes() {
   const [recherche, setRecherche] = useState('');
   const [tri, setTri] = useState<Tri>('recent');
   const [therapeute, setTherapeute] = useState('');
+  const [retardsSeuls, setRetardsSeuls] = useState(false);
 
   const { data: clientes = [], isLoading, error } = useQuery({
     queryKey: ['clientes', centre.id],
@@ -32,8 +36,27 @@ export default function Clientes() {
     queryFn: () => listerTherapeutes(centre.id),
   });
 
+  const { data: situations = [] } = useQuery({
+    queryKey: ['situations', centre.id],
+    queryFn: () => situationsDuCentre(centre.id),
+  });
+
+  const parCliente = useMemo(
+    () => new Map(situations.map((s) => [s.cliente_id, s])),
+    [situations],
+  );
+
+  const nbEnRetard = useMemo(
+    () => situations.filter((s) => s.nb_en_retard > 0).length,
+    [situations],
+  );
+
   const filtrees = useMemo(() => {
     let liste = [...clientes];
+
+    if (retardsSeuls) {
+      liste = liste.filter((c) => (parCliente.get(c.id!)?.nb_en_retard ?? 0) > 0);
+    }
 
     if (therapeute) {
       liste = liste.filter((c) => c.therapeutes.includes(therapeute));
@@ -58,9 +81,9 @@ export default function Clientes() {
     else liste.sort((a, b) => nomComplet(b).localeCompare(nomComplet(a), 'fr'));
 
     return liste;
-  }, [clientes, recherche, tri, therapeute]);
+  }, [clientes, recherche, tri, therapeute, retardsSeuls, parCliente]);
 
-  const filtreActif = Boolean(recherche.trim() || therapeute);
+  const filtreActif = Boolean(recherche.trim() || therapeute || retardsSeuls);
 
   return (
     <div className="space-y-6">
@@ -127,12 +150,29 @@ export default function Clientes() {
           ))}
         </select>
 
+        {nbEnRetard > 0 && (
+          <button
+            type="button"
+            onClick={() => setRetardsSeuls((v) => !v)}
+            aria-pressed={retardsSeuls}
+            className={`bouton ${
+              retardsSeuls
+                ? 'bg-rose-600 text-white hover:bg-rose-700'
+                : 'border border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100'
+            }`}
+          >
+            <AlertTriangle className="h-4 w-4" />
+            {nbEnRetard} en retard
+          </button>
+        )}
+
         {filtreActif && (
           <button
             type="button"
             onClick={() => {
               setRecherche('');
               setTherapeute('');
+              setRetardsSeuls(false);
             }}
             className="bouton-discret"
           >
@@ -164,6 +204,7 @@ export default function Clientes() {
                 <Entete>Cliente</Entete>
                 <Entete>Contact</Entete>
                 <Entete>Thérapeute</Entete>
+                <Entete>Règlement</Entete>
                 <Entete>Créée le</Entete>
               </tr>
             </thead>
@@ -186,6 +227,9 @@ export default function Clientes() {
                   <td className="px-4 py-2.5 text-ardoise-600">
                     {c.therapeutes.length > 0 ? c.therapeutes.join(', ') : '—'}
                   </td>
+                  <td className="px-4 py-2.5">
+                    <CelluleReglement situation={parCliente.get(c.id!)} />
+                  </td>
                   <td className="px-4 py-2.5 text-ardoise-500">
                     {format(new Date(c.cree_le), 'd MMM yyyy', { locale: fr })}
                   </td>
@@ -196,6 +240,34 @@ export default function Clientes() {
         </div>
       )}
     </div>
+  );
+}
+
+function CelluleReglement({ situation }: { situation: SituationReglement | undefined }) {
+  const etat = etatCliente(situation);
+
+  if (etat.etat === 'aucun') {
+    return <span className="text-xs text-ardoise-300">—</span>;
+  }
+
+  return (
+    <span className="flex flex-col gap-0.5">
+      <span
+        className={`inline-flex w-fit items-center rounded-full border px-2.5 py-0.5 text-2xs font-semibold ${etat.classe}`}
+      >
+        {etat.libelle}
+      </span>
+      {etat.etat === 'retard' && situation && (
+        <span className="chiffres text-2xs font-semibold text-rose-700">
+          {formaterEuros(Number(situation.montant_en_retard), 2)}
+        </span>
+      )}
+      {etat.etat === 'en_cours' && situation?.prochaine_echeance && (
+        <span className="text-2xs text-ardoise-400">
+          prochaine le {format(new Date(situation.prochaine_echeance), 'd MMM', { locale: fr })}
+        </span>
+      )}
+    </span>
   );
 }
 

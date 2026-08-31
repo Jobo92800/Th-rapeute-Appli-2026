@@ -6,7 +6,8 @@ import { fr } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { majEcheance, programmesDeLaCliente } from '../../services/metier';
 import { LIBELLES_TECHNOLOGIE, formaterEuros } from '../../domain/tarification';
-import type { Echeance, StatutEcheance } from '../../types/db';
+import { STATUT_SUIVANT, etatEcheance } from '../../domain/reglement';
+import type { Echeance } from '../../types/db';
 
 const LIBELLE_MODE: Record<string, string> = {
   comptant: 'Comptant',
@@ -14,22 +15,13 @@ const LIBELLE_MODE: Record<string, string> = {
   '10x_alma': '10 fois Alma',
 };
 
-/** Le code couleur des règlements, repris de l'ancienne application. */
-const STYLE_STATUT: Record<StatutEcheance, { classe: string; libelle: string }> = {
-  paye: { classe: 'border-emerald-300 bg-emerald-50 text-emerald-800', libelle: 'Payé' },
-  donne: { classe: 'border-ardoise-300 bg-ardoise-100 text-ardoise-600', libelle: 'Donné' },
-  impaye: { classe: 'border-rose-300 bg-rose-50 text-rose-800', libelle: 'Impayé' },
-  a_venir: { classe: 'border-ardoise-200 bg-white text-ardoise-700', libelle: 'À venir' },
-};
-
-const SUITE_STATUT: Record<StatutEcheance, StatutEcheance> = {
-  a_venir: 'paye',
-  paye: 'donne',
-  donne: 'impaye',
-  impaye: 'a_venir',
-};
-
-export default function OngletProgramme({ clienteId }: { clienteId: string }) {
+export default function OngletProgramme({
+  clienteId,
+  centreId,
+}: {
+  clienteId: string;
+  centreId: string;
+}) {
   const qc = useQueryClient();
 
   const { data: programmes = [], isLoading } = useQuery({
@@ -38,15 +30,35 @@ export default function OngletProgramme({ clienteId }: { clienteId: string }) {
   });
 
   async function basculerStatut(e: Echeance) {
-    const suivant = SUITE_STATUT[e.statut];
+    const suivant = STATUT_SUIVANT[e.statut];
     try {
       await majEcheance(e.id, {
         statut: suivant,
         date_reglement: suivant === 'paye' ? new Date().toISOString().slice(0, 10) : null,
       });
       qc.invalidateQueries({ queryKey: ['programmes', clienteId] });
+      qc.invalidateQueries({ queryKey: ['situations', centreId] });
     } catch {
       toast.error("Le statut n'a pas pu être modifié.");
+    }
+  }
+
+  async function changerDate(e: Echeance, date: string) {
+    try {
+      await majEcheance(e.id, { date_prevue: date || null });
+      qc.invalidateQueries({ queryKey: ['programmes', clienteId] });
+      qc.invalidateQueries({ queryKey: ['situations', centreId] });
+    } catch {
+      toast.error("La date n'a pas pu être modifiée.");
+    }
+  }
+
+  async function changerMoyen(e: Echeance, moyen: string) {
+    try {
+      await majEcheance(e.id, { moyen: (moyen || null) as Echeance['moyen'] });
+      qc.invalidateQueries({ queryKey: ['programmes', clienteId] });
+    } catch {
+      toast.error("Le moyen de paiement n'a pas pu être modifié.");
     }
   }
 
@@ -78,6 +90,9 @@ export default function OngletProgramme({ clienteId }: { clienteId: string }) {
           .filter((e) => e.statut === 'paye')
           .reduce((n, e) => n + Number(e.montant), 0);
         const reste = Number(p.montant_total) + Number(p.frais_financement) - encaisse;
+        const enRetard = echeances
+          .filter((e) => etatEcheance(e).etat === 'retard')
+          .reduce((n, e) => n + Number(e.montant), 0);
 
         return (
           <section key={p.id} className="carte overflow-hidden">
@@ -102,13 +117,14 @@ export default function OngletProgramme({ clienteId }: { clienteId: string }) {
               </span>
             </div>
 
-            <div className="grid gap-px bg-ardoise-100 sm:grid-cols-3">
+            <div className="grid gap-px bg-ardoise-100 sm:grid-cols-2 lg:grid-cols-4">
               <Bloc libelle="Séances au programme" valeur={`${totalFait} / ${totalPrevu}`} />
               <Bloc libelle="Encaissé" valeur={formaterEuros(encaisse)} />
+              <Bloc libelle="Reste à encaisser" valeur={formaterEuros(reste)} />
               <Bloc
-                libelle="Reste à encaisser"
-                valeur={formaterEuros(reste)}
-                alerte={reste > 0}
+                libelle="En retard"
+                valeur={enRetard > 0 ? formaterEuros(enRetard, 2) : '—'}
+                alerte={enRetard > 0}
               />
             </div>
 
@@ -164,28 +180,61 @@ export default function OngletProgramme({ clienteId }: { clienteId: string }) {
             <div className="border-t border-ardoise-100 px-5 py-4">
               <h3 className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
                 <Wallet className="h-3.5 w-3.5" />
-                Échéances — cliquez pour changer le statut
+                Échéancier
               </h3>
-              <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+              <p className="mt-1 text-xs text-ardoise-500">
+                La première échéance tombe le jour de la cure, puis une par mois. Les dates
+                restent modifiables. Cliquez sur la pastille pour changer le statut.
+              </p>
+
+              <div className="mt-3 space-y-1.5">
                 {echeances.map((e) => {
-                  const st = STYLE_STATUT[e.statut];
+                  const st = etatEcheance(e);
                   return (
-                    <button
+                    <div
                       key={e.id}
-                      type="button"
-                      onClick={() => basculerStatut(e)}
-                      className={`rounded-xl border px-3 py-2.5 text-left transition-colors hover:brightness-95 ${st.classe}`}
+                      className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border px-3 py-2.5 ${st.classe}`}
                     >
-                      <span className="block text-2xs font-semibold uppercase tracking-wide">
+                      <span className="w-24 shrink-0 text-2xs font-semibold uppercase tracking-wide text-ardoise-500">
                         {e.type === 'acompte'
                           ? 'Acompte'
-                          : `${e.rang}${e.rang === 1 ? 'ère' : 'ème'} échéance`}
+                          : `${e.rang}${e.rang === 1 ? 'ère' : 'ème'} éch.`}
                       </span>
-                      <span className="chiffres block text-base font-bold">
+
+                      <span className="chiffres w-24 shrink-0 text-base font-bold text-ardoise-900">
                         {formaterEuros(Number(e.montant), 2)}
                       </span>
-                      <span className="block text-2xs font-medium opacity-80">{st.libelle}</span>
-                    </button>
+
+                      <input
+                        type="date"
+                        value={e.date_prevue ?? ''}
+                        onChange={(ev) => changerDate(e, ev.target.value)}
+                        aria-label={`Date de l'échéance ${e.rang}`}
+                        className="w-36 shrink-0 rounded-lg border border-ardoise-300 bg-white px-2 py-1 text-xs text-ardoise-800 focus:border-marine-500 focus:outline-none focus:ring-1 focus:ring-marine-500"
+                      />
+
+                      <select
+                        value={e.moyen ?? ''}
+                        onChange={(ev) => changerMoyen(e, ev.target.value)}
+                        aria-label={`Moyen de paiement de l'échéance ${e.rang}`}
+                        className="w-32 shrink-0 rounded-lg border border-ardoise-300 bg-white px-2 py-1 text-xs text-ardoise-800 focus:border-marine-500 focus:outline-none focus:ring-1 focus:ring-marine-500"
+                      >
+                        <option value="">Moyen…</option>
+                        <option value="cb">Carte bancaire</option>
+                        <option value="cheque">Chèque</option>
+                        <option value="especes">Espèces</option>
+                        <option value="virement">Virement</option>
+                        <option value="alma">Alma</option>
+                      </select>
+
+                      <button
+                        type="button"
+                        onClick={() => basculerStatut(e)}
+                        className={`ml-auto rounded-full px-3 py-1 text-2xs font-semibold uppercase tracking-wide transition-opacity hover:opacity-80 ${st.pastille}`}
+                      >
+                        {st.libelle}
+                      </button>
+                    </div>
                   );
                 })}
               </div>

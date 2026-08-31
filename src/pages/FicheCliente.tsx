@@ -137,7 +137,9 @@ export default function FicheCliente() {
         <OngletCoordonnees centreId={centre.id} cliente={cliente ?? null} />
       )}
       {!creation && onglet === 'empreinte' && <OngletEmpreinte clienteId={id!} />}
-      {!creation && onglet === 'programme' && <OngletProgramme clienteId={id!} />}
+      {!creation && onglet === 'programme' && (
+        <OngletProgramme clienteId={id!} centreId={centre.id} />
+      )}
       {!creation && onglet === 'seances' && (
         <OngletSeances clienteId={id!} centreId={centre.id} profilDominant={profilDominant} />
       )}
