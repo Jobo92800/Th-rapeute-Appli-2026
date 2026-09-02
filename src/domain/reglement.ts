@@ -9,7 +9,7 @@
 import { addMonths, differenceInCalendarDays } from 'date-fns';
 import type { Echeance, StatutEcheance } from '../types/db';
 
-export type EtatEcheance = 'paye' | 'donne' | 'retard' | 'aujourdhui' | 'a_venir';
+export type EtatEcheance = 'paye' | 'donne' | 'annule' | 'retard' | 'aujourdhui' | 'a_venir';
 
 export interface Etat {
   etat: EtatEcheance;
@@ -25,7 +25,7 @@ export interface Etat {
 /*
   Couleurs sémantiques, distinctes de l'accent de l'interface :
     vert   = encaissé
-    gris   = donné, offert
+    gris   = donné, offert, ou annulé — rien à faire, rien à réclamer
     rouge  = en retard ou impayé, ce qui demande une action
     bleu   = à encaisser aujourd'hui
     neutre = à venir, rien à faire
@@ -48,6 +48,16 @@ export function etatEcheance(e: Echeance, aujourdhui = new Date()): Etat {
       jours: 0,
       classe: 'border-ardoise-300 bg-ardoise-100',
       pastille: 'bg-ardoise-200 text-ardoise-700',
+    };
+  }
+
+  if (e.statut === 'annule') {
+    return {
+      etat: 'annule',
+      libelle: 'Annulée',
+      jours: 0,
+      classe: 'border-ardoise-200 bg-ardoise-50',
+      pastille: 'bg-ardoise-100 text-ardoise-500 line-through',
     };
   }
 
@@ -95,6 +105,10 @@ export const STATUT_SUIVANT: Record<StatutEcheance, StatutEcheance> = {
   paye: 'donne',
   donne: 'impaye',
   impaye: 'a_venir',
+  // Une échéance annulée ne se rattrape pas d'un clic : elle l'a été parce
+  // que la cure s'est arrêtée, ou parce qu'un avoir l'a couverte. On rouvre
+  // la cure, ou on reprend l'avoir — deux gestes qui se disent.
+  annule: 'annule',
 };
 
 /**

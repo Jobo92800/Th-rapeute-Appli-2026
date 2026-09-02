@@ -202,6 +202,9 @@ export interface Programme {
   /** import_v1 : cure reprise du CRM, montant seul, sans séances ni échéancier. */
   origine: 'v2' | 'import_v1';
   date_validation: string | null;
+  /** Renseignés quand la cure a été arrêtée avant son terme. */
+  date_arret: string | null;
+  motif_arret: string | null;
   cree_le: string;
   maj_le: string;
 }
@@ -216,7 +219,7 @@ export interface LigneProgramme {
   prix_unitaire: number;
 }
 
-export type StatutEcheance = 'a_venir' | 'paye' | 'donne' | 'impaye';
+export type StatutEcheance = 'a_venir' | 'paye' | 'donne' | 'impaye' | 'annule';
 export type MoyenPaiement = 'cheque' | 'especes' | 'cb' | 'virement' | 'alma';
 
 export interface Echeance {

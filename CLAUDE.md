@@ -56,6 +56,8 @@ cliquer. Ne jamais supposer qu'une étape technique est évidente.
 | Vue d'ensemble | La direction dispose d'un centre « Tous les centres » dans le sélecteur : la liste des clientes et l'accueil montrent alors les cinq d'un coup, avec une colonne Centre. Les gestes qui supposent un centre — créer une fiche, démarrer un bilan, tenir le stock — le disent et demandent d'en choisir un, plutôt que d'en choisir un à la place de la personne. |
 | Tableau de bord | **Réservé à la direction** : le lien n'apparaît pas aux thérapeutes, et la fonction SQL refuse de répondre à un autre rôle. Filtrable par centre ou sur les cinq. Deux notions d'argent à ne jamais confondre : l'**encaissé** (ce qui est rentré, à la date de règlement de chaque échéance) et le **signé** (ce que les cures validées représentent, encaissé plus tard, parfois sur dix mois). Un mois à gros signé et faible encaissé est normal. |
 | Exception cure | Une pathologie ou une consigne impérative vit **sur la fiche**, pas dans les notes : une note se lit quand on pense à ouvrir l'onglet, une exception doit être vue sans avoir été cherchée. Elle s'affiche en rouge sous l'en-tête quel que soit l'onglet, et signale la cliente dans la liste. Un seul texte, remplacé à chaque modification — une consigne périmée au milieu d'un fil est pire que pas de consigne. |
+| Arrêt de cure | Une cliente qui s'arrête en route ne laisse plus une cure « en cours » éternelle. **Arrêter la cure** annule ses échéances non réglées — on ne réclame pas de l'argent pour des séances qui n'auront pas lieu — et la sort de tous les comptes. Le geste se date, s'explique, et **se défait** tant que l'avoir qu'il a créé n'a pas été dépensé. Séances, bilan et documents restent sur la fiche. |
+| Avoir | Ce que le centre doit à une cliente. Il naît d'un arrêt de cure — elle a payé plus qu'elle n'a reçu — ou d'un geste commercial. **Il ne se stocke pas, il se calcule** : on écrit des mouvements (accordé, utilisé, remboursé) et le solde est leur somme, comme le stock. Il se dépense sur une cure — il descend l'échéancier en partant de la dernière échéance, **sans toucher au montant signé** — ou se rembourse en argent. Un avoir traverse les 5 centres, comme le parrainage. Le montant proposé à l'arrêt (encaissé moins consommé) n'est jamais imposé : la thérapeute le corrige. |
 | Suppression | **Archiver** est le geste courant : réversible, rien n'est perdu. **Supprimer** est définitif, emporte tout le dossier, exige de retaper le nom, et reste réservé à la direction. |
 
 ---
@@ -151,7 +153,9 @@ Champs créés pour la V2 : `Source appli`, `Profil Empreinte`,
 `Date validation`, `Reste à encaisser`, `Échéances en retard`,
 `Montant en retard`, `Parrain`, `Filleules`, `Filleules engagées`,
 `Séances offertes restantes`, `Civilité`, `Exception cure`, `Frais de
-financement`. Ces trois derniers sont des champs **texte** : les frais y
+financement`. Le champ **`Avoir`**, monétaire, existait déjà dans le CRM :
+la V2 y écrit désormais le solde de la cliente, zéro compris — sans quoi un
+avoir soldé y resterait affiché pour toujours. Ces trois derniers sont des champs **texte** : les frais y
 partent formatés (« 76,70 € ») et ne se somment donc pas — à passer en
 numérique si un jour on veut les additionner.
 
@@ -180,7 +184,8 @@ faites, stock) · archivage réversible et suppression définitive (direction) �
 parcours audio avec mot de passe donné au comptoir · stock et ventes de
 compléments, la vente décomptant le rayon toute seule · parrainage, avec
 séances offertes reportées sur la cure suivante · **tableau de bord de la
-direction**, filtrable par centre.
+direction**, filtrable par centre · **arrêt de cure et avoirs**, avec
+décompte de ce qu'elle a payé contre ce qu'elle a reçu.
 
 **Tout est vérifié en conditions réelles** : fiches, bilan, cure, contrat,
 consentements, synchro Airtable et parcours audio fonctionnent. Le stock,
@@ -280,11 +285,11 @@ doit rester vert après toute modification.
 
 ## Banc d'essai
 
-`npm test` — **184 contrôles, à garder verts.** Ils couvrent ce qui décide
+`npm test` — **205 contrôles, à garder verts.** Ils couvrent ce qui décide
 de ce qu'une cliente paie, reçoit et se voit refuser pour raison de santé :
 tarification et échéanciers (centre et Alma), prescription et
 contre-indications, planchers des formules, BioPortrait, parrainage, stock,
-compte à rebours des compléments, contrat.
+compte à rebours des compléments, contrat, décompte d'un arrêt de cure.
 
 Deux partis pris. **Aucune bibliothèque de test n'est installée** : Node
 exécute le TypeScript directement et le harnais tient en quarante lignes —
@@ -328,10 +333,14 @@ curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
-Migrations passées jusqu'à **034** incluse. Deux attendent d'être collées :
-la **035** (l'exception de cure part dans Airtable) et la **036** (le
-BioPortrait, questionnaire version 3 — elle s'active toute seule à la fin
-du fichier).
+Migrations passées jusqu'à **034** incluse. Trois attendent d'être collées,
+dans l'ordre : la **035** (l'exception de cure part dans Airtable), la
+**036** (le BioPortrait, questionnaire version 3 — elle s'active toute seule
+à la fin du fichier) et la **037** (arrêt de cure et avoirs).
+
+La 037 s'accompagne d'un **redéploiement de `synchro-airtable`** : sans lui,
+le champ `Avoir` du CRM resterait vide et une cure arrêtée continuerait de
+s'annoncer « en cours ». La migration d'abord, la fonction ensuite.
 
 Deux diagnostics, dans `supabase/diagnostics/`, ne modifient rien et se
 relancent à volonté : `controle_coherence.sql` (quinze vérifications) et

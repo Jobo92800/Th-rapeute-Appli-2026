@@ -15,11 +15,13 @@ import { bilan } from './harnais.mts';
 import { controlerTarification } from './tarification.mts';
 import { controlerPrescription } from './prescription.mts';
 import { controlerMetier } from './metier.mts';
+import { controlerAvoir } from './avoir.mts';
 
 console.log('\n  MAbeautyplus V2 — contrôle des règles métier');
 
 controlerTarification();
 controlerPrescription();
 controlerMetier();
+controlerAvoir();
 
 process.exit(bilan());

@@ -1,14 +1,19 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Plus, Sparkles, Wallet } from 'lucide-react';
+import { OctagonX, Plus, RotateCcw, Sparkles, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { majEcheance, programmesDeLaCliente } from '../../services/metier';
+import type { ProgrammeComplet } from '../../services/metier';
 import { LIBELLES_TECHNOLOGIE, formaterEuros } from '../../domain/tarification';
 import { STATUT_SUIVANT, etatEcheance } from '../../domain/reglement';
 import ModaleNouvelleCure from '../cure/ModaleNouvelleCure';
+import ModaleArretCure from '../cure/ModaleArretCure';
+import CarteAvoir, { BoutonAvoir } from '../cure/CarteAvoir';
+import { resteAEncaisser } from '../../domain/avoir';
+import { rouvrirCure } from '../../services/avoirs';
 import type { Cliente, Echeance } from '../../types/db';
 
 const LIBELLE_MODE: Record<string, string> = {
@@ -28,6 +33,7 @@ export default function OngletProgramme({
   const clienteId = cliente.id;
   const qc = useQueryClient();
   const [nouvelleCure, setNouvelleCure] = useState(false);
+  const [arret, setArret] = useState<ProgrammeComplet | null>(null);
 
   const { data: programmes = [], isLoading } = useQuery({
     queryKey: ['programmes', clienteId],
@@ -45,6 +51,20 @@ export default function OngletProgramme({
       qc.invalidateQueries({ queryKey: ['situations', centreId] });
     } catch {
       toast.error("Le statut n'a pas pu être modifié.");
+    }
+  }
+
+  async function rouvrir(programmeId: string) {
+    try {
+      await rouvrirCure(programmeId);
+      qc.invalidateQueries({ queryKey: ['programmes', clienteId] });
+      qc.invalidateQueries({ queryKey: ['avoir', clienteId] });
+      qc.invalidateQueries({ queryKey: ['avoir-mouvements', clienteId] });
+      qc.invalidateQueries({ queryKey: ['situations', centreId] });
+      toast.success('Cure rouverte');
+    } catch (err) {
+      // Le refus vient de la base et dit précisément pourquoi : on le montre.
+      toast.error(err instanceof Error ? err.message : "La cure n'a pas pu être rouverte.");
     }
   }
 
@@ -115,11 +135,20 @@ export default function OngletProgramme({
           {programmes.length} cure{programmes.length > 1 ? 's' : ''} enregistrée
           {programmes.length > 1 ? 's' : ''}
         </p>
-        <button onClick={() => setNouvelleCure(true)} className="bouton-fort">
-          <Plus className="h-4 w-4" />
-          Nouvelle cure
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <BoutonAvoir clienteId={clienteId} centreId={centreId} />
+          <button onClick={() => setNouvelleCure(true)} className="bouton-fort">
+            <Plus className="h-4 w-4" />
+            Nouvelle cure
+          </button>
+        </div>
       </div>
+
+      <CarteAvoir
+        clienteId={clienteId}
+        centreId={centreId}
+        cures={programmes.map((p) => ({ programme: p.programme, echeances: p.echeances }))}
+      />
 
       {programmes.map(({ programme: p, lignes, echeances, suivi }) => {
         const totalPrevu = suivi.reduce((n, s) => n + s.seances_prevues, 0);
@@ -127,7 +156,10 @@ export default function OngletProgramme({
         const encaisse = echeances
           .filter((e) => e.statut === 'paye')
           .reduce((n, e) => n + Number(e.montant), 0);
-        const reste = Number(p.montant_total) + Number(p.frais_financement) - encaisse;
+        // Ce que l'échéancier réclame encore, et non « montant moins encaissé » :
+        // après un avoir posé ou une échéance offerte, les deux divergent.
+        const reste = resteAEncaisser(echeances);
+        const arretee = p.statut === 'abandonne';
         const enRetard = echeances
           .filter((e) => etatEcheance(e).etat === 'retard')
           .reduce((n, e) => n + Number(e.montant), 0);
@@ -154,6 +186,28 @@ export default function OngletProgramme({
                 {formaterEuros(Number(p.montant_total))}
               </span>
             </div>
+
+            {arretee && (
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ardoise-200 bg-ardoise-100 px-5 py-2.5">
+                <p className="text-xs text-ardoise-700">
+                  <strong className="font-semibold text-ardoise-900">Cure arrêtée</strong>
+                  {p.date_arret &&
+                    ` le ${format(new Date(p.date_arret), 'd MMMM yyyy', { locale: fr })}`}
+                  {p.motif_arret && ` — ${p.motif_arret}`}
+                  <span className="ml-1 text-ardoise-500">
+                    Elle ne compte plus nulle part : ni à encaisser, ni en retard, ni au tableau de
+                    bord.
+                  </span>
+                </p>
+                <button
+                  onClick={() => rouvrir(p.id)}
+                  className="bouton-discret shrink-0 text-xs"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Rouvrir
+                </button>
+              </div>
+            )}
 
             {p.origine === 'import_v1' && (
               <p className="border-b border-amber-200 bg-amber-50 px-5 py-2.5 text-xs text-amber-900">
@@ -276,7 +330,15 @@ export default function OngletProgramme({
                       <button
                         type="button"
                         onClick={() => basculerStatut(e)}
-                        className={`ml-auto rounded-full px-3 py-1 text-2xs font-semibold uppercase tracking-wide transition-opacity hover:opacity-80 ${st.pastille}`}
+                        disabled={e.statut === 'annule'}
+                        title={
+                          e.statut === 'annule'
+                            ? 'Annulée : rouvrez la cure, ou reprenez l’avoir qui l’a couverte.'
+                            : undefined
+                        }
+                        className={`ml-auto rounded-full px-3 py-1 text-2xs font-semibold uppercase tracking-wide transition-opacity ${
+                          e.statut === 'annule' ? 'cursor-default' : 'hover:opacity-80'
+                        } ${st.pastille}`}
                       >
                         {st.libelle}
                       </button>
@@ -284,10 +346,42 @@ export default function OngletProgramme({
                   );
                 })}
               </div>
+
+              {!arretee && p.origine !== 'import_v1' && (
+                <div className="mt-4 border-t border-ardoise-100 pt-3">
+                  <button
+                    onClick={() =>
+                      setArret(
+                        programmes.find((x) => x.programme.id === p.id) as ProgrammeComplet,
+                      )
+                    }
+                    className="bouton-discret border-rose-200 text-xs text-rose-700 hover:bg-rose-50"
+                  >
+                    <OctagonX className="h-3.5 w-3.5" />
+                    Arrêter cette cure
+                  </button>
+                  <p className="mt-1.5 text-xs text-ardoise-400">
+                    Elle s’arrête en cours de route : on annule ce qui reste à payer, et on lui
+                    fait un avoir si elle a payé plus qu’elle n’a reçu.
+                  </p>
+                </div>
+              )}
             </div>
           </section>
         );
       })}
+
+      {arret && (
+        <ModaleArretCure
+          programme={arret.programme}
+          lignes={arret.lignes}
+          suivi={arret.suivi}
+          echeances={arret.echeances}
+          clienteId={clienteId}
+          centreId={centreId}
+          onFerme={() => setArret(null)}
+        />
+      )}
 
       {nouvelleCure && (
         <ModaleNouvelleCure

@@ -63,7 +63,7 @@ const LIBELLE_STATUT: Record<string, string> = {
   valide: 'Validé',
   en_cours: 'En cours',
   termine: 'Terminé',
-  abandonne: 'Abandonné',
+  abandonne: 'Arrêtée',
 };
 
 const NOM_PROFIL: Record<string, string> = {
@@ -280,8 +280,20 @@ Deno.serve(async (req: Request) => {
       .eq('cliente_id', clienteId)
       .maybeSingle();
 
-    if (!data) return {};
+    // L'avoir est un champ monétaire côté Airtable : on y envoie un nombre,
+    // jamais un texte formaté. Zéro quand elle n'a rien — sans quoi un avoir
+    // soldé resterait affiché indéfiniment dans le CRM.
+    const { data: avoir } = await db
+      .from('solde_avoir')
+      .select('solde')
+      .eq('cliente_id', clienteId)
+      .maybeSingle();
+
+    const champs: Record<string, unknown> = { Avoir: Number(avoir?.solde) || 0 };
+
+    if (!data) return champs;
     return {
+      ...champs,
       'Reste à encaisser': Number(data.montant_restant) || 0,
       'Échéances en retard': Number(data.nb_en_retard) || 0,
       'Montant en retard': Number(data.montant_en_retard) || 0,
