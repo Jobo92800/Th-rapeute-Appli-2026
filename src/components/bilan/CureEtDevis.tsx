@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Ban, Eye, Loader2, Minus, Plus, Stethoscope } from 'lucide-react';
+import { AlertTriangle, Ban, Eye, Loader2, Minus, Pencil, Plus, Stethoscope } from 'lucide-react';
 import type { Bareme, Prestation } from '../../domain/empreinte';
 import {
   LIBELLES_NIVEAU,
@@ -86,6 +86,13 @@ export default function CureEtDevis({
   const [methode, setMethode] = useState<'centre' | 'alma'>('centre');
   const [nEcheances, setNEcheances] = useState(4);
   const [devisRevele, setDevisRevele] = useState(false);
+  /*
+    Les réglages restent rangés. L'écran se présente à la cliente : des
+    boutons plus et moins à côté de chaque soin invitent à négocier le
+    nombre de séances, alors que c'est le bilan qui l'a déterminé. La
+    thérapeute les fait apparaître quand elle en a besoin.
+  */
+  const [edition, setEdition] = useState(false);
 
   const base = useMemo(() => prescrire(bareme, depouillement), [bareme, depouillement]);
 
@@ -147,6 +154,22 @@ export default function CureEtDevis({
 
       {/* Les soins ------------------------------------------------------ */}
       <section className="space-y-2.5">
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setEdition((v) => !v)}
+            aria-pressed={edition}
+            className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+              edition
+                ? 'border-marine-600 bg-marine-600 text-white'
+                : 'border-ardoise-200 bg-white text-marine-700 hover:bg-marine-50'
+            }`}
+          >
+            <Pencil className="mr-1.5 inline h-3 w-3" />
+            {edition ? 'Terminer' : 'Modifier'}
+          </button>
+        </div>
+
         {cure.map((l) => {
           const retire = l.contreIndication === 'rem';
           const surveille = l.contreIndication === 'med';
@@ -200,27 +223,34 @@ export default function CureEtDevis({
 
               {!retire && (
                 <div className="flex shrink-0 items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => ajuster(l.presta, -1)}
-                    disabled={l.seances <= 0}
-                    aria-label="Une séance de moins"
-                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-ardoise-200 text-marine-700 hover:bg-marine-50 disabled:opacity-30"
-                  >
-                    <Minus className="h-3.5 w-3.5" />
-                  </button>
-                  <span className="chiffres min-w-6 text-center font-bold text-ardoise-900">
+                  {edition && (
+                    <button
+                      type="button"
+                      onClick={() => ajuster(l.presta, -1)}
+                      disabled={l.seances <= 0}
+                      aria-label="Une séance de moins"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-ardoise-200 text-marine-700 hover:bg-marine-50 disabled:opacity-30"
+                    >
+                      <Minus className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+
+                  <span className="chiffres min-w-6 text-center text-lg font-bold text-ardoise-900">
                     {l.seances}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => ajuster(l.presta, 1)}
-                    aria-label="Une séance de plus"
-                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-ardoise-200 text-marine-700 hover:bg-marine-50"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </button>
-                  <span className="text-[10px] text-ardoise-400">séances</span>
+
+                  {edition && (
+                    <button
+                      type="button"
+                      onClick={() => ajuster(l.presta, 1)}
+                      aria-label="Une séance de plus"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-ardoise-200 text-marine-700 hover:bg-marine-50"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+
+                  <span className="text-[11px] text-ardoise-400">séances</span>
                 </div>
               )}
             </div>
