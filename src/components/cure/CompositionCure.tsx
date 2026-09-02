@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, Gift, Minus, Plus } from 'lucide-react';
 import {
+  ECHEANCES_ALMA,
+  ECHEANCES_CENTRE,
+  FRAIS_ALMA,
   LIBELLES_TECHNOLOGIE,
   calculerMontant,
-  construireEcheancier,
+  construireEcheancierCure,
   formaterEuros,
   prixUnitaireParDefaut,
-  tauxAffichealma10x,
   type GrilleTarifaire,
   type ModeReglement,
   type Technologie,
@@ -52,10 +54,14 @@ interface Props {
 /** Le Dôme reste optionnel : il n'apparaît que si on le déplie. */
 const TECHNOS_PRINCIPALES: Technologie[] = ['luxo', 'ishape', 'presso'];
 
-const MODES: { valeur: ModeReglement; libelle: string; detail: string }[] = [
-  { valeur: '4x_maison', libelle: '4 fois sans frais', detail: 'Échéancier interne' },
-  { valeur: '10x_alma', libelle: '10 fois', detail: 'Financement Alma, frais inclus' },
-  { valeur: 'comptant', libelle: 'Comptant', detail: 'Règlement en une fois' },
+/*
+  Les deux façons de régler, identiques à celles du bilan. Un seul calcul
+  dans toute l'application : une cliente qui revient signer sa deuxième cure
+  doit trouver les mêmes conditions que la première fois.
+*/
+const METHODES = [
+  { id: 'centre' as const, libelle: 'Au centre', detail: 'Par chèques, sans frais' },
+  { id: 'alma' as const, libelle: 'Alma', detail: 'Par carte, frais à la charge de la cliente' },
 ];
 
 /**
@@ -79,7 +85,8 @@ export default function CompositionCure({
     dome: seancesInitiales?.dome ?? 0,
   });
   const [domeVisible, setDomeVisible] = useState((seancesInitiales?.dome ?? 0) > 0);
-  const [mode, setMode] = useState<ModeReglement>('4x_maison');
+  const [methode, setMethode] = useState<'centre' | 'alma'>('centre');
+  const [nEcheances, setNEcheances] = useState(4);
   const [guide, setGuide] = useState(true);
   // Tant que la thérapeute n'a pas décidé elle-même, la tenue suit la
   // prescription : elle s'ajoute dès qu'il y a de l'I-Shape.
@@ -111,8 +118,16 @@ export default function CompositionCure({
   const offertesPosees = Math.min(offertes, seancesOffertes);
 
   const echeancier = useMemo(
-    () => construireEcheancier(detail.total, mode),
-    [detail.total, mode],
+    () =>
+      construireEcheancierCure({
+        seances: detail.totalSeances,
+        prixSeance: grille.seance,
+        montantSeances: detail.montantSeances,
+        options: detail.montantGuide + detail.montantTenue,
+        methode,
+        n: nEcheances,
+      }),
+    [detail, grille.seance, methode, nEcheances],
   );
 
   useEffect(() => {
@@ -125,7 +140,7 @@ export default function CompositionCure({
         offertes:
           offertesPosees > 0 ? { technologie: technoOfferte, seances: offertesPosees } : null,
         montantTotal: detail.total,
-        modeReglement: mode,
+        modeReglement: echeancier.mode,
         frais: echeancier.frais,
         echeances: echeancier.echeances,
       },
@@ -133,7 +148,7 @@ export default function CompositionCure({
     );
     // onChange est recréée à chaque rendu du parent : on ne l'observe pas.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lignes, electro, tenue, guide, detail, mode, echeancier, offertesPosees, technoOfferte]);
+  }, [lignes, electro, tenue, guide, detail, echeancier, offertesPosees, technoOfferte]);
 
   function ajuster(t: Technologie, delta: number) {
     setSeances((s) => ({ ...s, [t]: Math.max(0, s[t] + delta) }));
@@ -299,7 +314,7 @@ export default function CompositionCure({
             <p className="mt-4 text-sm text-marine-100">
               Réglable en{' '}
               <strong className="font-semibold">
-                {mode === '4x_maison' ? '4 fois sans frais' : '10 fois'}
+                {echeancier.n} fois {methode === 'centre' ? 'sans frais' : 'chez Alma'}
               </strong>
               , soit{' '}
               <strong className="font-semibold">
@@ -322,14 +337,17 @@ export default function CompositionCure({
 
       <section className="carte p-5">
         <h2 className="mb-3 text-sm font-semibold text-ardoise-900">Règlement</h2>
-        <div className="grid gap-2 sm:grid-cols-3">
-          {MODES.map((m) => {
-            const actif = mode === m.valeur;
+        <div className="grid gap-2 sm:grid-cols-2">
+          {METHODES.map((m) => {
+            const actif = methode === m.id;
             return (
               <button
-                key={m.valeur}
+                key={m.id}
                 type="button"
-                onClick={() => setMode(m.valeur)}
+                onClick={() => {
+                  setMethode(m.id);
+                  setNEcheances(4);
+                }}
                 className={`rounded-xl border px-4 py-3 text-left transition-colors ${
                   actif
                     ? 'border-marine-600 bg-marine-50'
@@ -347,11 +365,36 @@ export default function CompositionCure({
           })}
         </div>
 
-        {mode === '10x_alma' && detail.total > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {(methode === 'centre' ? ECHEANCES_CENTRE : ECHEANCES_ALMA).map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => setNEcheances(n)}
+              className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${
+                echeancier.n === n
+                  ? 'border-marine-600 bg-marine-600 text-white'
+                  : 'border-ardoise-200 bg-white text-ardoise-700 hover:border-marine-400'
+              }`}
+            >
+              {n === 1 ? 'Comptant' : `${n}\u00d7`}
+            </button>
+          ))}
+        </div>
+
+        {methode === 'alma' && detail.total > 0 && (
           <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-            Frais Alma de {(tauxAffichealma10x(detail.total) * 100).toLocaleString('fr-FR')} % —{' '}
-            {formaterEuros(echeancier.frais, 2)} ajoutés au montant. Total réglé par la cliente :{' '}
+            Frais Alma de {String(FRAIS_ALMA[echeancier.n] ?? 0).replace('.', ',')} % —{' '}
+            {formaterEuros(echeancier.frais, 2)} à la charge de la cliente. Total réglé :{' '}
             <strong className="font-semibold">{formaterEuros(echeancier.montantARegler, 2)}</strong>.
+          </p>
+        )}
+
+        {methode === 'centre' && detail.montantGuide + detail.montantTenue > 0 && (
+          <p className="mt-3 text-xs text-ardoise-500">
+            Sans frais. Le guide et la tenue (
+            {formaterEuros(detail.montantGuide + detail.montantTenue)}) sont portés par la première
+            échéance.
           </p>
         )}
 

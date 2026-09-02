@@ -282,9 +282,16 @@ export function construireEcheancierCure(args: {
   options: number;
   methode: 'centre' | 'alma';
   n: number;
+  /**
+   * Montant des séances, quand tous les soins n'ont pas le même prix — le
+   * Dôme est moins cher. Sans lui, on multiplie simplement le nombre de
+   * séances par le prix unitaire.
+   */
+  montantSeances?: number;
 }): EcheancierCure {
   const { seances, prixSeance, options, methode } = args;
-  const base = arrondir(seances * prixSeance + options);
+  const montantDesSeances = arrondir(args.montantSeances ?? seances * prixSeance);
+  const base = arrondir(montantDesSeances + options);
   const mode = modeReglement(methode, args.n);
 
   if (methode === 'centre') {
@@ -301,10 +308,18 @@ export function construireEcheancierCure(args: {
       };
     }
 
+    /*
+      On répartit les séances, pas les euros : chaque échéance correspond à
+      un nombre entier de séances, ce qui s'explique devant la cliente. Le
+      reliquat d'arrondi tombe sur la première, avec le guide et la tenue.
+    */
     const parts = repartirSeances(seances, n);
-    const echeances = parts.map((s, i) => ({
+    const parPart = parts.map((s) => arrondir((montantDesSeances * s) / Math.max(1, seances)));
+    const ecart = arrondir(montantDesSeances - parPart.reduce((a, b) => a + b, 0));
+
+    const echeances = parPart.map((m, i) => ({
       rang: i + 1,
-      montant: arrondir(s * prixSeance + (i === 0 ? options : 0)),
+      montant: arrondir(m + (i === 0 ? options + ecart : 0)),
     }));
 
     return { methode, n, mode, frais: 0, montantARegler: base, echeances };

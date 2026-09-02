@@ -112,6 +112,25 @@ export function controlerTarification() {
   egal('en une fois, une seule échéance', comptant.echeances.length, 1);
   egalEuros('en une fois, le total y est entier', comptant.echeances[0].montant, 12 * 59 + 29);
 
+  section('L’échéancier quand les prix diffèrent (le Dôme)');
+
+  // 12 séances à 59 € et 4 de Dôme à 39 € : 708 + 156 = 864 €.
+  const mixte = construireEcheancierCure({
+    seances: 16,
+    prixSeance: 59,
+    montantSeances: 12 * 59 + 4 * 39,
+    options: 29,
+    methode: 'centre',
+    n: 4,
+  });
+
+  egalEuros('le montant à régler suit les prix réels', mixte.montantARegler, 864 + 29);
+  egalEuros(
+    'la somme des échéances tombe juste malgré les prix mêlés',
+    mixte.echeances.reduce((n, e) => n + e.montant, 0),
+    mixte.montantARegler,
+  );
+
   section('L’échéancier chez Alma, par carte');
 
   for (const n of ECHEANCES_ALMA) {
