@@ -21,13 +21,13 @@ import {
   complementRecommande,
   mesuresInbody,
   phraseSynthese,
-  prioriteCure,
   type Reponses,
 } from '../domain/empreinte';
 import Restitution from '../components/bilan/Restitution';
+import { depouiller } from '../domain/prescription';
 import QuestionEmpreinte from '../components/bilan/QuestionEmpreinte';
 import Progression from '../components/bilan/Progression';
-import Devis, { type Prescription } from '../components/bilan/Devis';
+import CureEtDevis, { type PrescriptionValidee } from '../components/bilan/CureEtDevis';
 
 type Vue = 'accueil' | 'questions' | 'restitution' | 'devis' | 'fini';
 
@@ -159,7 +159,7 @@ export default function NouveauBilan() {
     setTimeout(suivant, 220);
   }
 
-  async function enregistrerTout(prescription: Prescription | null) {
+  async function enregistrerTout(prescription: PrescriptionValidee | null) {
     if (!contact.prenom.trim() || !contact.nom.trim()) {
       toast.error('Le nom et le prénom sont nécessaires pour enregistrer.');
       return;
@@ -318,15 +318,11 @@ export default function NouveauBilan() {
 
   if (vue === 'devis' && empreinte && grille) {
     return (
-      <Devis
+      <CureEtDevis
+        bareme={bareme}
+        depouillement={depouiller(bareme, reponses)}
         grille={grille}
         prenom={prenomAffiche}
-        priorite={prioriteCure(bareme, empreinte)}
-        complement={complementRecommande(bareme, empreinte)}
-        profil={bareme.AX[empreinte.profilDominant].name}
-        terrain={bareme.AX[empreinte.terrainDominant].name}
-        contact={contact}
-        onContact={setContact}
         enregistrement={enregistrement}
         onRetour={() => setVue('restitution')}
         onBilanSeul={() => enregistrerTout(null)}

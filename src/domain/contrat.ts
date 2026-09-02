@@ -74,13 +74,19 @@ export interface ContractData {
 const LIGNES_CONTRAT: Array<{ label: string; technologies: Technologie[] }> = [
   { label: 'Electrostimulation', technologies: ['ishape'] },
   { label: 'Luxothérapie', technologies: ['luxo'] },
+  { label: 'Luxothérapie Relaxation', technologies: ['relax'] },
   { label: 'Pressodynamie', technologies: ['presso'] },
   { label: 'Dôme', technologies: ['dome'] },
 ];
 
 /** Technologie → consentement à faire signer. Le Dôme n'en a pas. */
+/*
+  La Relaxation est de la luxothérapie : c'est le même appareil, le même
+  consentement. Elle ne fait donc pas signer un document de plus.
+*/
 export const CONSENTEMENT_PAR_TECHNOLOGIE: Partial<Record<Technologie, string>> = {
   luxo: 'luxo-pdp',
+  relax: 'luxo-pdp',
   ishape: 'ishape',
   presso: 'presso',
 };

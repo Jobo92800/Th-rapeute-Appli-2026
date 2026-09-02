@@ -32,15 +32,30 @@ const LOT = 15;
 
 const LIBELLE_TECHNO: Record<string, string> = {
   luxo: 'Luxothérapie',
+  relax: 'Luxo Relaxation',
   ishape: 'I-Shape',
   presso: 'Pressodynamie',
   dome: 'Dôme',
 };
 
+/*
+  Les valeurs envoyées à Airtable sont créées à la volée dans le champ
+  « Mode de règlement » — l'écriture passe en typecast. Les deux dernières
+  sont les anciennes, gardées pour les cures déjà signées.
+*/
 const LIBELLE_MODE: Record<string, string> = {
   comptant: 'Comptant',
+  centre_2x: '2 fois au centre',
+  centre_3x: '3 fois au centre',
+  centre_4x: '4 fois au centre',
+  alma_2x: '2 fois Alma',
+  alma_3x: '3 fois Alma',
+  alma_4x: '4 fois Alma',
+  alma_10x: '10 fois Alma',
+  alma_12x: '12 fois Alma',
   '4x_maison': '4 fois sans frais',
   '10x_alma': '10 fois Alma',
+  inconnu: 'Inconnu (repris du CRM)',
 };
 
 const LIBELLE_STATUT: Record<string, string> = {
@@ -429,6 +444,13 @@ Deno.serve(async (req: Request) => {
     };
 
     if (p.date_validation) champs['Date validation'] = p.date_validation;
+
+    /*
+      Les frais Alma restent dans la V2 pour l'instant : le champ n'existe
+      pas dans Airtable, et typecast ne crée que les options d'une liste,
+      jamais un champ. L'envoyer ferait échouer toutes les synchros de cure.
+      À rebrancher quand « Frais de financement » aura été créé à la main.
+    */
 
     return { clienteId: p.cliente_id as string, champs };
   }
