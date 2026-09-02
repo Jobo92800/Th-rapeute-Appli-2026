@@ -9,6 +9,13 @@ interface EtatSession {
   /** La personne connectée. Null si son compte n'est rattaché à aucune fiche. */
   therapeute: Therapeute | null;
   centre: Centre | null;
+  /**
+   * Vue d'ensemble : la direction regarde les cinq centres à la fois. Les
+   * écrans qui filtrent par centre passent alors null au lieu d'un
+   * identifiant, et la RLS fait le reste — une thérapeute ne verrait que le
+   * sien de toute façon.
+   */
+  tousCentres: boolean;
   role: RoleCompte | null;
   /** Direction : tous les centres. Thérapeute : uniquement le sien. */
   centresAccessibles: Centre[];
@@ -17,6 +24,10 @@ interface EtatSession {
 }
 
 const Contexte = createContext<EtatSession | null>(null);
+
+/** Valeur du sélecteur quand la direction regarde les cinq centres. */
+export const TOUS_LES_CENTRES = 'tous';
+const TOUS = TOUS_LES_CENTRES;
 
 export function FournisseurSession({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -69,8 +80,11 @@ export function FournisseurSession({ children }: { children: ReactNode }) {
       setCentres(accessibles);
 
       const memorise = localStorage.getItem('centre_actif');
+      const globalMemorise = memorise === TOUS && moi?.role === 'direction';
       const valide = accessibles.find((c) => c.id === memorise);
-      setCentreId(valide?.id ?? moi?.centre_id ?? accessibles[0]?.id ?? null);
+      setCentreId(
+        globalMemorise ? TOUS : (valide?.id ?? moi?.centre_id ?? accessibles[0]?.id ?? null),
+      );
       setChargement(false);
     })();
 
@@ -80,8 +94,14 @@ export function FournisseurSession({ children }: { children: ReactNode }) {
   }, [session]);
 
   const valeur = useMemo<EtatSession>(() => {
+    const estDirection = therapeute?.role === 'direction';
+
     const choisirCentre = (id: string) => {
-      if (!centres.some((c) => c.id === id)) return;
+      if (id === TOUS) {
+        if (!estDirection) return;
+      } else if (!centres.some((c) => c.id === id)) {
+        return;
+      }
       localStorage.setItem('centre_actif', id);
       setCentreId(id);
     };
@@ -91,7 +111,8 @@ export function FournisseurSession({ children }: { children: ReactNode }) {
       session,
       therapeute,
       role: therapeute?.role ?? null,
-      centre: centres.find((c) => c.id === centreId) ?? null,
+      centre: centreId === TOUS ? (centres[0] ?? null) : (centres.find((c) => c.id === centreId) ?? null),
+      tousCentres: centreId === TOUS && estDirection,
       centresAccessibles: centres,
       choisirCentre,
       deconnexion: async () => {
@@ -115,4 +136,13 @@ export function useCentre(): Centre {
   const { centre } = useSession();
   if (!centre) throw new Error('Aucun centre actif');
   return centre;
+}
+
+/**
+ * L'identifiant à passer aux services : null quand la direction regarde les
+ * cinq centres, l'identifiant du centre sinon.
+ */
+export function usePerimetre(): string | null {
+  const { centre, tousCentres } = useSession();
+  return tousCentres ? null : (centre?.id ?? null);
 }

@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, Package, LogOut, ChevronDown, Sparkles, BarChart3 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { useSession } from '../lib/session';
+import { TOUS_LES_CENTRES, useSession } from '../lib/session';
 
 const LIENS = [
   { to: '/', libelle: 'Accueil', icone: LayoutDashboard, exact: true, direction: false },
@@ -14,10 +14,11 @@ const LIENS = [
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const { centre, centresAccessibles, choisirCentre, deconnexion, role, therapeute } = useSession();
+  const { centre, centresAccessibles, choisirCentre, deconnexion, role, therapeute, tousCentres } =
+    useSession();
   const navigate = useNavigate();
   const [menuOuvert, setMenuOuvert] = useState(false);
-  const plusieursCentres = centresAccessibles.length > 1;
+  const plusieursCentres = centresAccessibles.length > 1 || role === 'direction';
   const liens = LIENS.filter((l) => !l.direction || role === 'direction');
 
   return (
@@ -80,7 +81,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 Centre
               </span>
               <span className="block truncate text-sm font-semibold text-ardoise-900">
-                {centre?.nom ?? '—'}
+                {tousCentres ? 'Tous les centres' : (centre?.nom ?? '—')}
               </span>
             </span>
             {plusieursCentres && <ChevronDown className="h-4 w-4 shrink-0 text-ardoise-400" />}
@@ -88,6 +89,24 @@ export default function Layout({ children }: { children: ReactNode }) {
 
           {menuOuvert && plusieursCentres && (
             <div className="absolute bottom-full left-3 right-3 mb-1 overflow-hidden rounded-lg border border-ardoise-200 bg-white shadow-carte">
+              {/* La direction peut tout regarder d'un coup. Les écrans qui
+                  demandent un centre précis — bilan, stock — le disent. */}
+              {role === 'direction' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    choisirCentre(TOUS_LES_CENTRES);
+                    setMenuOuvert(false);
+                    navigate('/');
+                  }}
+                  className={`block w-full border-b border-ardoise-100 px-3 py-2 text-left text-sm hover:bg-ardoise-50 ${
+                    tousCentres ? 'font-semibold text-marine-800' : 'text-ardoise-700'
+                  }`}
+                >
+                  Tous les centres
+                </button>
+              )}
+
               {centresAccessibles.map((c) => (
                 <button
                   key={c.id}
@@ -98,7 +117,9 @@ export default function Layout({ children }: { children: ReactNode }) {
                     navigate('/');
                   }}
                   className={`block w-full px-3 py-2 text-left text-sm hover:bg-ardoise-50 ${
-                    c.id === centre?.id ? 'font-semibold text-marine-800' : 'text-ardoise-700'
+                    !tousCentres && c.id === centre?.id
+                      ? 'font-semibold text-marine-800'
+                      : 'text-ardoise-700'
                   }`}
                 >
                   {c.nom}
@@ -125,7 +146,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           </span>
           <span className="text-sm font-medium text-ardoise-600">
             {therapeute?.prenom ? `${therapeute.prenom} · ` : ''}
-            {centre?.nom}
+            {tousCentres ? 'Tous les centres' : centre?.nom}
           </span>
         </header>
 

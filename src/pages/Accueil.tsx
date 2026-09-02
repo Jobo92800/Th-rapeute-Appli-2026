@@ -5,19 +5,20 @@ import { Link } from 'react-router-dom';
 import { UserPlus, ArrowRight, Sparkles } from 'lucide-react';
 import { format, startOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useCentre } from '../lib/session';
+import { usePerimetre, useSession } from '../lib/session';
 import { listerClientes } from '../services/clientes';
 import { etatSynchro, oublierErreursSynchro, relancerSynchro } from '../services/metier';
 import EtatSynchro from '../components/EtatSynchro';
 
 export default function Accueil() {
-  const centre = useCentre();
+  const { centre, tousCentres } = useSession();
+  const perimetre = usePerimetre();
   const [relance, setRelance] = useState(false);
   const [oubli, setOubli] = useState(false);
 
   const { data: clientes = [], isLoading } = useQuery({
-    queryKey: ['clientes', centre.id],
-    queryFn: () => listerClientes(centre.id),
+    queryKey: ['clientes', perimetre],
+    queryFn: () => listerClientes(perimetre),
   });
 
   const { data: sync, refetch: relireSync } = useQuery({
@@ -34,21 +35,30 @@ export default function Accueil() {
     <div className="space-y-7">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ardoise-900">{centre.nom}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-ardoise-900">
+            {tousCentres ? 'Tous les centres' : (centre?.nom ?? '')}
+          </h1>
           <p className="mt-0.5 text-sm text-ardoise-500">
             {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link to="/clientes/nouvelle" className="bouton-discret">
-            <UserPlus className="h-4 w-4" />
-            Fiche seule
-          </Link>
-          <Link to="/bilan" className="bouton-fort">
-            <Sparkles className="h-4 w-4" />
-            Nouveau bilan
-          </Link>
-        </div>
+        {tousCentres ? (
+          <p className="max-w-xs text-xs text-ardoise-500">
+            Vue d’ensemble des cinq centres. Pour créer une fiche ou démarrer un bilan,
+            choisissez un centre en bas à gauche.
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <Link to="/clientes/nouvelle" className="bouton-discret">
+              <UserPlus className="h-4 w-4" />
+              Fiche seule
+            </Link>
+            <Link to="/bilan" className="bouton-fort">
+              <Sparkles className="h-4 w-4" />
+              Nouveau bilan
+            </Link>
+          </div>
+        )}
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

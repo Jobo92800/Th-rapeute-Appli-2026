@@ -11,6 +11,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ChoisirUnCentre from '../components/ChoisirUnCentre';
 import { useCentre, useSession } from '../lib/session';
 import { lireBaremeActif, lireGrilleTarifaire } from '../services/metier';
 import { creerCliente } from '../services/clientes';
@@ -41,7 +42,7 @@ const CONTACT_VIDE = {
 
 export default function NouveauBilan() {
   const centre = useCentre();
-  const { therapeute } = useSession();
+  const { therapeute, tousCentres } = useSession();
   const navigate = useNavigate();
 
   const { data: baremeData, isLoading, error } = useQuery({
@@ -70,6 +71,12 @@ export default function NouveauBilan() {
     () => (bareme ? calculerEmpreinte(bareme, reponses) : null),
     [bareme, reponses],
   );
+
+  if (tousCentres) {
+    return (
+      <ChoisirUnCentre quoi="Un bilan crée une fiche cliente, et une fiche appartient à un centre." />
+    );
+  }
 
   if (isLoading) {
     return (

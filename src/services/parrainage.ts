@@ -95,7 +95,7 @@ export interface CreditsCliente {
   seances_utilisees: number;
 }
 
-export async function creditsDuCentre(centreId: string): Promise<CreditsCliente[]> {
+export async function creditsDuCentre(centreId: string | null): Promise<CreditsCliente[]> {
   const { data, error } = await supabase.rpc('credits_parrainage_du_centre', {
     p_centre: centreId,
   });

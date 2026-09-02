@@ -18,7 +18,8 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useCentre } from '../lib/session';
+import { useCentre, useSession } from '../lib/session';
+import ChoisirUnCentre from '../components/ChoisirUnCentre';
 import { supabase } from '../lib/supabase';
 import { lireCliente } from '../services/clientes';
 import { bilansDeLaCliente, notesDeLaCliente } from '../services/metier';
@@ -58,6 +59,7 @@ export default function FicheCliente() {
   const { id } = useParams<{ id: string }>();
   const creation = !id;
   const centre = useCentre();
+  const { tousCentres } = useSession();
   const [onglet, setOnglet] = useState<Onglet>('coordonnees');
 
   const { data: cliente, isLoading } = useQuery({
@@ -97,6 +99,14 @@ export default function FicheCliente() {
 
   const profilDominant =
     (bilans.find((b) => b.statut === 'termine')?.profil_dominant as AxeProfil | null) ?? null;
+
+  // Créer une fiche demande de savoir dans quel centre. La consulter, non :
+  // la direction peut ouvrir n'importe quelle fiche depuis la vue d'ensemble.
+  if (creation && tousCentres) {
+    return (
+      <ChoisirUnCentre quoi="Une fiche cliente appartient à un centre : celui où elle est suivie." />
+    );
+  }
 
   if (!creation && isLoading) {
     return <p className="carte px-5 py-10 text-center text-sm text-ardoise-400">Chargement…</p>;

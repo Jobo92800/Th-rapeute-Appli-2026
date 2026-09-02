@@ -2,13 +2,16 @@ import { supabase } from '../lib/supabase';
 import { declencherSynchro } from './metier';
 import type { Cliente, ClienteSaisie, Therapeute } from '../types/db';
 
-export async function listerClientes(centreId: string): Promise<Cliente[]> {
-  const { data, error } = await supabase
-    .from('clientes')
-    .select('*')
-    .eq('centre_id', centreId)
-    .is('archivee_le', null)
-    .order('cree_le', { ascending: false });
+/**
+ * Les clientes d'un centre, ou de tous quand centreId vaut null — c'est la
+ * vue d'ensemble de la direction. Sans filtre, la RLS s'applique seule : une
+ * thérapeute ne verrait que le sien de toute façon.
+ */
+export async function listerClientes(centreId: string | null): Promise<Cliente[]> {
+  let requete = supabase.from('clientes').select('*').is('archivee_le', null);
+  if (centreId) requete = requete.eq('centre_id', centreId);
+
+  const { data, error } = await requete.order('cree_le', { ascending: false });
 
   if (error) throw error;
   return (data ?? []) as Cliente[];
@@ -83,13 +86,11 @@ export async function restaurerCliente(id: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function listerArchivees(centreId: string): Promise<Cliente[]> {
-  const { data, error } = await supabase
-    .from('clientes')
-    .select('*')
-    .eq('centre_id', centreId)
-    .not('archivee_le', 'is', null)
-    .order('archivee_le', { ascending: false });
+export async function listerArchivees(centreId: string | null): Promise<Cliente[]> {
+  let requete = supabase.from('clientes').select('*').not('archivee_le', 'is', null);
+  if (centreId) requete = requete.eq('centre_id', centreId);
+
+  const { data, error } = await requete.order('archivee_le', { ascending: false });
 
   if (error) throw error;
   return (data ?? []) as Cliente[];

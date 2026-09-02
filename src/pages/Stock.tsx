@@ -4,6 +4,7 @@ import { AlertTriangle, History, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useCentre, useSession } from '../lib/session';
+import ChoisirUnCentre from '../components/ChoisirUnCentre';
 import { etatDuCentre, mouvementsDuCentre } from '../services/stock';
 import { LIBELLES_MOTIF, niveauStock } from '../domain/stock';
 import CarteProduit from '../components/stock/CarteProduit';
@@ -29,7 +30,7 @@ function messageErreur(e: unknown): string {
 
 export default function Stock() {
   const centre = useCentre();
-  const { therapeute } = useSession();
+  const { therapeute, tousCentres } = useSession();
   const qc = useQueryClient();
   const [ouvert, setOuvert] = useState<EtatStock | null>(null);
 
@@ -52,6 +53,12 @@ export default function Stock() {
     qc.invalidateQueries({ queryKey: ['stock', centre.id] });
     qc.invalidateQueries({ queryKey: ['mouvements', centre.id] });
     qc.invalidateQueries({ queryKey: ['mouvements-produit', centre.id] });
+  }
+
+  if (tousCentres) {
+    return (
+      <ChoisirUnCentre quoi="Le stock se compte rayon par rayon : chaque centre a le sien, avec ses propres entrées et sorties." />
+    );
   }
 
   return (

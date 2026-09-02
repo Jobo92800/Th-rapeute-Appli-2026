@@ -236,11 +236,11 @@ export async function creerProgramme(n: NouveauProgramme): Promise<Programme> {
   return programme as Programme;
 }
 
-export async function situationsDuCentre(centreId: string): Promise<SituationReglement[]> {
-  const { data, error } = await supabase
-    .from('situation_reglement')
-    .select('*')
-    .eq('centre_id', centreId);
+export async function situationsDuCentre(centreId: string | null): Promise<SituationReglement[]> {
+  let requete = supabase.from('situation_reglement').select('*');
+  if (centreId) requete = requete.eq('centre_id', centreId);
+
+  const { data, error } = await requete;
 
   if (error) throw error;
   return (data ?? []) as SituationReglement[];
@@ -398,11 +398,11 @@ export async function supprimerNote(id: string): Promise<void> {
 }
 
 /** Compteurs pour le bouton de la liste des clientes. */
-export async function resumeNotesDuCentre(centreId: string): Promise<ResumeNotes[]> {
-  const { data, error } = await supabase
-    .from('notes_resume')
-    .select('*')
-    .eq('centre_id', centreId);
+export async function resumeNotesDuCentre(centreId: string | null): Promise<ResumeNotes[]> {
+  let requete = supabase.from('notes_resume').select('*');
+  if (centreId) requete = requete.eq('centre_id', centreId);
+
+  const { data, error } = await requete;
 
   if (error) throw error;
   return (data ?? []) as ResumeNotes[];

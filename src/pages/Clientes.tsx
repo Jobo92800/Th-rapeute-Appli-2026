@@ -5,7 +5,7 @@ import { Search, UserPlus, X, Sparkles, AlertTriangle, MessageSquare, Pin, Archi
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useCentre, useSession } from '../lib/session';
+import { useCentre, usePerimetre, useSession } from '../lib/session';
 import {
   archiverCliente,
   listerClientes,
@@ -34,7 +34,8 @@ const TRIS: { valeur: Tri; libelle: string }[] = [
 
 export default function Clientes() {
   const centre = useCentre();
-  const { role } = useSession();
+  const perimetre = usePerimetre();
+  const { role, tousCentres, centresAccessibles } = useSession();
   const [recherche, setRecherche] = useState('');
   const [tri, setTri] = useState<Tri>('recent');
   const [therapeute, setTherapeute] = useState('');
@@ -42,19 +43,20 @@ export default function Clientes() {
   const [notesOuvertes, setNotesOuvertes] = useState<Cliente | null>(null);
   const [archives, setArchives] = useState(false);
   const [aSupprimer, setASupprimer] = useState<Cliente | null>(null);
+  const perimetreLibelle = tousCentres ? 'Les cinq centres' : centre.nom;
   const qc = useQueryClient();
 
   const { data: clientes = [], isLoading, error } = useQuery({
-    queryKey: archives ? ['clientes-archivees', centre.id] : ['clientes', centre.id],
-    queryFn: () => (archives ? listerArchivees(centre.id) : listerClientes(centre.id)),
+    queryKey: archives ? ['clientes-archivees', perimetre] : ['clientes', perimetre],
+    queryFn: () => (archives ? listerArchivees(perimetre) : listerClientes(perimetre)),
   });
 
   async function archiver(c: Cliente) {
     if (!confirm(`Archiver la fiche de ${c.prenom} ${c.nom} ?\n\nElle sort des listes, rien n'est perdu, et elle se restaure.`)) return;
     try {
       await archiverCliente(c.id);
-      qc.invalidateQueries({ queryKey: ['clientes', centre.id] });
-      qc.invalidateQueries({ queryKey: ['clientes-archivees', centre.id] });
+      qc.invalidateQueries({ queryKey: ['clientes', perimetre] });
+      qc.invalidateQueries({ queryKey: ['clientes-archivees', perimetre] });
       toast.success(`${c.prenom} ${c.nom} archivée`);
     } catch {
       toast.error("La fiche n'a pas pu être archivée.");
@@ -64,8 +66,8 @@ export default function Clientes() {
   async function restaurer(c: Cliente) {
     try {
       await restaurerCliente(c.id);
-      qc.invalidateQueries({ queryKey: ['clientes-archivees', centre.id] });
-      qc.invalidateQueries({ queryKey: ['clientes', centre.id] });
+      qc.invalidateQueries({ queryKey: ['clientes-archivees', perimetre] });
+      qc.invalidateQueries({ queryKey: ['clientes', perimetre] });
       toast.success(`${c.prenom} ${c.nom} restaurée`);
     } catch {
       toast.error('La fiche n\'a pas pu être restaurée.');
@@ -78,16 +80,16 @@ export default function Clientes() {
   });
 
   const { data: situations = [], error: erreurSituations } = useQuery({
-    queryKey: ['situations', centre.id],
-    queryFn: () => situationsDuCentre(centre.id),
+    queryKey: ['situations', perimetre],
+    queryFn: () => situationsDuCentre(perimetre),
     retry: false,
   });
 
   // Les crédits de parrainage du centre, en un seul appel : une filleule
   // peut être suivie ailleurs, la liste ne saurait pas les compter.
   const { data: credits = [] } = useQuery({
-    queryKey: ['credits-parrainage', centre.id],
-    queryFn: () => creditsDuCentre(centre.id),
+    queryKey: ['credits-parrainage', perimetre],
+    queryFn: () => creditsDuCentre(perimetre),
   });
 
   const creditsParCliente = useMemo(
@@ -102,8 +104,8 @@ export default function Clientes() {
   );
 
   const { data: resumeNotes = [] } = useQuery({
-    queryKey: ['resume-notes', centre.id],
-    queryFn: () => resumeNotesDuCentre(centre.id),
+    queryKey: ['resume-notes', perimetre],
+    queryFn: () => resumeNotesDuCentre(perimetre),
     retry: false,
   });
 
@@ -166,7 +168,7 @@ export default function Clientes() {
               ? 'Chargement…'
               : `${filtrees.length} fiche${filtrees.length > 1 ? 's' : ''}${
                   filtreActif ? ` sur ${clientes.length}` : ''
-                } — ${centre.nom}`}
+                } — ${perimetreLibelle}`}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -310,6 +312,7 @@ export default function Clientes() {
                 <th className="border-l-4 border-transparent px-4 py-2.5 text-2xs font-semibold uppercase tracking-widest text-ardoise-500">
                   Cliente
                 </th>
+                {tousCentres && <Entete>Centre</Entete>}
                 <Entete>Contact</Entete>
                 <Entete>Thérapeute</Entete>
                 <Entete>Règlement</Entete>
@@ -349,6 +352,11 @@ export default function Clientes() {
                     </Link>
                     {c.ville && <div className="text-xs text-ardoise-400">{c.ville}</div>}
                   </td>
+                  {tousCentres && (
+                    <td className="px-4 py-2.5 text-ardoise-600">
+                      {centresAccessibles.find((ce) => ce.id === c.centre_id)?.nom ?? c.centre_id}
+                    </td>
+                  )}
                   <td className="px-4 py-2.5 text-ardoise-600">
                     <div>{c.telephone ?? '—'}</div>
                     {c.email && <div className="text-xs text-ardoise-400">{c.email}</div>}
@@ -416,8 +424,8 @@ export default function Clientes() {
           onSupprimee={() => {
             const nom = `${aSupprimer.prenom} ${aSupprimer.nom}`;
             setASupprimer(null);
-            qc.invalidateQueries({ queryKey: ['clientes', centre.id] });
-            qc.invalidateQueries({ queryKey: ['clientes-archivees', centre.id] });
+            qc.invalidateQueries({ queryKey: ['clientes', perimetre] });
+            qc.invalidateQueries({ queryKey: ['clientes-archivees', perimetre] });
             toast.success(`${nom} supprimée`);
           }}
         />
