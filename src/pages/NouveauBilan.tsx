@@ -116,20 +116,29 @@ export default function NouveauBilan() {
   }
 
   const steps = bareme.STEPS;
-  const s = steps[etape];
-  const derniere = etape === steps.length - 1;
+  /*
+    L'étape est bornée à la dernière : une question à choix unique enchaîne
+    toute seule après 220 ms, et deux clics rapprochés faisaient avancer
+    deux fois — l'écran cherchait alors une étape qui n'existe pas et se
+    vidait, en plein rendez-vous.
+  */
+  const indexEtape = Math.min(Math.max(0, etape), Math.max(0, steps.length - 1));
+  const s = steps[indexEtape];
+  const derniere = indexEtape >= steps.length - 1;
   const prenomAffiche = contact.prenom.trim() || 'vous';
 
   // -------------------------------------------------------------------------
 
   function suivant() {
+    window.scrollTo(0, 0);
+
     if (derniere) {
       setVue('restitution');
-      window.scrollTo(0, 0);
-    } else {
-      setEtape((e) => e + 1);
-      window.scrollTo(0, 0);
+      return;
     }
+
+    // Jamais au-delà de la dernière étape, quels que soient les clics reçus.
+    setEtape((e) => Math.min(e + 1, steps.length - 1));
   }
 
   function precedent() {
@@ -142,7 +151,7 @@ export default function NouveauBilan() {
   }
 
   function repondre(index: number) {
-    const courante = steps[etape];
+    const courante = steps[indexEtape];
 
     if (courante?.type === 'multi') {
       /*
@@ -154,7 +163,7 @@ export default function NouveauBilan() {
       const exclusive = (courante.o?.length ?? 0) - 1;
 
       setReponses((r) => {
-        const actuels = choix(r, etape);
+        const actuels = choix(r, indexEtape);
         const bascule = actuels.includes(index)
           ? actuels.filter((i) => i !== index)
           : [...actuels, index];
@@ -164,12 +173,12 @@ export default function NouveauBilan() {
             ? bascule.filter((i) => i === exclusive)
             : bascule.filter((i) => i !== exclusive);
 
-        return { ...r, [etape]: nettoyes };
+        return { ...r, [indexEtape]: nettoyes };
       });
       return;
     }
 
-    setReponses((r) => ({ ...r, [etape]: index }));
+    setReponses((r) => ({ ...r, [indexEtape]: index }));
     // On enchaîne tout seul : le rythme du questionnaire compte.
     setTimeout(suivant, 220);
   }
@@ -380,6 +389,18 @@ export default function NouveauBilan() {
   // Questionnaire
   // -------------------------------------------------------------------------
 
+  if (!s) {
+    return (
+      <div className="carte px-5 py-12 text-center">
+        <h1 className="text-lg font-semibold text-ardoise-900">Questionnaire indisponible</h1>
+        <p className="mx-auto mt-2 max-w-md text-sm text-ardoise-500">
+          Le barème actif ne contient aucune question. Vérifiez dans Supabase qu’une version est
+          bien marquée « actif » dans la table <code>bareme_empreinte</code>.
+        </p>
+      </div>
+    );
+  }
+
   const libellePhase = s.major
     ? 'Question clé'
     : s.phase === 'analyse'
@@ -392,7 +413,7 @@ export default function NouveauBilan() {
 
   const peutAvancer =
     s.type === 'multi' || s.type === 'yesno' || s.type === 'radio'
-      ? choix(reponses, etape).length > 0
+      ? choix(reponses, indexEtape).length > 0
       : true;
 
   const theme = s.phase === 'analyse' ? undefined : bareme.CAT?.[s.cat ?? ''];
@@ -401,7 +422,7 @@ export default function NouveauBilan() {
     <div className="mx-auto max-w-2xl">
       <Progression
         libelle={theme ? theme[0] : libellePhase}
-        etape={etape}
+        etape={indexEtape}
         total={steps.length}
       />
 
@@ -411,7 +432,7 @@ export default function NouveauBilan() {
           <QuestionEmpreinte
             etape={s}
             theme={theme}
-            choisis={choix(reponses, etape)}
+            choisis={choix(reponses, indexEtape)}
             onChoisir={repondre}
           />
         )}
