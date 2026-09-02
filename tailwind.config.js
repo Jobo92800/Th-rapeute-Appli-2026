@@ -4,34 +4,39 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Identité MAbeautyplus, retravaillée pour un usage écran prolongé :
-        // le bleu sert d'accent d'interface, le rose reste réservé aux
-        // actions fortes et aux états à signaler.
+        /*
+          Charte du diagnostic Empreinte, étendue à toute l'application.
+          Le teal porte l'interface, le magenta reste réservé aux actions
+          fortes et aux états à signaler. Les noms de teintes ne changent
+          pas — « marine » désigne désormais le teal —, ce qui évite de
+          réécrire quarante fichiers pour un changement de couleur.
+        */
         marine: {
-          50: '#f2f7f9', 100: '#e3eef2', 200: '#c5dde5', 300: '#98c4d3',
-          400: '#5ba3ba', 500: '#35aedc', 600: '#1f7fa3', 700: '#1b6684',
-          800: '#1a556d', 900: '#19475c', 950: '#0d2c3a',
+          50: '#F4FBFB', 100: '#EAF7F7', 200: '#D3EFEF', 300: '#A9E0E0',
+          400: '#6FCDCD', 500: '#3BBFBF', 600: '#2AA5A5', 700: '#1F8484',
+          800: '#166363', 900: '#0F4344', 950: '#0A2E2F',
         },
         rose: {
-          50: '#fdf2f9', 100: '#fce7f4', 200: '#fbcfe9', 300: '#f9a8d6',
-          400: '#f472bb', 500: '#f42abe', 600: '#d10e9c', 700: '#ae0b80',
-          800: '#900c69', 900: '#780f59', 950: '#4a0134',
+          50: '#FEF1F7', 100: '#FDE3EF', 200: '#FBC7DF', 300: '#F79BC6',
+          400: '#F160A4', 500: '#E8318A', 600: '#CE1E73', 700: '#AB135D',
+          800: '#8B124D', 900: '#741343', 950: '#470723',
         },
+        /* Le gris n'est pas neutre : il tire vers le vert-de-gris du teal. */
         ardoise: {
-          50: '#f7f9fa', 100: '#eef2f4', 200: '#dde5e9', 300: '#c2d0d7',
-          400: '#94a9b4', 500: '#6d8492', 600: '#556a77', 700: '#465662',
-          800: '#3c4a53', 900: '#354048', 950: '#1e262c',
+          50: '#FAFDFD', 100: '#F4FBFB', 200: '#E6EFEF', 300: '#CAD6D6',
+          400: '#9BABAB', 500: '#7C9091', 600: '#5E7273', 700: '#41595A',
+          800: '#2A4142', 900: '#152B2C', 950: '#0B1819',
         },
       },
       fontFamily: {
-        sans: ['system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'sans-serif'],
+        sans: ['Poppins', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       fontSize: {
         '2xs': ['0.6875rem', { lineHeight: '1rem' }],
       },
       boxShadow: {
-        carte: '0 1px 2px rgba(30,38,44,.05), 0 8px 24px -18px rgba(30,38,44,.35)',
+        carte: '0 1px 2px rgba(21,43,44,.04), 0 10px 30px -22px rgba(21,43,44,.32)',
       },
     },
   },

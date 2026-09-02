@@ -47,6 +47,20 @@ cliquer. Ne jamais supposer qu'une étape technique est évidente.
 
 ---
 
+## Charte graphique
+
+Celle du diagnostic Empreinte, étendue à toute l'application : **teal**
+(`#3BBFBF`) pour l'interface, **magenta** (`#E8318A`) réservé aux gestes qui
+engagent — signer, valider, démarrer. Typographie **Poppins**, titres en
+maigre avec le mot important en gras. Coins généreux (cartes 16 px, boutons
+en pilule), fond blanc lavé d'un halo de teal.
+
+Les noms de teintes n'ont pas changé — `marine` désigne désormais le teal,
+`ardoise` un gris qui tire vers le vert-de-gris. Changer la charte se fait
+donc dans `tailwind.config.js` et `src/index.css`, sans toucher aux écrans.
+
+---
+
 ## Conventions de code
 
 - **Tout en français** : noms de fichiers, variables, fonctions, commentaires,

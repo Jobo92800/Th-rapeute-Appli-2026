@@ -7,8 +7,19 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /*
+    Le fond n'est pas plat : un halo de teal très pâle en haut de page,
+    repris du diagnostic Empreinte. Il donne de la profondeur sans rien
+    coûter en lisibilité.
+  */
   body {
     @apply bg-ardoise-100 text-ardoise-900;
+    background-image: radial-gradient(
+      1000px 480px at 50% -220px,
+      theme('colors.marine.100') 0%,
+      rgba(234, 247, 247, 0) 72%
+    );
+    background-attachment: fixed;
   }
 
   /* Les chiffres s'alignent partout : montants, séances, mensurations. */
@@ -24,9 +35,9 @@
 
 @layer components {
   .champ {
-    @apply block w-full rounded-lg border border-ardoise-300 bg-white px-3 py-2 text-sm
+    @apply block w-full rounded-xl border-[1.5px] border-ardoise-200 bg-white px-3.5 py-3 text-sm
            text-ardoise-900 placeholder:text-ardoise-400
-           focus:border-marine-500 focus:outline-none focus:ring-1 focus:ring-marine-500
+           focus:border-marine-500 focus:outline-none focus:ring-0
            disabled:bg-ardoise-100 disabled:text-ardoise-500;
   }
 
@@ -34,24 +45,33 @@
     @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ardoise-500;
   }
 
+  /* Boutons en pilule, comme sur le diagnostic. */
   .bouton {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2
-           text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5
+           text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .bouton-principal {
-    @apply bouton bg-marine-600 text-white hover:bg-marine-700;
+    @apply bouton bg-marine-600 text-white hover:-translate-y-px hover:bg-marine-700;
   }
 
+  /* Le magenta ne sert qu'aux gestes qui engagent : signer, valider, démarrer. */
   .bouton-fort {
-    @apply bouton bg-rose-600 text-white hover:bg-rose-700;
+    @apply bouton bg-rose-500 text-white shadow-[0_8px_20px_-8px_rgba(232,49,138,0.55)]
+           hover:-translate-y-px hover:bg-rose-600;
   }
 
   .bouton-discret {
-    @apply bouton border border-ardoise-300 bg-white text-ardoise-700 hover:bg-ardoise-50;
+    @apply bouton border border-ardoise-200 bg-white font-medium text-marine-700
+           hover:bg-marine-50;
   }
 
   .carte {
-    @apply rounded-xl border border-ardoise-200 bg-white shadow-carte;
+    @apply rounded-2xl border border-ardoise-200 bg-white shadow-carte;
+  }
+
+  /* Le sur-titre discret des sections, repris du diagnostic. */
+  .surtitre {
+    @apply text-[11px] font-semibold uppercase tracking-[0.2em] text-ardoise-500;
   }
 }
