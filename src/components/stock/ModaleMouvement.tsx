@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
+  clienteDuMouvement,
   definirSeuils,
   enregistrerMouvement,
   mouvementsDuProduit,
@@ -287,9 +288,11 @@ export default function ModaleMouvement({ ligne, auteur, onFerme, onEnregistre }
               <ul className="divide-y divide-ardoise-100">
                 {historique.map((m) => (
                   <li key={m.id} className="flex items-center justify-between py-1.5 text-xs">
-                    <span className="text-ardoise-600">
+                    <span className="min-w-0 truncate text-ardoise-600">
                       {format(new Date(m.fait_le), 'd MMM yyyy', { locale: fr })} —{' '}
                       {LIBELLES_MOTIF[m.motif] ?? m.motif}
+                      {clienteDuMouvement(m) && ` · ${clienteDuMouvement(m)}`}
+                      {m.therapeute?.prenom && ` · ${m.therapeute.prenom}`}
                     </span>
                     <span
                       className={`chiffres font-semibold ${

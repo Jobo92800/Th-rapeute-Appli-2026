@@ -7,9 +7,27 @@ import type {
   SensMouvement,
 } from '../types/db';
 
-/** Un mouvement accompagné du nom de son produit, pour l'afficher tel quel. */
+/**
+ * Un mouvement, avec de quoi le lire sans ouvrir autre chose : le produit,
+ * la thérapeute qui l'a saisi, et — quand il vient d'une vente ou d'une
+ * signature — la cliente concernée.
+ */
 export interface MouvementDetaille extends MouvementStock {
   produit: { code: string; nom: string; unite: string } | null;
+  therapeute: { prenom: string } | null;
+  vente: { cliente: { prenom: string; nom: string } | null } | null;
+  programme: { cliente: { prenom: string; nom: string } | null } | null;
+}
+
+const CHAMPS_MOUVEMENT =
+  '*, produit:produits_stock(code, nom, unite), therapeute:therapeutes(prenom),' +
+  ' vente:ventes_complements(cliente:clientes(prenom, nom)),' +
+  ' programme:programmes(cliente:clientes(prenom, nom))';
+
+/** « Camille Durand », ou rien si le mouvement ne concerne personne. */
+export function clienteDuMouvement(m: MouvementDetaille): string | null {
+  const c = m.vente?.cliente ?? m.programme?.cliente ?? null;
+  return c ? `${c.prenom} ${c.nom}` : null;
 }
 
 export async function listerProduits(): Promise<ProduitStock[]> {
@@ -38,13 +56,13 @@ export async function etatDuCentre(centreId: string): Promise<EtatStock[]> {
 export async function mouvementsDuCentre(centreId: string, limite = 100): Promise<MouvementDetaille[]> {
   const { data, error } = await supabase
     .from('mouvements_stock')
-    .select('*, produit:produits_stock(code, nom, unite)')
+    .select(CHAMPS_MOUVEMENT)
     .eq('centre_id', centreId)
     .order('fait_le', { ascending: false })
     .limit(limite);
 
   if (error) throw error;
-  return (data ?? []) as MouvementDetaille[];
+  return (data ?? []) as unknown as MouvementDetaille[];
 }
 
 export async function mouvementsDuProduit(
@@ -54,14 +72,14 @@ export async function mouvementsDuProduit(
 ): Promise<MouvementDetaille[]> {
   const { data, error } = await supabase
     .from('mouvements_stock')
-    .select('*, produit:produits_stock(code, nom, unite)')
+    .select(CHAMPS_MOUVEMENT)
     .eq('centre_id', centreId)
     .eq('produit_id', produitId)
     .order('fait_le', { ascending: false })
     .limit(limite);
 
   if (error) throw error;
-  return (data ?? []) as MouvementDetaille[];
+  return (data ?? []) as unknown as MouvementDetaille[];
 }
 
 export interface SaisieMouvement {

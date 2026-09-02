@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useCentre, useSession } from '../lib/session';
 import ChoisirUnCentre from '../components/ChoisirUnCentre';
-import { etatDuCentre, mouvementsDuCentre } from '../services/stock';
+import { clienteDuMouvement, etatDuCentre, mouvementsDuCentre } from '../services/stock';
 import { LIBELLES_MOTIF, niveauStock } from '../domain/stock';
 import CarteProduit from '../components/stock/CarteProduit';
 import ModaleMouvement from '../components/stock/ModaleMouvement';
@@ -136,6 +136,10 @@ export default function Stock() {
                       <span className="block text-xs text-ardoise-500">
                         {format(new Date(m.fait_le), 'd MMM yyyy', { locale: fr })} —{' '}
                         {LIBELLES_MOTIF[m.motif] ?? m.motif}
+                        {clienteDuMouvement(m) && (
+                          <span className="text-ardoise-700"> · {clienteDuMouvement(m)}</span>
+                        )}
+                        {m.therapeute?.prenom && <> · par {m.therapeute.prenom}</>}
                         {m.note ? ` · ${m.note}` : ''}
                       </span>
                     </span>

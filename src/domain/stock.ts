@@ -37,7 +37,7 @@ export const COULEURS_NIVEAU: Record<NiveauStock, string> = {
 
 export const LIBELLES_MOTIF: Record<string, string> = {
   reception: 'Réception',
-  vente: 'Vente à une cliente',
+  vente: 'Vente',
   offert: 'Offert',
   perte: 'Perte ou casse',
   usage_centre: 'Utilisé au centre',
