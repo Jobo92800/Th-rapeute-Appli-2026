@@ -314,6 +314,15 @@ Deno.serve(async (req: Request) => {
     if (c.ville) champs['Ville'] = c.ville;
     if (c.source) champs['Comment nous avez-vous connu ?'] = c.source;
     if (c.therapeutes?.length) champs['Thérapeute'] = c.therapeutes.join(', ');
+    if (c.civilite) champs['Civilité'] = c.civilite;
+
+    /*
+      L'exception de cure part toujours, même vide : quand une consigne est
+      levée, le CRM doit cesser de l'afficher, sans quoi une automatisation
+      continuerait de tenir compte d'une pathologie qui n'existe plus.
+    */
+    champs['Exception cure'] = (c.exception_cure as string) ?? '';
+
     if (c.parcours_audio) champs['Parcours audio'] = c.parcours_audio;
     if (c.acces_audio_le) champs['Accès audio'] = String(c.acces_audio_le).slice(0, 10);
 
@@ -458,11 +467,13 @@ Deno.serve(async (req: Request) => {
     if (p.date_validation) champs['Date validation'] = p.date_validation;
 
     /*
-      Les frais Alma restent dans la V2 pour l'instant : le champ n'existe
-      pas dans Airtable, et typecast ne crée que les options d'une liste,
-      jamais un champ. L'envoyer ferait échouer toutes les synchros de cure.
-      À rebrancher quand « Frais de financement » aura été créé à la main.
+      Les frais Alma, pour que le CRM sache ce qui, dans le montant réglé,
+      revient à Alma et non au centre. Le champ est du texte : on envoie un
+      montant lisible plutôt qu'un nombre qui ne se sommerait pas davantage.
     */
+    const frais = Number(p.frais_financement) || 0;
+    champs['Frais de financement'] =
+      frais > 0 ? frais.toFixed(2).replace('.', ',') + ' €' : '';
 
     return { clienteId: p.cliente_id as string, champs };
   }

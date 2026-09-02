@@ -51,8 +51,13 @@ interface Props {
   onChange: (p: Prescription, totalSeances: number) => void;
 }
 
-/** Le Dôme reste optionnel : il n'apparaît que si on le déplie. */
-const TECHNOS_PRINCIPALES: Technologie[] = ['luxo', 'ishape', 'presso'];
+/*
+  Les soins proposés à la composition d'une cure. Le Dôme en est retiré : le
+  nouveau bilan ne le prescrit plus. Le socle le connaît encore — tarif,
+  libellé, colonne en base — pour qu'il suffise de le remettre dans cette
+  liste s'il revient au catalogue.
+*/
+const TECHNOS_PRINCIPALES: Technologie[] = ['luxo', 'relax', 'ishape', 'presso'];
 
 /*
   Les deux façons de régler, identiques à celles du bilan. Un seul calcul
@@ -84,7 +89,6 @@ export default function CompositionCure({
     presso: seancesInitiales?.presso ?? 0,
     dome: seancesInitiales?.dome ?? 0,
   });
-  const [domeVisible, setDomeVisible] = useState((seancesInitiales?.dome ?? 0) > 0);
   const [methode, setMethode] = useState<'centre' | 'alma'>('centre');
   const [nEcheances, setNEcheances] = useState(4);
   const [guide, setGuide] = useState(true);
@@ -102,7 +106,7 @@ export default function CompositionCure({
 
   const lignes = useMemo(
     () =>
-      (['luxo', 'relax', 'ishape', 'presso', 'dome'] as Technologie[]).map((t) => ({
+      (['luxo', 'relax', 'ishape', 'presso'] as Technologie[]).map((t) => ({
         technologie: t,
         seances: seances[t],
         prixUnitaire: prixUnitaireParDefaut(t, grille),
@@ -175,23 +179,6 @@ export default function CompositionCure({
             />
           ))}
 
-          {domeVisible ? (
-            <LigneSeances
-              libelle={LIBELLES_TECHNOLOGIE.dome}
-              valeur={seances.dome}
-              onMoins={() => ajuster('dome', -1)}
-              onPlus={() => ajuster('dome', 1)}
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() => setDomeVisible(true)}
-              className="flex w-full items-center gap-2 px-5 py-3 text-left text-sm font-medium text-ardoise-500 hover:bg-ardoise-50"
-            >
-              <Plus className="h-4 w-4" />
-              Ajouter du Dôme
-            </button>
-          )}
         </div>
 
         <div className="space-y-1.5 border-t border-ardoise-100 bg-ardoise-50/60 px-5 py-4 text-sm">
@@ -275,7 +262,7 @@ export default function CompositionCure({
                     value={technoOfferte}
                     onChange={(e) => setTechnoOfferte(e.target.value as Technologie)}
                   >
-                    {(['luxo', 'ishape', 'presso', 'dome'] as Technologie[]).map((t) => (
+                    {(['luxo', 'relax', 'ishape', 'presso'] as Technologie[]).map((t) => (
                       <option key={t} value={t}>
                         {LIBELLES_TECHNOLOGIE[t]}
                       </option>

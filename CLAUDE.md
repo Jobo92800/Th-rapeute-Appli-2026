@@ -28,7 +28,7 @@ cliquer. Ne jamais supposer qu'une étape technique est évidente.
 | Base | **Supabase dédié V2**, projet `kefvxglmybbbcdcautcm`. La V1 tourne sur un Supabase géré par Bolt + Firebase, on n'y touche pas. |
 | Transition | L'ancienne application **reste en service**. La V2 sert les nouvelles clientes. Une cliente est créée dans une seule des deux. Rien n'est supprimé. |
 | Migration des données | Repoussée. Le champ `clientes.origine` (`v2` / `import_v1`) est prêt pour plus tard. |
-| Périmètre soins | Luxothérapie, I-Shape, Pressodynamie. **Dôme en option**, compléments alimentaires conservés. Tous les autres soins (Mésojet, Advance Lift, Cavitalyse, Adipologie, Psio) sont abandonnés. |
+| Périmètre soins | Luxothérapie Perte de poids, **Luxothérapie Relaxation**, I-Shape, Pressodynamie. Le **Dôme est retiré** des écrans — le nouveau bilan ne le prescrit plus — mais le socle le connaît encore (tarif, libellé, colonne) : le remettre tient en une ligne. Compléments alimentaires conservés. Tous les autres soins (Mésojet, Advance Lift, Cavitalyse, Adipologie, Psio) sont abandonnés. |
 | Prix | `59 € × total séances + 29 € guide + 60 € tenue si électro`. Le catalogue de 60 lignes de la V1 et ses tables de répartition sont **obsolètes**. |
 | Cures suivantes | Une cliente qui revient reçoit une cure distincte (échéancier, séances, ligne de montant Airtable propres). Sur ces cures, **le guide et la tenue se décochent** : elle les a déjà, on ne les lui revend pas. Sur un premier bilan ils restent automatiques. |
 | Règlement | Les mêmes conditions partout — premier bilan comme cure suivante, un seul calcul couvert par le banc d'essai. **Au centre par chèques**, de 1 à 4 fois sans frais : les échéances suivent les séances, et le guide et la tenue tombent sur la première — la cliente repart avec. **Ou Alma par carte**, en 2, 3, 4, 10 ou 12 fois, avec des frais à la charge de la cliente (0,87 % à 7,5 %) portés par `frais_financement`. Les anciennes valeurs `4x_maison` et `10x_alma` restent acceptées pour les cures déjà signées. |
@@ -126,8 +126,10 @@ Champs créés pour la V2 : `Source appli`, `Profil Empreinte`,
 `Électrostimulation`, `Mode de règlement`, `Statut programme`,
 `Date validation`, `Reste à encaisser`, `Échéances en retard`,
 `Montant en retard`, `Parrain`, `Filleules`, `Filleules engagées`,
-`Séances offertes restantes`. **`Civilité` reste à créer à la main** (texte
-court) avant que la V2 puisse l'envoyer.
+`Séances offertes restantes`, `Civilité`, `Exception cure`, `Frais de
+financement`. Ces trois derniers sont des champs **texte** : les frais y
+partent formatés (« 76,70 € ») et ne se somment donc pas — à passer en
+numérique si un jour on veut les additionner.
 
 Le parrainage a un piège : quand une filleule signe, c'est la fiche de **sa
 marraine** qui change de valeur, pas la sienne. Un déclencheur sur `contrats`
@@ -302,7 +304,8 @@ curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
-Migrations passées jusqu'à **029** incluse.
+Migrations passées jusqu'à **034** incluse. La **035** (l'exception de cure
+part dans Airtable) est écrite et attend d'être collée.
 
 Deux diagnostics, dans `supabase/diagnostics/`, ne modifient rien et se
 relancent à volonté : `controle_coherence.sql` (quinze vérifications) et
