@@ -159,6 +159,7 @@ Deno.serve(async (req) => {
       sans_nom: 0,
       sans_centre: 0,
       centre_inconnu: [] as string[],
+      sans_cure: 0,
       sans_therapeute: 0,
       sans_telephone: 0,
       age_recalcule: 0,
@@ -186,6 +187,28 @@ Deno.serve(async (req) => {
       const centreId = parNomAirtable.get(nomCentre.toLowerCase());
       if (!centreId) {
         if (!anomalies.centre_inconnu.includes(nomCentre)) anomalies.centre_inconnu.push(nomCentre);
+        continue;
+      }
+
+      /*
+        Une fiche sans aucune cure n'est pas une cliente : c'est un prospect
+        qui n'a jamais signé. Le CRM en compte plus d'un millier, accumulés
+        depuis deux ans. Les reprendre noierait la liste des clientes.
+        L'avoir se déduit de la première cure, comme le faisait l'ancien
+        tableau de bord.
+      */
+      const avoir = nombre(f.fields['Avoir']);
+      const cures: Array<{ numero: number; montant: number }> = [];
+
+      CHAMPS_MONTANT.forEach((champ, i) => {
+        const brut = nombre(f.fields[champ]);
+        if (brut <= 0) return;
+        const montant = i === 0 ? Math.max(0, brut - avoir) : brut;
+        if (montant > 0) cures.push({ numero: i + 1, montant });
+      });
+
+      if (cures.length === 0) {
+        anomalies.sans_cure++;
         continue;
       }
 
@@ -217,19 +240,7 @@ Deno.serve(async (req) => {
         cree_le: creation ?? new Date().toISOString(),
       });
 
-      // Les cures : un montant renseigné vaut une cure. L'avoir se déduit de
-      // la première, comme le faisait l'ancien tableau de bord.
-      const avoir = nombre(f.fields['Avoir']);
-      const cures: Array<{ numero: number; montant: number }> = [];
-
-      CHAMPS_MONTANT.forEach((champ, i) => {
-        const brut = nombre(f.fields[champ]);
-        if (brut <= 0) return;
-        const montant = i === 0 ? Math.max(0, brut - avoir) : brut;
-        if (montant > 0) cures.push({ numero: i + 1, montant });
-      });
-
-      if (cures.length > 0) curesParRecord.set(f.id, cures);
+      curesParRecord.set(f.id, cures);
     }
 
     const nbCures = [...curesParRecord.values()].reduce((n, c) => n + c.length, 0);

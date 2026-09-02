@@ -74,8 +74,9 @@ export default function ImportAirtable() {
         </h2>
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>
-            Une <strong>fiche cliente</strong> par enregistrement Airtable : identité,
-            coordonnées, date de naissance, centre, source, date de création.
+            Une <strong>fiche cliente</strong> par enregistrement Airtable <strong>ayant au
+            moins une cure</strong> : identité, coordonnées, date de naissance, centre, source,
+            date de création. Les prospects qui n’ont jamais signé restent dans le CRM.
           </li>
           <li>
             Une <strong>cure</strong> par montant renseigné (« Montant Cure », « Montant cure 2 »
@@ -161,6 +162,10 @@ export default function ImportAirtable() {
               />
               <Ligne libelle="Écartées, sans nom ni prénom" valeur={rapport.anomalies.sans_nom} />
               <Ligne libelle="Écartées, sans centre" valeur={rapport.anomalies.sans_centre} />
+              <Ligne
+                libelle="Prospects sans aucune cure — laissés dans le CRM"
+                valeur={rapport.anomalies.sans_cure}
+              />
               <Ligne
                 libelle="Sans thérapeute — la fiche est créée, la case reste vide"
                 valeur={rapport.anomalies.sans_therapeute}

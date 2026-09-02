@@ -9,6 +9,7 @@ export interface RapportImport {
     sans_nom: number;
     sans_centre: number;
     centre_inconnu: string[];
+    sans_cure: number;
     sans_therapeute: number;
     sans_telephone: number;
     age_recalcule: number;
