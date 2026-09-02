@@ -153,7 +153,7 @@ export interface Bilan {
 // ---------------------------------------------------------------------------
 
 export type StatutProgramme = 'propose' | 'valide' | 'en_cours' | 'termine' | 'abandonne';
-export type ModeReglement = 'comptant' | '4x_maison' | '10x_alma';
+export type ModeReglement = 'comptant' | '4x_maison' | '10x_alma' | 'inconnu';
 export type Technologie = 'luxo' | 'ishape' | 'presso' | 'dome';
 
 export type TailleTenue = 'S' | 'M' | 'L' | 'XL';
@@ -177,6 +177,8 @@ export interface Programme {
   mode_reglement: ModeReglement;
   frais_financement: number;
   complement_recommande: string | null;
+  /** import_v1 : cure reprise du CRM, montant seul, sans séances ni échéancier. */
+  origine: 'v2' | 'import_v1';
   date_validation: string | null;
   cree_le: string;
   maj_le: string;

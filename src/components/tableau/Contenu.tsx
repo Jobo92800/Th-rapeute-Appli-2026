@@ -18,6 +18,7 @@ const LIBELLES_MODE: Record<string, string> = {
   comptant: 'Comptant',
   '4x_maison': '4 fois sans frais',
   '10x_alma': '10 fois Alma',
+  inconnu: 'Inconnu (cure reprise du CRM)',
 };
 
 /**

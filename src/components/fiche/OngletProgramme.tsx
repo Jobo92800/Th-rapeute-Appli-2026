@@ -15,6 +15,7 @@ const LIBELLE_MODE: Record<string, string> = {
   comptant: 'Comptant',
   '4x_maison': '4 fois sans frais',
   '10x_alma': '10 fois Alma',
+  inconnu: 'Mode de règlement inconnu',
 };
 
 export default function OngletProgramme({
@@ -153,6 +154,14 @@ export default function OngletProgramme({
                 {formaterEuros(Number(p.montant_total))}
               </span>
             </div>
+
+            {p.origine === 'import_v1' && (
+              <p className="border-b border-amber-200 bg-amber-50 px-5 py-2.5 text-xs text-amber-900">
+                Cure reprise de l’ancienne application : seul le montant est connu. Le détail des
+                séances, l’échéancier et la date exacte n’existaient pas dans le CRM — la date
+                affichée est celle de création de la fiche.
+              </p>
+            )}
 
             <div className="grid gap-px bg-ardoise-100 sm:grid-cols-2 lg:grid-cols-4">
               <Bloc libelle="Séances au programme" valeur={`${totalFait} / ${totalPrevu}`} />

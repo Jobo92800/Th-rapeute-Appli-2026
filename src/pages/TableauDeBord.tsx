@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Download } from 'lucide-react';
 import { endOfMonth, format, startOfMonth, startOfYear, subDays, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Link } from 'react-router-dom';
 import { useSession } from '../lib/session';
 import { lireTableauDeBord } from '../services/tableauDeBord';
 import { lireBaremeActif } from '../services/metier';
@@ -88,6 +89,11 @@ export default function TableauDeBord() {
             {format(new Date(au), 'd MMM yyyy', { locale: fr })}
           </p>
         </div>
+
+        <Link to="/reprise-crm" className="bouton-discret">
+          <Download className="h-4 w-4" />
+          Reprendre les fiches du CRM
+        </Link>
       </header>
 
       <div className="flex flex-wrap gap-3">

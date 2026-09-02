@@ -84,7 +84,12 @@ export function prixUnitaireParDefaut(techno: Technologie, grille: GrilleTarifai
 // Échéanciers
 // ---------------------------------------------------------------------------
 
-export type ModeReglement = 'comptant' | '4x_maison' | '10x_alma';
+/**
+ * « inconnu » n'existe que pour les cures reprises du CRM : Airtable ne
+ * garde aucune trace du mode de règlement. On le dit plutôt que d'inventer
+ * un « 4 fois sans frais » qui fausserait le tableau de bord.
+ */
+export type ModeReglement = 'comptant' | '4x_maison' | '10x_alma' | 'inconnu';
 
 export interface Echeance {
   rang: number;
@@ -117,6 +122,9 @@ function tauxEffectifAlma10x(total: number): number {
 
 export function construireEcheancier(total: number, mode: ModeReglement): Echeancier {
   if (total <= 0) return { mode, frais: 0, montantARegler: 0, echeances: [] };
+
+  // Une cure reprise du CRM n'a pas d'échéancier : on n'en invente pas un.
+  if (mode === 'inconnu') return { mode, frais: 0, montantARegler: total, echeances: [] };
 
   if (mode === 'comptant') {
     return { mode, frais: 0, montantARegler: total, echeances: [{ rang: 1, montant: total }] };
