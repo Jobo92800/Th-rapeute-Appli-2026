@@ -431,8 +431,20 @@ Deno.serve(async (req: Request) => {
     const utiles = (lignes ?? []).filter((l) => l.seances_prevues > 0);
     const totalSeances = utiles.reduce((n, l) => n + l.seances_prevues, 0);
 
+    /*
+      « Montant Cure » porte ce que la cliente règle réellement, frais Alma
+      compris. C'est le montant du contrat et celui des relances : le CRM ne
+      doit jamais annoncer moins que ce qu'elle doit.
+
+      Le tableau de bord de la V2, lui, compte le montant hors frais — les
+      frais Alma ne sont pas du chiffre d'affaires du centre. Les deux
+      chiffres diffèrent donc légèrement sur les cures payées chez Alma, et
+      c'est voulu : ils ne répondent pas à la même question.
+    */
+    const aRegler = (Number(p.montant_total) || 0) + (Number(p.frais_financement) || 0);
+
     const champs: Record<string, unknown> = {
-      [champMontantCure(p.numero)]: Number(p.montant_total) || 0,
+      [champMontantCure(p.numero)]: aRegler,
       'Nb séances': totalSeances,
       'Détail prescription': utiles
         .map((l) => `${LIBELLE_TECHNO[l.technologie] ?? l.technologie} ${l.seances_prevues}`)
