@@ -255,6 +255,26 @@ de son API thérapeute accepte un `motDePasse`, ce qui crée le compte avec
 l'email déjà confirmé. Son banc d'essai (`node tests/run.mjs`, 52 contrôles)
 doit rester vert après toute modification.
 
+## Banc d'essai
+
+`npm test` — **174 contrôles, à garder verts.** Ils couvrent ce qui décide
+de ce qu'une cliente paie, reçoit et se voit refuser pour raison de santé :
+tarification et échéanciers (centre et Alma), prescription et
+contre-indications, planchers des formules, Empreinte, parrainage, stock,
+compte à rebours des compléments, contrat.
+
+Deux partis pris. **Aucune bibliothèque de test n'est installée** : Node
+exécute le TypeScript directement et le harnais tient en quarante lignes —
+une dépendance de moins à suivre. Et les contrôles de prescription lisent
+**le barème réellement livré** (extrait de la migration 033), pas une copie
+d'essai : si le questionnaire change et qu'un palier devient inatteignable,
+le banc le dit.
+
+Le hook `tests/resolveur.mjs` complète les extensions dans les imports, que
+Node exige et que Vite devine. Il ne concerne que les tests.
+
+---
+
 ## Déploiement
 
 Dépôt : `Jobo92800/Th-rapeute-Appli-2026` (public pour l'instant — contient
@@ -270,6 +290,7 @@ les migrations SQL, les fonctions Edge, et les champs Airtable.
 
 ```bash
 npm run dev                     # développement
+npm test                        # banc d'essai des règles métier
 npm run build                   # vérification avant livraison
 npx --no-install tsc --noEmit   # typage seul
 
