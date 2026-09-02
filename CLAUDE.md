@@ -260,9 +260,11 @@ curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
-Migrations passées jusqu'à **026** incluse. Les **027** (crédits sur les
-cinq centres), **028** (une fiche archivée ne doit plus rien) et **029**
-(civilité) sont écrites et attendent d'être collées, dans cet ordre.
+Migrations passées jusqu'à **029** incluse.
+
+Deux diagnostics, dans `supabase/diagnostics/`, ne modifient rien et se
+relancent à volonté : `controle_coherence.sql` (quinze vérifications) et
+`qui_est_en_retard.sql` (les impayés, nom par nom).
 
 Les migrations SQL se collent dans l'éditeur SQL de Supabase, dans l'ordre
 des numéros. Elles sont rejouables sans risque.
