@@ -158,3 +158,18 @@ function nettoyer<T extends Record<string, unknown>>(saisie: T): T {
   }
   return sortie as T;
 }
+
+
+/**
+ * L'exception de cure : une pathologie, une contre-indication, une consigne
+ * qui change la façon de travailler avec cette personne. Un seul texte, qui
+ * remplace le précédent — c'est l'état actuel qui compte, pas l'historique.
+ */
+export async function definirExceptionCure(clienteId: string, texte: string): Promise<void> {
+  const { error } = await supabase
+    .from('clientes')
+    .update({ exception_cure: texte.trim() })
+    .eq('id', clienteId);
+
+  if (error) throw error;
+}

@@ -60,6 +60,11 @@ export interface Cliente {
   parcours_audio: 'A' | 'B' | 'C' | null;
   acces_audio_le: string | null;
   archivee_le: string | null;
+  /**
+   * Pathologie ou consigne impérative. Vide la plupart du temps ; quand
+   * elle est remplie, elle s'affiche en rouge partout où la fiche paraît.
+   */
+  exception_cure: string;
   /** La marraine, même si elle est suivie dans un autre centre. */
   parrain_id: string | null;
   /** Son nom, quand elle n'a pas de fiche (cliente de la V1). */

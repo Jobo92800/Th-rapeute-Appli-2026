@@ -30,6 +30,7 @@ import OngletSeances from '../components/fiche/OngletSeances';
 import OngletMensurations from '../components/fiche/OngletMensurations';
 import OngletComplements from '../components/fiche/OngletComplements';
 import CarteParrainage from '../components/fiche/CarteParrainage';
+import ExceptionCure from '../components/fiche/ExceptionCure';
 import Notes from '../components/fiche/Notes';
 import OngletDocuments from '../components/fiche/OngletDocuments';
 import type { AxeProfil } from '../domain/empreinte';
@@ -145,8 +146,22 @@ export default function FicheCliente() {
             </p>
           )}
         </div>
-        {!creation && <BadgeSynchro statut={sync?.statut} erreur={sync?.derniere_erreur} />}
+        {!creation && (
+          <div className="flex flex-wrap items-center gap-3">
+            <ExceptionCure cliente={cliente!} mode="bouton" />
+            <BadgeSynchro statut={sync?.statut} erreur={sync?.derniere_erreur} />
+          </div>
+        )}
       </header>
+
+      {/*
+        L'exception reste sous les yeux quel que soit l'onglet ouvert : une
+        pathologie ne se consulte pas, elle s'impose. Le bouton d'en-tête ne
+        sert qu'à la créer quand il n'y en a pas.
+      */}
+      {!creation && cliente?.exception_cure?.trim() && (
+        <ExceptionCure cliente={cliente} mode="bandeau" />
+      )}
 
       {!creation && (
         <nav className="flex flex-wrap gap-1 border-b border-ardoise-200">

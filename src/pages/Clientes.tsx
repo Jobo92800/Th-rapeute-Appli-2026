@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Search, UserPlus, X, Sparkles, AlertTriangle, MessageSquare, Pin, Archive, Undo2, Trash2 } from 'lucide-react';
+import { Search, UserPlus, X, Sparkles, AlertTriangle, AlertOctagon, MessageSquare, Pin, Archive, Undo2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -365,6 +365,14 @@ export default function Clientes() {
                         />
                       )}
                       {c.prenom} {c.nom}
+                      {c.exception_cure?.trim() && (
+                        <AlertOctagon
+                          className="h-3.5 w-3.5 shrink-0 text-rose-600"
+                          aria-label="Exception de cure"
+                        >
+                          <title>{c.exception_cure}</title>
+                        </AlertOctagon>
+                      )}
                       <PastilleCredits nombre={creditsParCliente.get(c.id!) ?? 0} />
                     </Link>
                     {c.ville && <div className="text-xs text-ardoise-400">{c.ville}</div>}
