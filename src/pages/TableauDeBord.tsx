@@ -12,7 +12,7 @@ import { lireBaremeActif } from '../services/metier';
 import type { Axe } from '../domain/empreinte';
 import ContenuTableauDeBord from '../components/tableau/Contenu';
 
-type Periode = 'jour' | 'semaine' | 'mois' | 'mois_dernier' | 'annee';
+type Periode = 'jour' | 'semaine' | 'mois' | 'mois_dernier' | 'annee' | 'tout' | 'perso';
 
 const PERIODES: { id: Periode; libelle: string }[] = [
   { id: 'jour', libelle: "Aujourd'hui" },
@@ -20,10 +20,14 @@ const PERIODES: { id: Periode; libelle: string }[] = [
   { id: 'mois', libelle: 'Ce mois' },
   { id: 'mois_dernier', libelle: 'Mois dernier' },
   { id: 'annee', libelle: 'Cette année' },
+  { id: 'tout', libelle: 'Tout' },
 ];
 
+/* Avant cette date, il n'existe rien : ni cure reprise, ni cure de la V2. */
+const ORIGINE_DES_TEMPS = '2015-01-01';
+
 /** Les bornes de la période choisie, en dates ISO. */
-function bornes(p: Periode): { du: string; au: string } {
+function bornes(p: Periode, perso: { du: string; au: string }): { du: string; au: string } {
   const jour = (d: Date) => format(d, 'yyyy-MM-dd');
   const aujourdhui = new Date();
 
@@ -40,16 +44,22 @@ function bornes(p: Periode): { du: string; au: string } {
     }
     case 'annee':
       return { du: jour(startOfYear(aujourdhui)), au: jour(aujourdhui) };
+    case 'tout':
+      return { du: ORIGINE_DES_TEMPS, au: jour(aujourdhui) };
+    case 'perso':
+      return perso;
   }
 }
 
 export default function TableauDeBord() {
   const { centresAccessibles, role } = useSession();
   const [periode, setPeriode] = useState<Periode>('mois');
+  const aujourdhuiIso = format(new Date(), 'yyyy-MM-dd');
+  const [perso, setPerso] = useState({ du: aujourdhuiIso, au: aujourdhuiIso });
   const [centreId, setCentreId] = useState<string | null>(null);
   const [therapeuteId, setTherapeuteId] = useState<string | null>(null);
 
-  const { du, au } = useMemo(() => bornes(periode), [periode]);
+  const { du, au } = useMemo(() => bornes(periode, perso), [periode, perso]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['tableau-de-bord', centreId, du, au, therapeuteId],
@@ -103,8 +113,10 @@ export default function TableauDeBord() {
               ? centresAccessibles.find((c) => c.id === centreId)?.nom
               : 'Les cinq centres'}
             {therapeuteId && ` · ${therapeutes.find((t) => t.id === therapeuteId)?.prenom ?? ''}`}{' '}
-            · du {format(new Date(du), 'd MMM', { locale: fr })} au{' '}
-            {format(new Date(au), 'd MMM yyyy', { locale: fr })}
+            ·{' '}
+            {periode === 'tout'
+              ? 'depuis le début'
+              : `du ${format(new Date(du), 'd MMM', { locale: fr })} au ${format(new Date(au), 'd MMM yyyy', { locale: fr })}`}
           </p>
         </div>
 
@@ -148,7 +160,7 @@ export default function TableauDeBord() {
             ))}
         </select>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {PERIODES.map((p) => (
             <button
               key={p.id}
@@ -163,6 +175,33 @@ export default function TableauDeBord() {
               {p.libelle}
             </button>
           ))}
+
+          {/* La plage libre, comme sur l'ancien tableau de bord. */}
+          <span className="flex items-center gap-1.5">
+            <input
+              type="date"
+              className="champ w-auto"
+              value={perso.du}
+              max={perso.au}
+              onChange={(e) => {
+                setPerso((v) => ({ ...v, du: e.target.value }));
+                setPeriode('perso');
+              }}
+              aria-label="Début de la période"
+            />
+            <span className="text-ardoise-400">→</span>
+            <input
+              type="date"
+              className="champ w-auto"
+              value={perso.au}
+              min={perso.du}
+              onChange={(e) => {
+                setPerso((v) => ({ ...v, au: e.target.value }));
+                setPeriode('perso');
+              }}
+              aria-label="Fin de la période"
+            />
+          </span>
         </div>
       </div>
 
