@@ -149,7 +149,8 @@ programme et prix · cures successives avec guide et tenue facultatifs ·
 moteur du jeu du jour · mensurations avec courbe · notes entre thérapeutes ·
 contrats et consentements signés, avec lecture obligatoire avant signature ·
 synchronisation Airtable complète, PDF en pièces jointes compris ·
-archivage réversible et suppression définitive (direction) · accès au
+**écran d'accueil du jour** (à encaisser, compléments à renouveler, séances
+faites, stock) · archivage réversible et suppression définitive (direction) · accès au
 parcours audio avec mot de passe donné au comptoir · stock et ventes de
 compléments, la vente décomptant le rayon toute seule · parrainage, avec
 séances offertes reportées sur la cure suivante · **tableau de bord de la
@@ -177,10 +178,6 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
 - **Vente des cosmétiques KOS** : ils sont au stock, mais aucune interface ne
   les vend. Une vente se note en sortie manuelle (« Ça sort »). Seuls les
   compléments se vendent depuis la fiche cliente.
-- **L'écran d'accueil** reste maigre : nombre de fiches et état de la
-  synchro. Les chiffres vivent désormais dans le tableau de bord (direction) ;
-  l'accueil pourrait montrer à une thérapeute ce qui la concerne le jour même
-  — ses échéances à encaisser, ses séances à faire.
 - **Reprise des fiches du CRM** : écran `/reprise-crm` (direction), qui
   compte d'abord et n'écrit qu'après confirmation. Reprend l'identité, les
   coordonnées et une cure par montant Airtable. Le reste — séances,
