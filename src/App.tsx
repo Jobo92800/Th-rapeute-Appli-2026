@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { FournisseurSession, useSession } from './lib/session';
 import Layout from './components/Layout';
+import Filet from './components/Filet';
 import Connexion from './pages/Connexion';
 import Accueil from './pages/Accueil';
 import Stock from './pages/Stock';
@@ -73,15 +74,17 @@ where lower(u.email) = lower(t.email)
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <FournisseurSession>
-        <BrowserRouter>
-          <Application />
-          <Toaster
-            position="top-right"
-            toastOptions={{ style: { fontSize: '14px' }, duration: 3500 }}
-          />
-        </BrowserRouter>
-      </FournisseurSession>
+      <Filet>
+        <FournisseurSession>
+          <BrowserRouter>
+            <Application />
+            <Toaster
+              position="top-right"
+              toastOptions={{ style: { fontSize: '14px' }, duration: 3500 }}
+            />
+          </BrowserRouter>
+        </FournisseurSession>
+      </Filet>
     </QueryClientProvider>
   );
 }
