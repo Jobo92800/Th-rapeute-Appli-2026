@@ -31,8 +31,23 @@ import CureEtDevis, { type PrescriptionValidee } from '../components/bilan/CureE
 
 type Vue = 'accueil' | 'questions' | 'restitution' | 'devis' | 'fini';
 
+/** L'âge se calcule : on ne le demande pas deux fois. */
+function ageDepuis(naissance: string): string {
+  if (!naissance) return '';
+  const d = new Date(naissance);
+  if (Number.isNaN(d.getTime())) return '';
+
+  const maintenant = new Date();
+  let age = maintenant.getFullYear() - d.getFullYear();
+  const m = maintenant.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && maintenant.getDate() < d.getDate())) age--;
+
+  return age > 0 && age < 120 ? String(age) : '';
+}
+
 const CONTACT_VIDE = {
   civilite: 'Mme' as 'Mme' | 'M.',
+  date_naissance: '',
   prenom: '',
   nom: '',
   email: '',
@@ -174,7 +189,7 @@ export default function NouveauBilan() {
         nom: contact.nom.trim(),
         email: contact.email || null,
         telephone: contact.telephone || null,
-        date_naissance: null,
+        date_naissance: contact.date_naissance || null,
         age: contact.age ? Number(contact.age) : null,
         adresse: contact.adresse || null,
         code_postal: contact.code_postal || null,
@@ -260,25 +275,55 @@ export default function NouveauBilan() {
             restituez son Empreinte ensemble.
           </p>
 
-          <div className="mt-7">
-            <label htmlFor="prenom-accueil" className="etiquette text-center">
-              Prénom de la personne
-            </label>
-            <input
-              id="prenom-accueil"
-              value={contact.prenom}
-              onChange={(e) => setContact((c) => ({ ...c, prenom: e.target.value }))}
-              className="champ mx-auto max-w-xs text-center"
-              placeholder="Sophie"
-            />
+          <div className="mt-8 text-left">
+            <div className="surtitre mb-3">Ses coordonnées</div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <span className="etiquette">Civilité</span>
+                <div className="flex gap-2">
+                  {(['Mme', 'M.'] as const).map((civ) => (
+                    <button
+                      key={civ}
+                      type="button"
+                      onClick={() => setContact((c) => ({ ...c, civilite: civ }))}
+                      aria-pressed={contact.civilite === civ}
+                      className={`flex-1 rounded-xl border-[1.5px] px-3 py-2.5 text-sm font-semibold transition-colors ${
+                        contact.civilite === civ
+                          ? 'border-marine-500 bg-marine-500 text-white'
+                          : 'border-ardoise-200 bg-white text-ardoise-700 hover:border-marine-300'
+                      }`}
+                    >
+                      {civ === 'Mme' ? 'Madame' : 'Monsieur'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <ChampContact id="a_prenom" libelle="Prénom" v={contact.prenom} on={(v) => setContact((c) => ({ ...c, prenom: v }))} />
+              <ChampContact id="a_nom" libelle="Nom" v={contact.nom} on={(v) => setContact((c) => ({ ...c, nom: v }))} />
+              <ChampContact id="a_naissance" libelle="Date de naissance" type="date" v={contact.date_naissance} on={(v) => setContact((c) => ({ ...c, date_naissance: v, age: ageDepuis(v) || c.age }))} />
+              <ChampContact id="a_age" libelle="Âge" type="number" v={contact.age} on={(v) => setContact((c) => ({ ...c, age: v }))} />
+              <ChampContact id="a_tel" libelle="Téléphone" type="tel" v={contact.telephone} on={(v) => setContact((c) => ({ ...c, telephone: v }))} />
+              <ChampContact id="a_mail" libelle="Email" type="email" v={contact.email} on={(v) => setContact((c) => ({ ...c, email: v }))} />
+              <div className="sm:col-span-2">
+                <ChampContact id="a_adr" libelle="Adresse" v={contact.adresse} on={(v) => setContact((c) => ({ ...c, adresse: v }))} />
+              </div>
+              <ChampContact id="a_cp" libelle="Code postal" v={contact.code_postal} on={(v) => setContact((c) => ({ ...c, code_postal: v }))} />
+              <ChampContact id="a_ville" libelle="Ville" v={contact.ville} on={(v) => setContact((c) => ({ ...c, ville: v }))} />
+            </div>
           </div>
 
           <button
             onClick={() => {
+              if (!contact.prenom.trim() || !contact.nom.trim()) {
+                toast.error('Le nom et le prénom sont nécessaires pour commencer.');
+                return;
+              }
               setVue('questions');
               setEtape(0);
             }}
-            className="bouton-principal mt-6"
+            className="bouton-fort mt-7"
           >
             Commencer le bilan
             <ArrowRight className="h-4 w-4" />
