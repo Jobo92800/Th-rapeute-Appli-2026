@@ -73,6 +73,7 @@ export default function CompositionCure({
 }: Props) {
   const [seances, setSeances] = useState<Record<Technologie, number>>({
     luxo: seancesInitiales?.luxo ?? 16,
+    relax: seancesInitiales?.relax ?? 0,
     ishape: seancesInitiales?.ishape ?? 0,
     presso: seancesInitiales?.presso ?? 0,
     dome: seancesInitiales?.dome ?? 0,
@@ -94,7 +95,7 @@ export default function CompositionCure({
 
   const lignes = useMemo(
     () =>
-      (['luxo', 'ishape', 'presso', 'dome'] as Technologie[]).map((t) => ({
+      (['luxo', 'relax', 'ishape', 'presso', 'dome'] as Technologie[]).map((t) => ({
         technologie: t,
         seances: seances[t],
         prixUnitaire: prixUnitaireParDefaut(t, grille),

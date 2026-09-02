@@ -158,8 +158,20 @@ export interface Bilan {
 // ---------------------------------------------------------------------------
 
 export type StatutProgramme = 'propose' | 'valide' | 'en_cours' | 'termine' | 'abandonne';
-export type ModeReglement = 'comptant' | '4x_maison' | '10x_alma' | 'inconnu';
-export type Technologie = 'luxo' | 'ishape' | 'presso' | 'dome';
+export type ModeReglement =
+  | 'comptant'
+  | 'centre_2x'
+  | 'centre_3x'
+  | 'centre_4x'
+  | 'alma_2x'
+  | 'alma_3x'
+  | 'alma_4x'
+  | 'alma_10x'
+  | 'alma_12x'
+  | '4x_maison'
+  | '10x_alma'
+  | 'inconnu';
+export type Technologie = 'luxo' | 'relax' | 'ishape' | 'presso' | 'dome';
 
 export type TailleTenue = 'S' | 'M' | 'L' | 'XL';
 

@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Activity,
-  Check,
   ChevronLeft,
   Sparkles,
   Loader2,
@@ -17,6 +16,7 @@ import { lireBaremeActif, lireGrilleTarifaire } from '../services/metier';
 import { creerCliente } from '../services/clientes';
 import { enregistrerBilan, creerProgramme } from '../services/metier';
 import {
+  choix,
   calculerEmpreinte,
   complementRecommande,
   mesuresInbody,
@@ -25,6 +25,8 @@ import {
   type Reponses,
 } from '../domain/empreinte';
 import Restitution from '../components/bilan/Restitution';
+import QuestionEmpreinte from '../components/bilan/QuestionEmpreinte';
+import Progression from '../components/bilan/Progression';
 import Devis, { type Prescription } from '../components/bilan/Devis';
 
 type Vue = 'accueil' | 'questions' | 'restitution' | 'devis' | 'fini';
@@ -125,6 +127,33 @@ export default function NouveauBilan() {
   }
 
   function repondre(index: number) {
+    const courante = steps[etape];
+
+    if (courante?.type === 'multi') {
+      /*
+        « Aucune de ces situations » ne se coche pas avec le reste : une
+        personne qui a un pacemaker n'a pas « aucune » situation de santé.
+        On considère la dernière option comme l'exclusive — c'est ainsi que
+        le questionnaire est écrit.
+      */
+      const exclusive = (courante.o?.length ?? 0) - 1;
+
+      setReponses((r) => {
+        const actuels = choix(r, etape);
+        const bascule = actuels.includes(index)
+          ? actuels.filter((i) => i !== index)
+          : [...actuels, index];
+
+        const nettoyes =
+          index === exclusive
+            ? bascule.filter((i) => i === exclusive)
+            : bascule.filter((i) => i !== exclusive);
+
+        return { ...r, [etape]: nettoyes };
+      });
+      return;
+    }
+
     setReponses((r) => ({ ...r, [etape]: index }));
     // On enchaîne tout seul : le rythme du questionnaire compte.
     setTimeout(suivant, 220);
@@ -321,71 +350,29 @@ export default function NouveauBilan() {
           : 'Le profil de la cliente';
 
   const peutAvancer =
-    s.type !== 'radio' || reponses[etape] != null || s.type === undefined;
+    s.type === 'multi' || s.type === 'yesno' || s.type === 'radio'
+      ? choix(reponses, etape).length > 0
+      : true;
+
+  const theme = s.phase === 'analyse' ? undefined : bareme.CAT?.[s.cat ?? ''];
 
   return (
     <div className="mx-auto max-w-2xl">
-      {/* Progression */}
-      <div className="mb-6">
-        <div className="mb-2 flex items-baseline justify-between">
-          <span className="text-2xs font-semibold uppercase tracking-widest text-ardoise-500">
-            {libellePhase}
-          </span>
-          <span className="chiffres text-2xs font-semibold text-ardoise-400">
-            {etape + 1} / {steps.length}
-          </span>
-        </div>
-        <div className="h-1 overflow-hidden rounded-full bg-ardoise-200">
-          <div
-            className="h-full rounded-full bg-marine-600 transition-all duration-300"
-            style={{ width: `${((etape + 1) / steps.length) * 100}%` }}
-          />
-        </div>
-      </div>
+      <Progression
+        libelle={theme ? theme[0] : libellePhase}
+        etape={etape}
+        total={steps.length}
+      />
 
       <div className="carte p-6 sm:p-8">
-        {s.phase === 'analyse' && (
-          <span className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1 text-2xs font-semibold uppercase tracking-widest text-rose-700">
-            <Activity className="h-3 w-3" />
-            Saisie thérapeute · InBody
-          </span>
-        )}
 
-        {s.type === 'radio' && (
-          <>
-            {s.major && (
-              <p className="mb-2 text-2xs font-semibold uppercase tracking-widest text-marine-700">
-                Choisissez ce qui est le plus vrai
-              </p>
-            )}
-            <h2 className="text-lg font-semibold leading-snug text-ardoise-900">{s.t}</h2>
-            <div className="mt-5 flex flex-col gap-2.5">
-              {s.o!.map(([libelle], i) => {
-                const choisi = reponses[etape] === i;
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => repondre(i)}
-                    className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 text-left text-sm transition-colors ${
-                      choisi
-                        ? 'border-marine-600 bg-marine-50 font-semibold text-marine-900'
-                        : 'border-ardoise-200 bg-white text-ardoise-700 hover:border-marine-400 hover:bg-ardoise-50'
-                    }`}
-                  >
-                    <span
-                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
-                        choisi ? 'border-marine-600 bg-marine-600' : 'border-ardoise-300'
-                      }`}
-                    >
-                      {choisi && <Check className="h-2.5 w-2.5 text-white" strokeWidth={4} />}
-                    </span>
-                    {libelle}
-                  </button>
-                );
-              })}
-            </div>
-          </>
+        {(s.type === 'radio' || s.type === 'multi' || s.type === 'yesno') && (
+          <QuestionEmpreinte
+            etape={s}
+            theme={theme}
+            choisis={choix(reponses, etape)}
+            onChoisir={repondre}
+          />
         )}
 
         {s.type === 'slider' && (
