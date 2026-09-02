@@ -52,7 +52,24 @@ export default function Clientes() {
   });
 
   async function archiver(c: Cliente) {
-    if (!confirm(`Archiver la fiche de ${c.prenom} ${c.nom} ?\n\nElle sort des listes, rien n'est perdu, et elle se restaure.`)) return;
+    /*
+      Archiver sort la fiche du suivi — y compris de « Reste à encaisser ».
+      Si elle doit encore de l'argent, il faut le dire maintenant : après,
+      plus personne ne verra cette somme, ni ne la réclamera.
+    */
+    const situation = parCliente.get(c.id!);
+    const du = Number(situation?.montant_restant ?? 0);
+    const alerte =
+      du > 0
+        ? `\n\nAttention : il reste ${formaterEuros(du)} à encaisser sur sa cure. Une fois archivée, cette somme ne sera plus comptée nulle part et personne ne la relancera.`
+        : '';
+
+    if (
+      !confirm(
+        `Archiver la fiche de ${c.prenom} ${c.nom} ?\n\nElle sort des listes, rien n'est perdu, et elle se restaure.${alerte}`,
+      )
+    )
+      return;
     try {
       await archiverCliente(c.id);
       qc.invalidateQueries({ queryKey: ['clientes', perimetre] });
