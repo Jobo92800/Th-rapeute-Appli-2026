@@ -19,6 +19,8 @@ import {
   supprimerSeance,
 } from '../../services/metier';
 import { LIBELLES_TECHNOLOGIE } from '../../domain/tarification';
+import CourbePoids, { libelleDelta } from './CourbePoids';
+import ModaleSeance from './ModaleSeance';
 import { LIBELLES_PHASE, choisirJeu } from '../../domain/jeuDuJour';
 import type { AxeProfil } from '../../domain/empreinte';
 import type { Seance, Technologie } from '../../types/db';
@@ -31,6 +33,7 @@ interface Props {
 
 export default function OngletSeances({ clienteId, centreId, profilDominant }: Props) {
   const qc = useQueryClient();
+  const [aCorriger, setACorriger] = useState<Seance | null>(null);
   const [enCours, setEnCours] = useState<Seance | null>(null);
 
   const { data: programmes = [], isLoading } = useQuery({
@@ -45,6 +48,26 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
     queryFn: () => seancesDuProgramme(actif!.programme.id),
     enabled: Boolean(actif),
   });
+
+  /*
+    L'écart de poids d'une séance à l'autre. Il se calcule dans l'ordre des
+    dates, pas dans celui de l'affichage — la liste montre les plus récentes
+    d'abord, et une différence lue à l'envers dirait le contraire de la
+    vérité.
+  */
+  const ecartPoids = useMemo(() => {
+    const pesees = seances
+      .filter((s) => s.cloturee && s.poids != null)
+      .slice()
+      .sort((a, b) => a.date_seance.localeCompare(b.date_seance));
+
+    const ecarts = new Map<string, number>();
+    pesees.forEach((s, i) => {
+      if (i === 0) return;
+      ecarts.set(s.id, Math.round((Number(s.poids) - Number(pesees[i - 1].poids)) * 10) / 10);
+    });
+    return ecarts;
+  }, [seances]);
 
   const { data: bibliotheque = [] } = useQuery({
     queryKey: ['jeux'],
@@ -195,6 +218,8 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
         </section>
       )}
 
+      <CourbePoids seances={seances.filter((s) => s.cloturee)} />
+
       {/* Historique ------------------------------------------------------ */}
       <section className="carte">
         <div className="border-b border-ardoise-100 px-5 py-3.5">
@@ -211,35 +236,67 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
               .filter((s) => s.cloturee)
               .map((s) => {
                 const jeu = bibliotheque.find((j) => j.code === s.jeu_code);
+                const delta = ecartPoids.get(s.id) ?? null;
+
                 return (
-                  <li key={s.id} className="flex items-start justify-between gap-4 px-5 py-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-ardoise-900">
-                        {format(new Date(s.date_seance), 'd MMMM yyyy', { locale: fr })}
-                        <span className="ml-2 font-normal text-ardoise-500">
-                          {LIBELLES_TECHNOLOGIE[s.technologie]}
-                        </span>
-                      </p>
-                      {jeu && (
-                        <p className="text-xs text-ardoise-500">
-                          {jeu.code} · {jeu.titre}
+                  <li key={s.id}>
+                    <button
+                      type="button"
+                      onClick={() => setACorriger(s)}
+                      className="flex w-full items-start justify-between gap-4 px-5 py-3 text-left hover:bg-ardoise-50"
+                      title="Corriger cette séance"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-ardoise-900">
+                          {format(new Date(s.date_seance), 'd MMMM yyyy', { locale: fr })}
+                          <span className="ml-2 font-normal text-ardoise-500">
+                            {LIBELLES_TECHNOLOGIE[s.technologie]}
+                          </span>
                         </p>
+                        {jeu && (
+                          <p className="text-xs text-ardoise-500">
+                            {jeu.code} · {jeu.titre}
+                          </p>
+                        )}
+                        {s.commentaire && (
+                          <p className="mt-1 text-xs text-ardoise-600">{s.commentaire}</p>
+                        )}
+                      </div>
+
+                      {s.poids != null && (
+                        <span className="shrink-0 text-right">
+                          <span className="chiffres block text-sm font-semibold text-marine-800">
+                            {Number(s.poids).toLocaleString('fr-FR', { minimumFractionDigits: 1 })} kg
+                          </span>
+                          {delta != null && delta !== 0 && (
+                            <span
+                              className={`chiffres block text-xs font-semibold ${
+                                delta < 0 ? 'text-marine-600' : 'text-rose-600'
+                              }`}
+                            >
+                              {libelleDelta(delta)}
+                            </span>
+                          )}
+                        </span>
                       )}
-                      {s.commentaire && (
-                        <p className="mt-1 text-xs text-ardoise-600">{s.commentaire}</p>
-                      )}
-                    </div>
-                    {s.poids != null && (
-                      <span className="chiffres shrink-0 text-sm font-semibold text-marine-800">
-                        {Number(s.poids).toLocaleString('fr-FR', { minimumFractionDigits: 1 })} kg
-                      </span>
-                    )}
+                    </button>
                   </li>
                 );
               })}
           </ul>
         )}
       </section>
+      {aCorriger && (
+        <ModaleSeance
+          seance={aCorriger}
+          onFerme={() => setACorriger(null)}
+          onEnregistre={() => {
+            qc.invalidateQueries({ queryKey: ['seances', actif?.programme.id] });
+            qc.invalidateQueries({ queryKey: ['programmes', clienteId] });
+          }}
+        />
+      )}
+
     </div>
   );
 }
