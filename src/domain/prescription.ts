@@ -1,5 +1,5 @@
 /**
- * De l'Empreinte à la cure.
+ * Du BioPortrait à la cure.
  *
  * Chaque réponse du bilan donne des points à un soin. Un barème à paliers
  * en déduit deux choses d'un coup : le nombre de séances, et le degré de
@@ -19,8 +19,8 @@ import type {
   PalierPrestation,
   Prestation,
   Reponses,
-} from './empreinte';
-import { choix } from './empreinte';
+} from './bioportrait';
+import { choix } from './bioportrait';
 
 export const PRESTATIONS: Prestation[] = ['LUXO', 'RELAX', 'ISHAPE', 'PRESSO'];
 

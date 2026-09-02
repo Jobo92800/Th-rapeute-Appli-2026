@@ -203,7 +203,7 @@ export default function ContenuTableauDeBord({
         />
 
         <Repartition
-          titre="Profils Empreinte des bilans"
+          titre="Profils BioPortrait des bilans"
           vide="Aucun bilan sur cette période"
           lignes={data.empreinte.profils.map((p) => ({
             libelle: nomAxe(p.code),
@@ -212,7 +212,7 @@ export default function ContenuTableauDeBord({
         />
 
         <Repartition
-          titre="Terrains Empreinte des bilans"
+          titre="Terrains BioPortrait des bilans"
           vide="Aucun bilan sur cette période"
           lignes={data.empreinte.terrains.map((t) => ({
             libelle: nomAxe(t.code),

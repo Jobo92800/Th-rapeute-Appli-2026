@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Ban, Eye, Loader2, Minus, Pencil, Plus, Stethoscope } from 'lucide-react';
-import type { Bareme, Prestation } from '../../domain/empreinte';
+import type { Bareme, Prestation } from '../../domain/bioportrait';
 import {
   LIBELLES_NIVEAU,
   appliquerFormule,
@@ -454,7 +454,7 @@ export default function CureEtDevis({
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ardoise-200 pt-5">
         <button onClick={onRetour} disabled={enregistrement} className="bouton-discret">
-          Revenir à l’Empreinte
+          Revenir au BioPortrait
         </button>
 
         <div className="flex flex-wrap gap-3">

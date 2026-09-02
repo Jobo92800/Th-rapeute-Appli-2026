@@ -23,7 +23,7 @@ interface Props {
  * Elle est totalement distincte de la précédente : son propre échéancier,
  * son propre décompte de séances, sa propre ligne de montant dans Airtable
  * (« Montant cure 2 », « Montant cure 3 »…). Aucun bilan n'est demandé :
- * l'Empreinte du premier bilan reste valable.
+ * le BioPortrait du premier bilan reste valable.
  */
 export default function ModaleNouvelleCure({
   cliente,

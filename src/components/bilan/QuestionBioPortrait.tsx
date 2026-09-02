@@ -1,4 +1,4 @@
-import type { EtapeBareme } from '../../domain/empreinte';
+import type { EtapeBareme } from '../../domain/bioportrait';
 
 /**
  * Une question du diagnostic, telle que la cliente la voit sur la tablette.
@@ -8,7 +8,7 @@ import type { EtapeBareme } from '../../domain/empreinte';
  * une case — parce qu'une personne qui ne peut cocher qu'une réponse et une
  * personne qui peut tout cocher ne lisent pas la même question.
  */
-export default function QuestionEmpreinte({
+export default function QuestionBioPortrait({
   etape,
   theme,
   choisis,

@@ -1,6 +1,6 @@
 /*
   Node veut l'extension dans les imports, Vite s'en passe. Plutôt que
-  d'écrire « ./empreinte.ts » partout dans le code de l'application pour
+  d'écrire « ./bioportrait.ts » partout dans le code de l'application pour
   faire plaisir au banc d'essai, on complète la résolution ici — ce hook ne
   sert qu'aux tests et ne change rien à ce qui est livré.
 */

@@ -9,7 +9,7 @@ import { lireTableauDeBord } from '../services/tableauDeBord';
 import { supabase } from '../lib/supabase';
 import { lireBaremeActif } from '../services/metier';
 
-import type { Axe } from '../domain/empreinte';
+import type { Axe } from '../domain/bioportrait';
 import ContenuTableauDeBord from '../components/tableau/Contenu';
 
 type Periode = 'jour' | 'semaine' | 'mois' | 'mois_dernier' | 'annee' | 'tout' | 'perso';

@@ -1,11 +1,11 @@
 /*
-  Le reste des règles : l'Empreinte, le parrainage, le stock, les
+  Le reste des règles : le BioPortrait, le parrainage, le stock, les
   règlements, le contrat.
 */
 
 import { section, verifie, egal, egalEuros } from './harnais.mts';
 import { baremeLivre } from './prescription.mts';
-import { calculerEmpreinte, choix, scoresMaximum } from '../src/domain/empreinte.ts';
+import { calculerBioPortrait, choix, scoresMaximum } from '../src/domain/bioportrait.ts';
 import {
   PLAFOND_SEANCES,
   SEANCES_PAR_FILLEULE,
@@ -21,12 +21,12 @@ import type { Centre, Cliente, Echeance, LigneProgramme, Programme } from '../sr
 export function controlerMetier() {
   const bareme = baremeLivre();
 
-  section('L’Empreinte');
+  section('Le BioPortrait');
 
   const max = scoresMaximum(bareme);
   verifie('chaque axe peut être atteint', Object.values(max).every((v) => v > 0), JSON.stringify(max));
 
-  const vide = calculerEmpreinte(bareme, {});
+  const vide = calculerBioPortrait(bareme, {});
   verifie('sans réponse, tous les axes sont à zéro', Object.values(vide.pourcentages).every((p) => p === 0));
 
   // Une question à cases à cocher doit compter toutes les réponses.
@@ -51,7 +51,7 @@ export function controlerMetier() {
     fortes[i] = meilleur;
   });
 
-  const chargee = calculerEmpreinte(bareme, fortes);
+  const chargee = calculerBioPortrait(bareme, fortes);
   verifie('un profil dominant se dégage', Boolean(chargee.profilDominant));
   verifie('un terrain dominant se dégage', Boolean(chargee.terrainDominant));
   verifie(

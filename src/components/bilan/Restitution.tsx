@@ -3,13 +3,13 @@ import {
   SEUIL_PRESENCE,
   type Axe,
   type Bareme,
-  type Empreinte,
+  type BioPortrait,
   type MesureInbody,
-} from '../../domain/empreinte';
+} from '../../domain/bioportrait';
 
 interface Props {
   bareme: Bareme;
-  empreinte: Empreinte;
+  bioportrait: BioPortrait;
   prenom: string;
   synthese: string;
   mesures: MesureInbody[];
@@ -23,14 +23,14 @@ interface Props {
  */
 export default function Restitution({
   bareme,
-  empreinte,
+  bioportrait,
   prenom,
   synthese,
   mesures,
   onRetour,
   onSuite,
 }: Props) {
-  const { profilDominant: dp, terrainDominant: dt, pourcentages } = empreinte;
+  const { profilDominant: dp, terrainDominant: dt, pourcentages } = bioportrait;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -39,7 +39,7 @@ export default function Restitution({
           La conclusion de votre bilan
         </p>
         <h1 className="mt-3 text-2xl font-bold tracking-tight text-ardoise-900 sm:text-3xl">
-          L'Empreinte de {prenom}
+          Le BioPortrait de {prenom}
         </h1>
         <p className="mt-4 flex flex-wrap items-center justify-center gap-3 text-lg font-semibold">
           <span className="text-marine-700">{bareme.AX[dp].name}</span>
@@ -75,7 +75,7 @@ export default function Restitution({
         soustitre="Qui elle est aujourd'hui"
         badge="Profil dominant"
         accent="marine"
-        secondaires={empreinte.profilsTries.slice(1)}
+        secondaires={bioportrait.profilsTries.slice(1)}
         pourcentages={pourcentages}
       />
 
@@ -87,7 +87,7 @@ export default function Restitution({
         soustitre="Ce que révèle son corps"
         badge="Terrain dominant"
         accent="rose"
-        secondaires={empreinte.terrainsTries.slice(1)}
+        secondaires={bioportrait.terrainsTries.slice(1)}
         pourcentages={pourcentages}
       />
 

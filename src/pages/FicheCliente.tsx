@@ -24,7 +24,7 @@ import { supabase } from '../lib/supabase';
 import { lireCliente } from '../services/clientes';
 import { bilansDeLaCliente, notesDeLaCliente } from '../services/metier';
 import OngletCoordonnees from '../components/fiche/OngletCoordonnees';
-import OngletEmpreinte from '../components/fiche/OngletEmpreinte';
+import OngletBioPortrait from '../components/fiche/OngletBioPortrait';
 import OngletProgramme from '../components/fiche/OngletProgramme';
 import OngletSeances from '../components/fiche/OngletSeances';
 import OngletMensurations from '../components/fiche/OngletMensurations';
@@ -33,11 +33,11 @@ import CarteParrainage from '../components/fiche/CarteParrainage';
 import ExceptionCure from '../components/fiche/ExceptionCure';
 import Notes from '../components/fiche/Notes';
 import OngletDocuments from '../components/fiche/OngletDocuments';
-import type { AxeProfil } from '../domain/empreinte';
+import type { AxeProfil } from '../domain/bioportrait';
 
 type Onglet =
   | 'coordonnees'
-  | 'empreinte'
+  | 'bioportrait'
   | 'programme'
   | 'seances'
   | 'mensurations'
@@ -47,7 +47,7 @@ type Onglet =
 
 const ONGLETS: { id: Onglet; libelle: string; icone: typeof User }[] = [
   { id: 'coordonnees', libelle: 'Coordonnées', icone: User },
-  { id: 'empreinte', libelle: 'Empreinte', icone: Fingerprint },
+  { id: 'bioportrait', libelle: 'BioPortrait', icone: Fingerprint },
   { id: 'programme', libelle: 'Cure & règlement', icone: Wallet },
   { id: 'seances', libelle: 'Séances', icone: Zap },
   { id: 'mensurations', libelle: 'Mensurations', icone: Ruler },
@@ -213,7 +213,7 @@ export default function FicheCliente() {
         <OngletCoordonnees centreId={centre.id} cliente={cliente ?? null} />
       )}
       {!creation && onglet === 'coordonnees' && cliente && <CarteParrainage cliente={cliente} />}
-      {!creation && onglet === 'empreinte' && <OngletEmpreinte clienteId={id!} />}
+      {!creation && onglet === 'bioportrait' && <OngletBioPortrait clienteId={id!} />}
       {!creation && onglet === 'programme' && (
         <OngletProgramme cliente={cliente!} centreId={centre.id} />
       )}

@@ -1,5 +1,5 @@
 /*
-  Moteur Empreinte.
+  Moteur BioPortrait.
 
   Le questionnaire et sa pondération ne sont pas écrits ici : ils vivent dans
   la table `bareme_empreinte`, en base. Ce module ne contient que les règles
@@ -116,7 +116,7 @@ export function choix(reponses: Reponses, index: number): number[] {
   return Array.isArray(r) ? r : [r];
 }
 
-export interface Empreinte {
+export interface BioPortrait {
   pourcentages: Record<Axe, number>;
   profilsTries: AxeProfil[];
   terrainsTries: AxeTerrain[];
@@ -154,7 +154,7 @@ export function scoresMaximum(bareme: Bareme): Record<Axe, number> {
   return max;
 }
 
-export function calculerEmpreinte(bareme: Bareme, reponses: Reponses): Empreinte {
+export function calculerBioPortrait(bareme: Bareme, reponses: Reponses): BioPortrait {
   const brut = Object.fromEntries(TOUS_AXES.map((a) => [a, 0])) as Record<Axe, number>;
 
   bareme.STEPS.forEach((etape, index) => {
@@ -222,7 +222,7 @@ export function mesuresInbody(bareme: Bareme, reponses: Reponses): MesureInbody[
 }
 
 /** Une phrase de synthèse pour la restitution, nuancée par les axes secondaires. */
-export function phraseSynthese(bareme: Bareme, e: Empreinte): string {
+export function phraseSynthese(bareme: Bareme, e: BioPortrait): string {
   const secondaires = [
     ...e.profilsSecondaires.slice(0, 1),
     ...e.terrainsSecondaires.slice(0, 1),
@@ -236,19 +236,19 @@ export function phraseSynthese(bareme: Bareme, e: Empreinte): string {
         : ` Deux forces secondaires la nuancent : ${secondaires.join(' et ')}.`;
 
   return (
-    `Votre empreinte associe un profil ${bareme.AX[e.profilDominant].name} ` +
+    `Votre BioPortrait associe un profil ${bareme.AX[e.profilDominant].name} ` +
     `à un terrain ${bareme.AX[e.terrainDominant].name}.${nuance} ` +
     `Cette combinaison est la vôtre, et elle seule guide votre parcours.`
   );
 }
 
 /** Le complément orienté par le terrain dominant. */
-export function complementRecommande(bareme: Bareme, e: Empreinte): { nom: string; raison: string } | null {
+export function complementRecommande(bareme: Bareme, e: BioPortrait): { nom: string; raison: string } | null {
   const c = bareme.TERRAIN_COMPL[e.terrainDominant];
   return c ? { nom: c.n, raison: c.r } : null;
 }
 
-export function prioriteCure(bareme: Bareme, e: Empreinte): string {
+export function prioriteCure(bareme: Bareme, e: BioPortrait): string {
   return bareme.CURE_PRIO[e.terrainDominant] ?? '';
 }
 

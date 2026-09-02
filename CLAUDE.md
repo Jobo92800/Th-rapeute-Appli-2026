@@ -11,9 +11,20 @@ changement de cap.**
 Application de suivi des clientes pour les 5 centres MAbeautyplus, qui
 remplace une application existante (dépôt `Jobo92800/MABEAUTYPLUS`).
 
-Elle est bâtie autour de la **Méthode Empreinte** : un bilan de 24 questions
-croisé avec 7 mesures InBody produit un profil comportemental et un terrain
-physiologique, qui orientent la cure et l'accompagnement.
+Elle est bâtie autour de la **Méthode Empreinte** : le **BioPortrait**, un
+bilan de 28 questions croisé avec 5 mesures InBody, produit un profil
+comportemental et un terrain physiologique, qui orientent la cure et
+l'accompagnement.
+
+Le diagnostic s'appelait « Empreinte » jusqu'au 2 septembre 2026. **Le mot
+visible est désormais « BioPortrait »** — écrans, contrat, guide des
+thérapeutes. La *méthode*, elle, reste la Méthode Empreinte. Les noms
+techniques n'ont pas suivi et c'est délibéré : la table s'appelle toujours
+`bareme_empreinte`, les colonnes `profil_dominant`, et les champs Airtable
+`Profil Empreinte` / `Terrain Empreinte`. Les renommer imposerait de
+renommer les champs Airtable **et** de redéployer la synchro dans le même
+mouvement — beaucoup de risque pour un nom que personne ne lit. À faire d'un
+seul coup si un jour ça vaut la peine.
 
 **Interlocuteur : Jonathan, non développeur.** Expliquer en français, sans
 jargon, et donner les manipulations pas à pas avec les endroits exacts où
@@ -51,7 +62,7 @@ cliquer. Ne jamais supposer qu'une étape technique est évidente.
 
 ## Charte graphique
 
-Celle du diagnostic Empreinte, étendue à toute l'application : **teal**
+Celle du diagnostic BioPortrait, étendue à toute l'application : **teal**
 (`#3BBFBF`) pour l'interface, **magenta** (`#E8318A`) réservé aux gestes qui
 engagent — signer, valider, démarrer. Typographie **Poppins**, titres en
 maigre avec le mot important en gras. Coins généreux (cartes 16 px, boutons
@@ -68,7 +79,7 @@ donc dans `tailwind.config.js` et `src/index.css`, sans toucher aux écrans.
 - **Tout en français** : noms de fichiers, variables, fonctions, commentaires,
   tables et colonnes. Le code se lit comme le métier se parle.
 - `src/domain/` = règles métier pures, sans dépendance à l'interface ni au
-  réseau. C'est là que vivent la tarification, l'Empreinte, le jeu du jour,
+  réseau. C'est là que vivent la tarification, le BioPortrait, le jeu du jour,
   l'état des règlements.
 - **Aucun prix en dur dans le code.** Ils vivent dans la table `tarifs`,
   datés. Un programme copie le prix en vigueur à sa validation : les cures
@@ -89,7 +100,7 @@ donc dans `tailwind.config.js` et `src/index.css`, sans toucher aux écrans.
 **Vite · React 18 · TypeScript · Tailwind · TanStack Query · Supabase.**
 
 ```
-src/domain/        règles métier pures (tarification, empreinte, jeuDuJour, reglement, contrat, stock, parrainage)
+src/domain/        règles métier pures (tarification, bioportrait, jeuDuJour, reglement, contrat, stock, parrainage)
 src/services/      accès aux données (clientes, metier, stock, parrainage, tableauDeBord, contratPdf, consentementsPdf)
 src/lib/           supabase, session
 src/pages/         Accueil, Clientes, FicheCliente, NouveauBilan, Stock, TableauDeBord, Connexion
@@ -98,18 +109,31 @@ supabase/migrations/   le schéma, numéroté, à exécuter dans l'ordre
 supabase/functions/    synchro-airtable, envoyer-contrat, acces-parcours-audio, importer-airtable
 ```
 
-Le questionnaire Empreinte **n'est pas dans le code** : il est stocké en base
+Le questionnaire du BioPortrait **n'est pas dans le code** : il est stocké en base
 (`bareme_empreinte.contenu`, jsonb, versionné). Le faire évoluer ne demande
 aucune modification de code, et les bilans passés restent recalculables
 puisque chacun retient sa version de barème.
 
-La **version 2** est en base mais pas active. Elle range les questions par
-thème, ouvre sur deux questions de santé dont les réponses **retirent** un
-soin de la prescription, et fait donner à chaque réponse des points par
-soin — un barème à paliers en déduit les séances et le degré de
-recommandation. Sa maquette d'origine est dans
-`docs/maquettes/diagnostic-empreinte-v2.html`. Elle s'activera quand l'écran
-du bilan saura lire ces nouveaux types de question.
+La **version 3** est celle qui tourne (migration 036). Les questions sont
+rangées par thème, deux questions de santé ouvrent le parcours et leurs
+réponses **retirent** un soin de la prescription, et chaque réponse donne
+des points par soin — un barème à paliers en déduit les séances et le degré
+de recommandation.
+
+Ce que la 3 change par rapport à la 2 : **vingt-huit questions au lieu de
+vingt**, les huit nouvelles étant toutes des « signaux du corps ». Le
+terrain physiologique ne tenait qu'à deux questions (jambes, digestion)
+quand le profil comportemental en avait douze : les cinq terrains ne se
+départageaient pas, et se déduisaient surtout de l'InBody. **Les prix, les
+paliers, les formules et les contre-indications n'ont pas bougé** — à
+réponses identiques, une cliente paie exactement pareil.
+
+Maquettes de référence, versionnées :
+`docs/maquettes/diagnostic-bioportrait-v3.html` (celle qui fait foi) et
+`docs/maquettes/diagnostic-empreinte-v2.html` (la précédente).
+
+Les versions 1 et 2 restent en base : les bilans déjà passés les
+référencent et doivent rester recalculables.
 
 ---
 
@@ -145,7 +169,7 @@ Secrets de la fonction : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`, `AIRTABLE_TABLE`.
 
 ## Où on en est
 
-**Fait** — socle et connexion · fiches clientes · Bilan Empreinte complet ·
+**Fait** — socle et connexion · fiches clientes · Bilan BioPortrait complet ·
 programme et prix · cures successives avec guide et tenue facultatifs ·
 échéancier daté avec états de retard, visibles sur la liste · séances et
 moteur du jeu du jour · mensurations avec courbe · notes entre thérapeutes ·
@@ -186,7 +210,7 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   échéanciers, bilans, mensurations — n'est pas dans Airtable.
 - Migration éventuelle de l'historique Firestore (séances, mensurations,
   bilans de la V1).
-- Le dépôt est **public** : il contient le questionnaire Empreinte, les 60
+- Le dépôt est **public** : il contient le questionnaire BioPortrait, les 60
   jeux, les textes de contrat et la grille tarifaire. À repasser en privé.
 - `ADMIN_CODE` du podcast toujours à `0000`.
 
@@ -256,16 +280,16 @@ doit rester vert après toute modification.
 
 ## Banc d'essai
 
-`npm test` — **174 contrôles, à garder verts.** Ils couvrent ce qui décide
+`npm test` — **184 contrôles, à garder verts.** Ils couvrent ce qui décide
 de ce qu'une cliente paie, reçoit et se voit refuser pour raison de santé :
 tarification et échéanciers (centre et Alma), prescription et
-contre-indications, planchers des formules, Empreinte, parrainage, stock,
+contre-indications, planchers des formules, BioPortrait, parrainage, stock,
 compte à rebours des compléments, contrat.
 
 Deux partis pris. **Aucune bibliothèque de test n'est installée** : Node
 exécute le TypeScript directement et le harnais tient en quarante lignes —
 une dépendance de moins à suivre. Et les contrôles de prescription lisent
-**le barème réellement livré** (extrait de la migration 033), pas une copie
+**le barème réellement livré** (extrait de la migration 036), pas une copie
 d'essai : si le questionnaire change et qu'un palier devient inatteignable,
 le banc le dit.
 
@@ -277,7 +301,7 @@ Node exige et que Vite devine. Il ne concerne que les tests.
 ## Déploiement
 
 Dépôt : `Jobo92800/Th-rapeute-Appli-2026` (public pour l'instant — contient
-le questionnaire Empreinte, les 60 jeux, les textes de contrat et la grille
+le questionnaire BioPortrait, les 60 jeux, les textes de contrat et la grille
 tarifaire ; à repasser en privé). Netlify déploie automatiquement sur chaque
 poussée. Variables à définir côté Netlify : `VITE_SUPABASE_URL` et
 `VITE_SUPABASE_ANON_KEY`.
@@ -304,8 +328,10 @@ curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
-Migrations passées jusqu'à **034** incluse. La **035** (l'exception de cure
-part dans Airtable) est écrite et attend d'être collée.
+Migrations passées jusqu'à **034** incluse. Deux attendent d'être collées :
+la **035** (l'exception de cure part dans Airtable) et la **036** (le
+BioPortrait, questionnaire version 3 — elle s'active toute seule à la fin
+du fichier).
 
 Deux diagnostics, dans `supabase/diagnostics/`, ne modifient rien et se
 relancent à volonté : `controle_coherence.sql` (quinze vérifications) et

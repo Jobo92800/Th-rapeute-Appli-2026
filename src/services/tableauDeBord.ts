@@ -72,6 +72,7 @@ export interface DonneesTableauDeBord {
     semaine_nb: number;
   };
 
+  /* La clé garde son nom d'origine : c'est celui que renvoie la fonction SQL. */
   empreinte: {
     profils: Array<{ code: string; nb: number }>;
     terrains: Array<{ code: string; nb: number }>;

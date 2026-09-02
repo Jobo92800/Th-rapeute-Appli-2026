@@ -76,7 +76,7 @@ export default function OngletProgramme({
       <div className="carte px-5 py-12 text-center">
         <p className="text-sm text-ardoise-600">Aucune cure enregistrée pour cette cliente.</p>
         <p className="mt-1 text-xs text-ardoise-400">
-          Une cure se crée à la fin d'un Bilan Empreinte.
+          Une cure se crée à la fin d'un Bilan BioPortrait.
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-2">
           <Link to="/bilan" className="bouton-fort">

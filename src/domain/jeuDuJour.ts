@@ -5,7 +5,7 @@
   l'ouverture d'une séance, le moteur croise trois choses :
 
     QUAND ?   la phase A / B / C, déduite de l'avancement réel du programme
-    POUR QUI ? le profil comportemental dominant de l'Empreinte
+    POUR QUI ? le profil comportemental dominant du BioPortrait
     QUOI ?     ce qui n'a pas encore été fait avec cette cliente
 
   Le terrain n'intervient pas ici : il oriente le protocole physique et les
@@ -13,7 +13,7 @@
 */
 
 import type { Jeu, PhaseJeu } from '../types/db';
-import type { AxeProfil } from './empreinte';
+import type { AxeProfil } from './bioportrait';
 
 /**
  * Répartition indicative de la méthode : environ un tiers des séances en

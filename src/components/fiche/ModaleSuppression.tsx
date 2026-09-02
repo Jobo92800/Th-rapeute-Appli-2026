@@ -11,7 +11,7 @@ interface Props {
 }
 
 const LIBELLES: Array<{ cle: keyof Awaited<ReturnType<typeof contenuCliente>>; un: string; plusieurs: string }> = [
-  { cle: 'bilans', un: 'bilan Empreinte', plusieurs: 'bilans Empreinte' },
+  { cle: 'bilans', un: 'bilan BioPortrait', plusieurs: 'bilans BioPortrait' },
   { cle: 'programmes', un: 'cure', plusieurs: 'cures' },
   { cle: 'seances', un: 'séance', plusieurs: 'séances' },
   { cle: 'mensurations', un: 'relevé de mensurations', plusieurs: 'relevés de mensurations' },

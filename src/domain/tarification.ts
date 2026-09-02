@@ -1,5 +1,7 @@
 /*
   Moteur de prix de la Méthode Empreinte.
+  (« Empreinte » est le nom historique de la méthode ; le diagnostic, lui,
+  s'appelle désormais le BioPortrait.)
 
   Remplace intégralement le catalogue de 60 lignes et les tables de
   répartition par palier de l'ancienne application. La règle tient

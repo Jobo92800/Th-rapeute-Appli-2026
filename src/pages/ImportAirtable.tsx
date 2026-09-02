@@ -88,7 +88,7 @@ export default function ImportAirtable() {
           Ce qui ne peut pas l’être
         </h2>
         <p className="mt-2">
-          Le détail des séances, les échéanciers, les bilans Empreinte, les mensurations et les
+          Le détail des séances, les échéanciers, les bilans BioPortrait, les mensurations et les
           notes ne sont pas dans Airtable : ils vivent dans l’ancienne base Firebase. Les cures
           reprises portent donc un montant, et rien d’autre — l’application les signale comme
           telles.

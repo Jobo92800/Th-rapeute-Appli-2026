@@ -17,15 +17,15 @@ import { creerCliente } from '../services/clientes';
 import { enregistrerBilan, creerProgramme } from '../services/metier';
 import {
   choix,
-  calculerEmpreinte,
+  calculerBioPortrait,
   complementRecommande,
   mesuresInbody,
   phraseSynthese,
   type Reponses,
-} from '../domain/empreinte';
+} from '../domain/bioportrait';
 import Restitution from '../components/bilan/Restitution';
 import { depouiller } from '../domain/prescription';
-import QuestionEmpreinte from '../components/bilan/QuestionEmpreinte';
+import QuestionBioPortrait from '../components/bilan/QuestionBioPortrait';
 import Progression from '../components/bilan/Progression';
 import CureEtDevis, { type PrescriptionValidee } from '../components/bilan/CureEtDevis';
 
@@ -85,8 +85,8 @@ export default function NouveauBilan() {
 
   const bareme = baremeData?.bareme;
 
-  const empreinte = useMemo(
-    () => (bareme ? calculerEmpreinte(bareme, reponses) : null),
+  const bioportrait = useMemo(
+    () => (bareme ? calculerBioPortrait(bareme, reponses) : null),
     [bareme, reponses],
   );
 
@@ -188,7 +188,7 @@ export default function NouveauBilan() {
       toast.error('Le nom et le prénom sont nécessaires pour enregistrer.');
       return;
     }
-    if (!empreinte || !grille || !bareme || !baremeData) return;
+    if (!bioportrait || !grille || !bareme || !baremeData) return;
 
     setEnregistrement(true);
     try {
@@ -216,17 +216,17 @@ export default function NouveauBilan() {
         curseur,
         texte_libre: texte,
         inbody: { mesures: mesuresInbody(bareme, reponses) },
-        scores: empreinte.pourcentages,
-        profil_dominant: empreinte.profilDominant,
-        terrain_dominant: empreinte.terrainDominant,
-        profils_secondaires: empreinte.profilsSecondaires,
-        terrains_secondaires: empreinte.terrainsSecondaires,
+        scores: bioportrait.pourcentages,
+        profil_dominant: bioportrait.profilDominant,
+        terrain_dominant: bioportrait.terrainDominant,
+        profils_secondaires: bioportrait.profilsSecondaires,
+        terrains_secondaires: bioportrait.terrainsSecondaires,
         facturation: prescription ? 'offert' : 'facture',
         montant_facture: prescription ? 0 : grille.bilan,
       });
 
       if (prescription) {
-        const complement = complementRecommande(bareme, empreinte);
+        const complement = complementRecommande(bareme, bioportrait);
         await creerProgramme({
           clienteId: cliente.id,
           bilanId: bilan.id,
@@ -276,12 +276,12 @@ export default function NouveauBilan() {
             <Sparkles className="h-6 w-6 text-marine-700" />
           </span>
           <h1 className="mt-5 text-2xl font-bold tracking-tight text-ardoise-900">
-            Bilan Empreinte
+            Bilan BioPortrait
           </h1>
           <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-ardoise-600">
             Le questionnaire se remplit par la cliente, seule, sur tablette — une dizaine de
             minutes. Vous reprenez ensuite la main pour saisir l'analyse InBody, puis vous
-            restituez son Empreinte ensemble.
+            restituez son BioPortrait ensemble.
           </p>
 
           <div className="mt-8 text-left">
@@ -346,13 +346,13 @@ export default function NouveauBilan() {
   // Restitution — aucun prix, aucune cure sur cet écran
   // -------------------------------------------------------------------------
 
-  if (vue === 'restitution' && empreinte) {
+  if (vue === 'restitution' && bioportrait) {
     return (
       <Restitution
         bareme={bareme}
-        empreinte={empreinte}
+        bioportrait={bioportrait}
         prenom={prenomAffiche}
-        synthese={phraseSynthese(bareme, empreinte)}
+        synthese={phraseSynthese(bareme, bioportrait)}
         mesures={mesuresInbody(bareme, reponses)}
         onRetour={() => {
           setVue('questions');
@@ -370,7 +370,7 @@ export default function NouveauBilan() {
   // Devis
   // -------------------------------------------------------------------------
 
-  if (vue === 'devis' && empreinte && grille) {
+  if (vue === 'devis' && bioportrait && grille) {
     return (
       <CureEtDevis
         bareme={bareme}
@@ -429,7 +429,7 @@ export default function NouveauBilan() {
       <div className="carte p-6 sm:p-8">
 
         {(s.type === 'radio' || s.type === 'multi' || s.type === 'yesno') && (
-          <QuestionEmpreinte
+          <QuestionBioPortrait
             etape={s}
             theme={theme}
             choisis={choix(reponses, indexEtape)}

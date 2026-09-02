@@ -129,7 +129,7 @@ export interface Jeu {
 }
 
 // ---------------------------------------------------------------------------
-// Bilan Empreinte
+// Bilan BioPortrait
 // ---------------------------------------------------------------------------
 
 export type StatutBilan = 'en_cours' | 'termine' | 'abandonne';

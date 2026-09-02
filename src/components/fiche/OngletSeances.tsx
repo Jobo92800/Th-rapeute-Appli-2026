@@ -22,7 +22,7 @@ import { LIBELLES_TECHNOLOGIE } from '../../domain/tarification';
 import CourbePoids, { libelleDelta } from './CourbePoids';
 import ModaleSeance from './ModaleSeance';
 import { LIBELLES_PHASE, choisirJeu } from '../../domain/jeuDuJour';
-import type { AxeProfil } from '../../domain/empreinte';
+import type { AxeProfil } from '../../domain/bioportrait';
 import type { Seance, Technologie } from '../../types/db';
 
 interface Props {

@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type { Bareme } from '../domain/empreinte';
+import type { Bareme } from '../domain/bioportrait';
 import type {
   Bilan,
   Consentement,

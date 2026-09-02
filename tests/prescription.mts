@@ -8,7 +8,7 @@
 
 import { readFileSync } from 'node:fs';
 import { section, verifie, egal } from './harnais.mts';
-import type { Bareme, Prestation } from '../src/domain/empreinte.ts';
+import type { Bareme, Prestation } from '../src/domain/bioportrait.ts';
 import {
   appliquerFormule,
   depouiller,
@@ -19,8 +19,8 @@ import {
 
 /** Le barème tel qu'il est réellement livré en base, pas une copie d'essai. */
 export function baremeLivre(): Bareme {
-  const sql = readFileSync('supabase/migrations/033_coordonnees_au_debut.sql', 'utf8');
-  const debut = sql.indexOf("SET contenu = '") + "SET contenu = '".length;
+  const sql = readFileSync('supabase/migrations/036_bioportrait_v3.sql', 'utf8');
+  const debut = sql.indexOf("VALUES (3, '") + "VALUES (3, '".length;
   const fin = sql.indexOf("'::jsonb", debut);
   return JSON.parse(sql.slice(debut, fin).replaceAll("''", "'")) as Bareme;
 }
@@ -32,10 +32,10 @@ export function controlerPrescription() {
 
   section('Le barème livré en base');
 
-  verifie('vingt questions posées à la cliente', bareme.STEPS.filter((e) => e.phase === 'client' && e.o).length === 20);
+  verifie('vingt-huit questions posées à la cliente', bareme.STEPS.filter((e) => e.phase === 'client' && e.o).length === 28);
   verifie('cinq mesures InBody', bareme.STEPS.filter((e) => e.phase === 'analyse').length === 5);
   verifie('plus d’étape de coordonnées dans le questionnaire', !bareme.STEPS.some((e) => e.type === 'contact'));
-  verifie('les dix axes de l’Empreinte sont décrits', Object.keys(bareme.AX).length === 10);
+  verifie('les dix axes du BioPortrait sont décrits', Object.keys(bareme.AX).length === 10);
   verifie('les quatre prestations sont nommées', Object.keys(bareme.PRESTA ?? {}).length === 4);
 
   for (const e of bareme.STEPS) {

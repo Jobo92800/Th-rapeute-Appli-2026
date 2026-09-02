@@ -4,9 +4,9 @@ import { Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { bilansDeLaCliente, lireBaremeActif } from '../../services/metier';
-import { SEUIL_PRESENCE, type Axe, AXES_PROFIL, AXES_TERRAIN } from '../../domain/empreinte';
+import { SEUIL_PRESENCE, type Axe, AXES_PROFIL, AXES_TERRAIN } from '../../domain/bioportrait';
 
-export default function OngletEmpreinte({ clienteId }: { clienteId: string }) {
+export default function OngletBioPortrait({ clienteId }: { clienteId: string }) {
   const { data: bilans = [], isLoading } = useQuery({
     queryKey: ['bilans', clienteId],
     queryFn: () => bilansDeLaCliente(clienteId),
@@ -30,7 +30,7 @@ export default function OngletEmpreinte({ clienteId }: { clienteId: string }) {
         <p className="text-sm text-ardoise-600">Aucun bilan pour cette cliente.</p>
         <Link to="/bilan" className="bouton-fort mt-5">
           <Sparkles className="h-4 w-4" />
-          Démarrer un Bilan Empreinte
+          Démarrer un Bilan BioPortrait
         </Link>
       </div>
     );

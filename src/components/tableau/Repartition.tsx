@@ -1,6 +1,6 @@
 /**
  * Une répartition en barres horizontales : moyens de paiement, technologies,
- * profils Empreinte. La barre se lit d'un coup d'œil, le chiffre reste
+ * profils BioPortrait. La barre se lit d'un coup d'œil, le chiffre reste
  * lisible à droite.
  */
 export default function Repartition({
