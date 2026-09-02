@@ -3,6 +3,9 @@ import { LIBELLES_TECHNOLOGIE, formaterEuros } from '../../domain/tarification';
 import type { DonneesTableauDeBord } from '../../services/tableauDeBord';
 import Repartition from './Repartition';
 import CourbeMensuelle from './CourbeMensuelle';
+import TableauCroise from './TableauCroise';
+import DernieresVentes from './DernieresVentes';
+import { evolution, libelleEvolution } from '../../domain/tableauDeBord';
 
 const LIBELLES_MOYEN: Record<string, string> = {
   cheque: 'Chèque',
@@ -41,12 +44,14 @@ export default function ContenuTableauDeBord({
           libelle="Encaissé"
           valeur={formaterEuros(data.encaisse.total)}
           detail="Argent réellement rentré"
+          evolution={evolution(data.encaisse.cures, data.encaisse.precedent)}
           accent
         />
         <Tuile
           libelle="Signé"
           valeur={formaterEuros(data.signe.montant)}
           detail={`${data.signe.nb} cure${data.signe.nb > 1 ? 's' : ''} validée${data.signe.nb > 1 ? 's' : ''}`}
+          evolution={evolution(data.signe.montant, data.signe.precedent)}
         />
         <Tuile
           libelle="Séances faites"
@@ -121,6 +126,34 @@ export default function ContenuTableauDeBord({
 
       <CourbeMensuelle mois={data.mensuel} />
 
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Repartition
+          titre="Signé par centre"
+          format={formaterEuros}
+          vide="Aucune cure signée sur cette période"
+          lignes={data.par_centre.map((c) => ({
+            libelle: c.centre,
+            valeur: Number(c.montant),
+            detail: `· ${c.nb}`,
+          }))}
+        />
+
+        <Repartition
+          titre="Signé par thérapeute"
+          format={formaterEuros}
+          vide="Aucune cure signée sur cette période"
+          lignes={data.par_therapeute.map((t) => ({
+            libelle: t.therapeute,
+            valeur: Number(t.montant),
+            detail: `· ${t.nb}`,
+          }))}
+        />
+      </section>
+
+      <TableauCroise croise={data.croise} />
+
+      <DernieresVentes ventes={data.dernieres_ventes} />
+
       {/* Le détail ------------------------------------------------- */}
       <section className="grid gap-4 lg:grid-cols-2">
         <Repartition
@@ -193,6 +226,12 @@ export default function ContenuTableauDeBord({
           <p className="chiffres mt-2 text-3xl font-bold text-ardoise-900">
             {formaterEuros(data.signe.panier_moyen)}
           </p>
+          {libelleEvolution(evolution(data.signe.panier_moyen, data.signe.panier_precedent)) && (
+            <p className="mt-0.5 text-xs font-semibold text-ardoise-500">
+              {libelleEvolution(evolution(data.signe.panier_moyen, data.signe.panier_precedent))}{' '}
+              <span className="font-normal">sur la période précédente</span>
+            </p>
+          )}
           <p className="mt-1 text-xs text-ardoise-500">
             {data.signe.premieres} première{data.signe.premieres > 1 ? 's' : ''} cure
             {data.signe.premieres > 1 ? 's' : ''} · {data.signe.suivantes} cure
@@ -253,13 +292,17 @@ function Tuile({
   libelle,
   valeur,
   detail,
+  evolution: pct,
   accent = false,
 }: {
   libelle: string;
   valeur: string;
   detail: string;
+  /** Variation contre la période précédente. Null : pas de comparaison possible. */
+  evolution?: number | null;
   accent?: boolean;
 }) {
+  const badge = libelleEvolution(pct ?? null);
   return (
     <div className={`carte px-5 py-4 ${accent ? 'border-marine-300 bg-marine-50' : ''}`}>
       <div
@@ -276,8 +319,22 @@ function Tuile({
       >
         {valeur}
       </div>
-      <div className={`mt-0.5 text-xs ${accent ? 'text-marine-700' : 'text-ardoise-500'}`}>
-        {detail}
+      <div className={`mt-0.5 flex flex-wrap items-baseline gap-2 text-xs ${accent ? 'text-marine-700' : 'text-ardoise-500'}`}>
+        <span>{detail}</span>
+        {badge && (
+          <span
+            className={`rounded-full px-1.5 py-px text-[11px] font-semibold ${
+              badge === 'stable'
+                ? 'bg-ardoise-100 text-ardoise-600'
+                : badge.startsWith('+')
+                  ? 'bg-emerald-50 text-emerald-700'
+                  : 'bg-rose-50 text-rose-700'
+            }`}
+            title="Comparé à la période précédente, de même durée"
+          >
+            {badge}
+          </span>
+        )}
       </div>
     </div>
   );

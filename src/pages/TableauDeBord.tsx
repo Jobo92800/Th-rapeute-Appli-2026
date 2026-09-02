@@ -6,6 +6,7 @@ import { fr } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
 import { useSession } from '../lib/session';
 import { lireTableauDeBord } from '../services/tableauDeBord';
+import { supabase } from '../lib/supabase';
 import { lireBaremeActif } from '../services/metier';
 
 import type { Axe } from '../domain/empreinte';
@@ -46,12 +47,28 @@ export default function TableauDeBord() {
   const { centresAccessibles, role } = useSession();
   const [periode, setPeriode] = useState<Periode>('mois');
   const [centreId, setCentreId] = useState<string | null>(null);
+  const [therapeuteId, setTherapeuteId] = useState<string | null>(null);
 
   const { du, au } = useMemo(() => bornes(periode), [periode]);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['tableau-de-bord', centreId, du, au],
-    queryFn: () => lireTableauDeBord(centreId, du, au),
+    queryKey: ['tableau-de-bord', centreId, du, au, therapeuteId],
+    queryFn: () => lireTableauDeBord(centreId, du, au, therapeuteId),
+    enabled: role === 'direction',
+  });
+
+  // Toutes les thérapeutes des centres accessibles, pour le filtre.
+  const { data: therapeutes = [] } = useQuery({
+    queryKey: ['therapeutes-toutes'],
+    queryFn: async () => {
+      const { data: liste } = await supabase
+        .from('therapeutes')
+        .select('id, prenom, centre_id')
+        .eq('actif', true)
+        .order('prenom');
+      return (liste ?? []) as Array<{ id: string; prenom: string; centre_id: string }>;
+    },
+    staleTime: 10 * 60_000,
     enabled: role === 'direction',
   });
 
@@ -84,7 +101,8 @@ export default function TableauDeBord() {
           <p className="mt-0.5 text-sm text-ardoise-500">
             {centreId
               ? centresAccessibles.find((c) => c.id === centreId)?.nom
-              : 'Les cinq centres'}{' '}
+              : 'Les cinq centres'}
+            {therapeuteId && ` · ${therapeutes.find((t) => t.id === therapeuteId)?.prenom ?? ''}`}{' '}
             · du {format(new Date(du), 'd MMM', { locale: fr })} au{' '}
             {format(new Date(au), 'd MMM yyyy', { locale: fr })}
           </p>
@@ -100,7 +118,10 @@ export default function TableauDeBord() {
         <select
           className="champ w-auto"
           value={centreId ?? ''}
-          onChange={(e) => setCentreId(e.target.value || null)}
+          onChange={(e) => {
+            setCentreId(e.target.value || null);
+            setTherapeuteId(null);
+          }}
           aria-label="Centre"
         >
           <option value="">Tous les centres</option>
@@ -109,6 +130,22 @@ export default function TableauDeBord() {
               {c.nom}
             </option>
           ))}
+        </select>
+
+        <select
+          className="champ w-auto"
+          value={therapeuteId ?? ''}
+          onChange={(e) => setTherapeuteId(e.target.value || null)}
+          aria-label="Thérapeute"
+        >
+          <option value="">Toutes les thérapeutes</option>
+          {therapeutes
+            .filter((t) => !centreId || t.centre_id === centreId)
+            .map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.prenom}
+              </option>
+            ))}
         </select>
 
         <div className="flex flex-wrap gap-1.5">

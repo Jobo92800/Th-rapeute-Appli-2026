@@ -39,6 +39,7 @@ cliquer. Ne jamais supposer qu'une étape technique est évidente.
 | Stock | La quantité en rayon **ne se stocke pas** : elle se calcule (entrées − sorties), comme les séances restantes. La V1 recopiait un compteur, qui mentait au bout de quelques jours. Une vente de compléments **est** un mouvement de sortie, écrit par la base : les deux systèmes ne peuvent plus diverger. Le stock peut passer en négatif — c'est le signe qu'un comptage s'impose, pas une raison de refuser une vente réelle. Le guide et la tenue sortent du rayon **à la signature du contrat** : c'est le moment où la cliente repart avec. La taille de la tenue est demandée dans la fenêtre de signature, et la signature reste bloquée tant qu'elle n'est pas choisie. |
 | Parrainage | 2 séances offertes par filleule **qui a signé son contrat**, plafond 10 (5 filleules). Elles ne touchent jamais la cure en cours — déjà signée, réglée, facturée : ce sont des crédits pour **la cure suivante**, où elles s'ajoutent au décompte sans changer le montant. Un parrainage traverse les 5 centres. Rien de calculable n'est stocké : les filleules se lisent sur les fiches, « engagée » veut dire « a un contrat », les séances gagnées se calculent. Le seul fait écrit est « cette cure comporte N séances offertes ». |
 | Reprise du CRM | Les fiches Airtable entrent dans la V2 avec, pour chaque montant renseigné, une cure « reprise » : montant seul, sans séances ni échéancier, **datée à la création de la fiche** — Airtable ne date que celle-là, y compris pour les cures 2 et suivantes. Ces cures portent `origine = 'import_v1'` et un mode de règlement `inconnu` : inventer « 4 fois sans frais » fausserait le tableau de bord. Une fiche importée ne repart pas dans Airtable à sa création : elle en vient. |
+| Cures reprises soldées | Une cure reprise du CRM porte **une échéance unique, déjà réglée**, à sa propre date. Airtable ne garde aucune trace des règlements : sans ça, 630 000 € resteraient éternellement « à encaisser ». La date de règlement vaut celle de la cure — approximation assumée, faute de mieux. |
 | Tableau de bord | **Réservé à la direction** : le lien n'apparaît pas aux thérapeutes, et la fonction SQL refuse de répondre à un autre rôle. Filtrable par centre ou sur les cinq. Deux notions d'argent à ne jamais confondre : l'**encaissé** (ce qui est rentré, à la date de règlement de chaque échéance) et le **signé** (ce que les cures validées représentent, encaissé plus tard, parfois sur dix mois). Un mois à gros signé et faible encaissé est normal. |
 | Suppression | **Archiver** est le geste courant : réversible, rien n'est perdu. **Supprimer** est définitif, emporte tout le dossier, exige de retaper le nom, et reste réservé à la direction. |
 
@@ -256,8 +257,9 @@ curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
-Migrations passées jusqu'à **021** incluse. La **022** (reprise des fiches
-du CRM) est écrite et attend d'être collée.
+Migrations passées jusqu'à **022** incluse. La **023** (cures reprises
+soldées) et la **024** (tableau de bord complet) sont écrites et attendent
+d'être collées, dans cet ordre.
 
 Les migrations SQL se collent dans l'éditeur SQL de Supabase, dans l'ordre
 des numéros. Elles sont rejouables sans risque.
