@@ -101,6 +101,14 @@ Le questionnaire Empreinte **n'est pas dans le code** : il est stocké en base
 aucune modification de code, et les bilans passés restent recalculables
 puisque chacun retient sa version de barème.
 
+La **version 2** est en base mais pas active. Elle range les questions par
+thème, ouvre sur deux questions de santé dont les réponses **retirent** un
+soin de la prescription, et fait donner à chaque réponse des points par
+soin — un barème à paliers en déduit les séances et le degré de
+recommandation. Sa maquette d'origine est dans
+`docs/maquettes/diagnostic-empreinte-v2.html`. Elle s'activera quand l'écran
+du bilan saura lire ces nouveaux types de question.
+
 ---
 
 ## Airtable

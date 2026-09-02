@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnostic Empreinte — MAbeautyplus</title>
+<style>
+:root{--teal:#3BBFBF;--teal-deep:#2AA5A5;--teal-ink:#0F4344;--magenta:#E8318A;--ink:#152B2C;--grey:#7C9091;--grey-soft:#9BABAB;--wash:#F4FBFB;--wash2:#EAF7F7;--track:#E4F2F2;--muted-fill:#CAD6D6;--line:#E6EFEF;--white:#FFFFFF;--gold:#C9A227}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Poppins','Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;background:radial-gradient(1000px 480px at 50% -220px,#E7F7F7 0%,rgba(231,247,247,0) 72%),var(--white);color:var(--ink);line-height:1.55;padding:30px 18px 70px;min-height:100vh}
+.wrap{max-width:680px;margin:0 auto}.wrap.result{max-width:800px}
+.brand{display:flex;align-items:center;justify-content:space-between;padding-bottom:20px;margin-bottom:26px;border-bottom:1px solid var(--line)}
+.word{font-weight:700;font-size:19px}.word span{color:var(--teal)}
+.kicker{font-size:10.5px;font-weight:600;letter-spacing:2.4px;text-transform:uppercase;color:var(--teal-deep)}
+.btn{display:inline-block;background:var(--magenta);color:#fff;font-weight:600;font-size:15px;padding:14px 30px;border-radius:40px;border:none;cursor:pointer;box-shadow:0 8px 20px -8px rgba(232,49,138,.55);transition:transform .18s,box-shadow .18s;font-family:inherit}
+.btn:hover{transform:translateY(-2px)}.btn:focus-visible{outline:3px solid #F7A8CE;outline-offset:2px}
+.btn.ghost{background:transparent;color:var(--teal-deep);box-shadow:none;border:1px solid var(--line);font-weight:500}.btn.ghost:hover{background:var(--wash);transform:none}
+.screen{display:none}
+.eyebrow{font-size:11.5px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--grey);margin-bottom:12px}
+h1.big{font-weight:300;font-size:clamp(27px,6vw,40px);line-height:1.1;letter-spacing:-.5px;margin-bottom:16px}h1.big b{font-weight:600}
+.lead{font-size:15px;color:#41595A;max-width:54ch;margin-bottom:14px}
+.field{margin-top:18px}.field label{display:block;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--grey);margin-bottom:7px}
+input[type=text],input[type=number],input[type=date],input[type=email],input[type=tel]{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;font-family:inherit;font-size:15px;color:var(--ink)}input[readonly]{background:var(--wash);color:var(--teal-ink)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:540px){.grid2{grid-template-columns:1fr}}
+input:focus{outline:none;border-color:var(--teal)}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
+/* quiz */
+#quiz{display:none}
+.prog-wrap{margin-bottom:22px}.prog-top{display:flex;justify-content:space-between;font-size:12px;color:var(--grey);font-weight:500;margin-bottom:8px}
+.prog{position:relative;height:8px;border-radius:6px;overflow:hidden;background:linear-gradient(90deg,#3BBFBF 0%,#8E6FC6 55%,#E8318A 100%)}.prog-mask{position:absolute;top:0;right:0;bottom:0;width:100%;background:var(--track);transition:width .4s ease}
+.cat-badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;padding:5px 14px;border-radius:20px;margin-bottom:14px;color:#fff}
+.q-text{font-weight:500;font-size:20px;line-height:1.35;letter-spacing:-.2px;margin-bottom:20px}
+.hint{font-size:12px;color:var(--grey);margin:-12px 0 16px}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;align-items:center;gap:13px;padding:15px 17px;border:1.5px solid var(--line);border-radius:14px;cursor:pointer;transition:border-color .18s,background .18s;font-size:15px}
+.opt:hover{border-color:#BFE6E6;background:var(--wash)}.opt.sel{border-color:var(--teal);background:var(--wash)}
+.opt .dot{width:20px;height:20px;border-radius:50%;border:2px solid #CBD7D7;flex:none;position:relative}.opt.sel .dot{border-color:var(--teal)}.opt.sel .dot::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--teal)}
+.opt.multi .dot{border-radius:6px}.opt.multi.sel .dot::after{border-radius:2px;inset:3px}
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:28px;gap:12px}
+.nav .prev{background:none;border:none;color:var(--grey);font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;padding:8px}.nav .prev[hidden]{visibility:hidden}
+.panel-card{border:1px solid var(--line);border-radius:20px;padding:34px 30px;background:var(--wash);text-align:center}
+.panel-icon{width:56px;height:56px;border-radius:16px;background:var(--teal);margin:0 auto 20px;display:flex;align-items:center;justify-content:center}.panel-icon svg{width:28px;height:28px;stroke:#fff}
+.panel-card h2{font-weight:600;font-size:22px;margin-bottom:12px}.panel-card p{font-size:15px;color:#41595A;max-width:44ch;margin:0 auto}
+/* result */
+#result{display:none}
+.hero{margin-bottom:28px}
+.empreinte-line{display:inline-flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--wash);border:1px solid var(--line);border-radius:14px;padding:12px 18px;margin-bottom:16px}.empreinte-line .p{font-weight:600;font-size:17px;color:var(--teal-ink)}.empreinte-line .x{color:var(--teal);font-weight:300;font-size:18px}
+.synthese{font-size:15px;color:#41595A;max-width:62ch}.synthese b{font-weight:600;color:var(--ink)}
+.metab{border-radius:16px;padding:18px 20px;margin:18px 0;border:1px solid}
+.metab .ml{font-size:11px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;margin-bottom:6px;display:flex;justify-content:space-between}
+.metab .mp{font-size:14px;line-height:1.5}
+.dim{border:1px solid var(--line);border-radius:20px;overflow:hidden;margin-bottom:20px;background:#fff}
+.dim-head{display:flex;align-items:center;gap:14px;padding:16px 22px;background:var(--wash2);border-bottom:1px solid var(--line)}
+.dim-num{width:32px;height:32px;border-radius:9px;background:var(--teal);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex:none}
+.dim-titles .t{font-weight:600;font-size:15px}.dim-titles .s{font-size:12px;color:var(--grey);font-weight:500;letter-spacing:.4px;text-transform:uppercase;margin-top:2px}
+.dim-body{padding:20px}
+.heroc{margin-bottom:18px}.heroc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:6px}
+.heroc .badge{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#fff;background:var(--teal);padding:4px 11px;border-radius:20px;display:inline-block;margin-bottom:9px}
+.heroc .nm{font-weight:600;font-size:24px;letter-spacing:-.4px}.heroc .sig{font-size:13.5px;color:var(--teal-deep);font-style:italic;margin-top:3px}
+.heroc .big-pct{font-weight:600;font-size:32px;color:var(--teal-deep);font-variant-numeric:tabular-nums;line-height:1;flex:none}.heroc .big-pct small{font-size:15px}
+.track{position:relative;height:15px;border-radius:9px;background:var(--track);overflow:hidden;margin-top:12px}.track.slim{height:9px;border-radius:6px;margin-top:0}
+.fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:9px;background:linear-gradient(90deg,var(--teal),var(--teal-deep));transition:width 1s cubic-bezier(.22,1,.36,1)}.fill.under{background:linear-gradient(90deg,#DEE7E7,var(--muted-fill))}
+.seuil{position:absolute;top:-3px;bottom:-3px;width:0;border-left:2px dashed #B3C6C6}
+.bubble{margin-top:14px;border-left:3px solid var(--teal);background:var(--wash);border-radius:0 12px 12px 0;padding:13px 15px}.bubble .feel{font-size:14px;margin-bottom:11px}.bubble .feel b{font-weight:600;color:var(--teal-ink)}
+.impacts-lab{font-size:10px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:var(--grey);margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}.chip{font-size:12px;font-weight:500;color:#41595A;background:#fff;border:1px solid var(--line);border-radius:20px;padding:5px 11px}
+.also-lab{font-size:11px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:var(--grey-soft);margin:12px 0}
+.mini{padding:9px 11px;border-radius:10px}.mini-top{display:flex;align-items:center;gap:10px;margin-bottom:7px}.mini .mn{font-weight:500;font-size:13.5px}.mini.low .mn{color:#5E7273}
+.mini .flag{font-size:9px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--teal-deep);background:#DDF1F1;padding:2px 7px;border-radius:12px}.mini .sp{flex:1}.mini .mp{font-weight:600;font-size:13px;color:var(--teal-deep)}.mini.low .mp{color:var(--grey-soft)}
+.bc{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}.bc-item{font-size:12px;font-weight:500;color:#41595A;background:var(--wash);border:1px solid var(--line);border-radius:9px;padding:6px 11px}.bc-item b{color:var(--teal-ink)}
+/* prestations */
+.presta{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px}
+.presta.removed{opacity:.5;background:#FAFBFB}.presta.medical{background:#FFFDF6;border-color:#EFE6C8}
+.presta .pinfo{flex:1}.presta .pn{font-weight:600;font-size:15px}.presta .pd{font-size:12.5px;color:var(--grey);margin-top:2px}
+.plevel{font-size:9.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:4px 10px;border-radius:20px;white-space:nowrap}
+.lvl-prop{background:#EAF1F1;color:#5E7273}.lvl-fort{background:#DDEFF6;color:#2E7CA6}.lvl-oblig{background:var(--magenta);color:#fff}.lvl-med{background:#F3EAC8;color:#8A7220}.lvl-rem{background:#F0EDED;color:#9BABAB}
+.pseances{display:flex;align-items:center;gap:8px;flex:none}
+.pseances button{width:26px;height:26px;border-radius:8px;border:1px solid var(--line);background:#fff;font-size:16px;cursor:pointer;color:var(--teal-deep);font-family:inherit;line-height:1}.pseances button:hover{background:var(--wash)}.pseances button:disabled{opacity:.3;cursor:not-allowed}
+.pseances .sc{font-weight:700;font-size:15px;min-width:22px;text-align:center;color:var(--teal-ink)}.pseances .sl{font-size:10px;color:var(--grey)}
+/* devis */
+.devis{margin-top:26px;border-radius:20px;overflow:hidden;border:1px solid #D6EDED}
+.devis-price{background:var(--teal-ink);color:#fff;padding:30px 26px;text-align:center}
+.devis-price .pl{font-size:10.5px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#9FD6D6;margin-bottom:8px}
+.devis-price .month{font-size:44px;font-weight:700;line-height:1}.devis-price .month small{font-size:20px;font-weight:600}
+.devis-price .dur{font-size:13px;color:#BFE6E6;margin-top:6px}
+.devis-price .perday{display:inline-block;margin-top:14px;font-size:13px;background:rgba(255,255,255,.12);padding:6px 16px;border-radius:20px}
+.devis-price .total{font-size:12px;color:#8FC7C7;margin-top:12px}
+.devis-detail{background:#fff;padding:18px 22px;font-size:12.5px;color:#5E7273}
+.devis-detail summary{cursor:pointer;font-weight:600;color:var(--teal-deep);font-size:12px;letter-spacing:.5px;text-transform:uppercase}
+.drow{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--line)}.drow:last-child{border:none}
+.internal-tag{font-size:9.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--gold);background:#FBF6E7;padding:2px 8px;border-radius:10px;margin-left:6px}
+.restart{margin-top:22px;text-align:center}.restart button{background:none;border:none;color:var(--grey);font-family:inherit;font-size:13.5px;cursor:pointer;text-decoration:underline}
+.foot{margin-top:24px;text-align:center;font-size:11px;color:#AAB9B9}
+.incl{display:flex;gap:14px;align-items:flex-start;border:1px solid var(--line);border-radius:14px;padding:15px 17px;margin-bottom:9px;background:#fff}.incl .ic{width:42px;height:42px;flex:none;border-radius:12px;background:var(--wash2);display:flex;align-items:center;justify-content:center}.incl .ic svg{width:22px;height:22px;stroke:var(--teal-deep);fill:none;stroke-linecap:round;stroke-linejoin:round}.incl .it{font-weight:600;font-size:15px;margin-bottom:3px}.incl .id{font-size:13px;color:#5E7273;line-height:1.5}.formulas{display:flex;gap:10px}.formula{flex:1;border:1.5px solid var(--line);border-radius:14px;padding:13px 10px;cursor:pointer;text-align:center;transition:border-color .18s,background .18s}.formula:hover{border-color:#BFE6E6}.formula.active{border-color:var(--teal);background:var(--wash)}.formula .fn{font-weight:600;font-size:14px;color:var(--ink)}.formula .fd{font-size:10.5px;color:var(--grey);margin-top:3px;line-height:1.35}.formula .frec{font-size:8.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--teal-deep);margin-top:6px}.devis-price .mlabel{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#9FD6D6;margin-bottom:2px}.devis-price .paynote{font-size:11px;color:#8FC7C7;margin-top:10px;max-width:46ch;margin-left:auto;margin-right:auto}.confirm-card{border:1px solid var(--line);border-radius:20px;padding:34px 30px;text-align:center;background:var(--wash)}.confirm-card .cc-ico{width:60px;height:60px;border-radius:50%;background:var(--teal);margin:0 auto 20px;display:flex;align-items:center;justify-content:center}.confirm-card .cc-ico svg{width:30px;height:30px;stroke:#fff;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}.confirm-card .cc-t{font-size:20px;font-weight:600;margin-bottom:12px}.confirm-card .cc-p{font-size:14.5px;color:#41595A;max-width:48ch;margin:0 auto 18px}.confirm-card .cc-p b{color:var(--teal-ink);font-weight:600}.confirm-card .cc-amount{display:inline-block;font-size:17px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 24px;color:var(--ink)}.confirm-card .cc-amount b{color:var(--teal-deep)}.confirm-card .cc-note{font-size:13px;color:var(--grey);margin-top:16px}.edit-btn{margin-left:auto;background:#fff;border:1px solid var(--line);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--teal-deep);cursor:pointer;font-family:inherit;white-space:nowrap}.edit-btn:hover{background:var(--wash)}.edit-btn.active{background:var(--teal-deep);color:#fff;border-color:var(--teal-deep)}.pseances.view{gap:0}.devis-hidden{position:relative;border-radius:20px;overflow:hidden}.devis-blur{filter:blur(11px);-webkit-filter:blur(11px);pointer-events:none;user-select:none}.devis-veil{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:linear-gradient(rgba(244,251,251,.5),rgba(234,247,247,.58))}.devis-veil .vtext{font-size:13px;color:#5E7273;font-weight:600;letter-spacing:.3px}.pay-methods{display:flex;gap:8px;justify-content:center;margin-bottom:16px}.pay-method{background:rgba(255,255,255,.1);color:#CFEDED;border:1px solid rgba(255,255,255,.22);border-radius:20px;padding:8px 18px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}.pay-method:hover{background:rgba(255,255,255,.18)}.pay-method.active{background:#fff;color:var(--teal-ink);border-color:#fff}.ech-list{display:flex;flex-direction:column;gap:2px;max-width:260px;margin:12px auto 0}.ech-row{display:flex;justify-content:space-between;font-size:13px;color:#BFE6E6;padding:4px 0;border-bottom:1px dashed rgba(255,255,255,.14)}.ech-row span:last-child{font-weight:600;color:#fff}.pay-opts{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-top:18px}.pay-opt{background:rgba(255,255,255,.12);color:#CFEDED;border:1px solid rgba(255,255,255,.22);border-radius:20px;padding:8px 15px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;position:relative}.pay-opt:hover{background:rgba(255,255,255,.2)}.pay-opt.active{background:#fff;color:var(--teal-ink);border-color:#fff}.pay-opt .rec{position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-size:7.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;background:var(--magenta);color:#fff;padding:2px 7px;border-radius:8px;white-space:nowrap}@media(max-width:540px){.formulas{flex-direction:column}body{padding:22px 13px}.q-text{font-size:18px}.heroc .nm{font-size:21px}.devis-price .month{font-size:36px}}
+@media(prefers-reduced-motion:reduce){.fill,.prog-fill{transition:none}}
+</style></head>
+<body>
+<div class="wrap" id="topwrap">
+<div class="brand"><div class="word">MAbeauty<span>plus</span></div><div class="kicker">Diagnostic Empreinte</div></div>
+
+<section id="welcome" class="screen" style="display:block">
+<div class="eyebrow">Votre bilan personnalisé</div>
+<h1 class="big">Prenons le temps de comprendre <b>votre histoire</b></h1>
+<p class="lead">Dans un instant, vous répondrez à quelques questions, tranquillement. On va balayer chaque aspect de votre situation pour un accompagnement vraiment global. Il n'y a pas de mauvaise réponse.</p>
+<div style="font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--grey);margin-top:22px;margin-bottom:4px">Vos coordonnées</div><div class="grid2"><div class="field"><label>Prénom</label><input type="text" id="prenom"></div><div class="field"><label>Nom</label><input type="text" id="nom"></div></div><div class="grid2"><div class="field"><label>Date de naissance</label><input type="date" id="dob"></div><div class="field"><label>Âge</label><input type="text" id="age" readonly placeholder="—"></div></div><div class="grid2"><div class="field"><label>Email</label><input type="email" id="email"></div><div class="field"><label>Téléphone</label><input type="tel" id="tel"></div></div><div class="field"><label>Adresse postale</label><input type="text" id="adresse"></div>
+<div class="actions"><button class="btn" id="go">Commencer le diagnostic</button></div>
+</section>
+
+<section id="quiz">
+<div class="prog-wrap"><div class="prog-top"><span id="prog-label">—</span><span id="prog-count"></span></div><div class="prog"><div class="prog-mask" id="prog-mask"></div></div></div>
+<div id="q-holder"></div>
+<div class="nav"><button class="prev" id="prev">← Précédent</button><button class="btn" id="next">Suivant</button></div>
+</section>
+
+<section id="result"></section>
+<section id="cure"></section>
+<section id="confirm"></section>
+<div class="foot">Maquette de travail — diagnostic non médical · MAbeautyplus</div>
+</div>
+
+<script>
+/* ============ AXES ============ */
+const AX={
+P1:{n:"Réconfort",s:"« l'aliment refuge »",f:"Chez vous, l'aliment n'est pas un besoin, c'est une <b>régulation émotionnelle</b>. Face au stress, le cerveau réclame du sucre pour libérer de la dopamine, et le réconfort devient un réflexe.",i:["Grignotage sucré du soir","Humeur en dents de scie","Culpabilité après les repas"],nt:"L'aliment sert d'apaisement émotionnel."},
+P2:{n:"Sous Pression",s:"« le corps en alerte »",f:"Votre corps vit en <b>état d'alerte permanent</b>. Le stress maintient un cortisol élevé, qui pousse à stocker sur le ventre et sabote le sommeil.",i:["Stockage du ventre","Sommeil léger","Fringales de fin de journée"],nt:"Le stress entretient le stockage."},
+P3:{n:"Rupture",s:"« le lien distendu »",f:"Le lien avec votre image s'est <b>distendu</b>. À force de vous éviter dans le miroir, la motivation s'érode.",i:["Évitement des miroirs","Baisse de confiance","Motivation en pointillés"],nt:"Le rapport à l'image s'est distendu."},
+P4:{n:"En Veille",s:"« le corps endormi »",f:"Votre corps tourne au ralenti. Moins de mouvement, c'est moins de masse musculaire, donc un <b>métabolisme qui s'endort</b>.",i:["Fatigue au réveil","Masse musculaire en baisse","Le mouvement coûte"],nt:"Le corps est en veille, énergie basse."},
+P5:{n:"Résistance",s:"« le corps verrouillé »",f:"Votre corps s'est <b>verrouillé pour se protéger</b>. À force de régimes, le métabolisme s'est adapté à la baisse.",i:["Effet yo-yo installé","Perte qui stagne","Découragement"],nt:"Métabolisme sur la défensive."},
+T1:{n:"Hormonal",s:"« le stockage hormonal »",f:"Vos hormones pilotent le stockage. Un déséquilibre discret suffit à <b>bloquer la perte</b> et orienter le stockage sur le ventre et les hanches.",i:["Stockage ventre et hanches","Fatigue cyclique","Résistance à la perte"],nt:"Les hormones orientent le stockage."},
+T2:{n:"Inflammatoire",s:"« le corps qui se défend »",f:"Votre organisme entretient une <b>inflammation silencieuse</b>. Vos cellules stockent par réflexe de protection et retiennent l'eau.",i:["Rétention d'eau","Ventre gonflé le matin","Peau réactive"],nt:"Une inflammation de fond fait retenir."},
+T3:{n:"Circulatoire",s:"« les fluides qui stagnent »",f:"Votre circulation est paresseuse. Les <b>fluides stagnent</b> et s'accumulent dans le bas du corps.",i:["Jambes lourdes","Gonflement du bas du corps","Cellulite aqueuse"],nt:"Les fluides stagnent en bas du corps."},
+T4:{n:"Métabolique Lent",s:"« le moteur au ralenti »",f:"Votre moteur brûle au ralenti. Vous dépensez moins que vous ne stockez, avec une <b>signature thyroïdienne discrète</b>.",i:["Perte de poids lente","Frilosité","Coup de barre après les repas"],nt:"Le métabolisme brûle lentement."},
+T5:{n:"Digestif",s:"« l'assimilation ralentie »",f:"Votre digestion peine à suivre. <b>Assimilation et élimination sont ralenties</b>, le ventre gonfle.",i:["Ballonnements","Transit irrégulier","Lourdeur après manger"],nt:"Digestion et élimination ralenties."}};
+const PROF=["P1","P2","P3","P4","P5"],TERR=["T1","T2","T3","T4","T5"],SEUIL=60;
+/* ============ CATEGORIES ============ */
+const CAT={elig:["Santé & éligibilité","#DCE9F5","#3E6289"],alim:["Alimentation","#E2E6F3","#4A5788"],emo:["Émotions & stress","#E8E4F1","#5D4F86"],image:["Estime & image","#EEE4EF","#71527D"],energie:["Énergie & activité","#F3E4EA","#855370"],corps:["Signaux du corps","#F7E3E7","#954F64"],histo:["Historique & objectif","#FBE3EA","#A24E6C"]};
+/* ============ QUESTIONS ============ */
+// o: [label, {P/T points}, [presta cases], {ci}]
+const Q=[
+{c:"elig",type:"multi",t:"Êtes-vous concerné(e) par l'une de ces situations de santé ?",hint:"Cochez tout ce qui s'applique. Sinon, cochez « Aucune ».",o:[
+ ["Problème cardiaque / pacemaker",{},{},{ISHAPE:"rem",PRESSO:"rem"}],
+ ["Épilepsie ou maladie neurologique",{},{},{LUXO:"rem",ISHAPE:"rem"}],
+ ["Phlébite, thrombose, troubles circulatoires graves, hémophilie",{},{},{ISHAPE:"rem",PRESSO:"rem"}],
+ ["Œdèmes lymphatiques sévères, varices œdémateuses",{},{},{PRESSO:"rem"}],
+ ["Diabète, foie ou reins non équilibrés",{},{},{ISHAPE:"med",PRESSO:"med"}],
+ ["Maladie inflammatoire de l'intestin en poussée (Crohn, RCH)",{},{},{PRESSO:"med"}],
+ ["Hernie abdominale ou inguinale",{},{},{ISHAPE:"med",PRESSO:"med"}],
+ ["Cancer actif, maladie grave en cours, infection",{},{},{LUXO:"rem",ISHAPE:"rem",PRESSO:"rem"}],
+ ["Aucune de ces situations",{},{},{}]]},
+{c:"elig",type:"yesno",t:"Êtes-vous enceinte ou en projet de grossesse ?",o:[
+ ["Oui",{},{},{LUXO:"rem",ISHAPE:"rem",PRESSO:"rem"}],["Non",{},{},{}]]},
+{c:"alim",type:"radio",t:"Le soir, l'envie de sucré ou de gras s'impose, même sans vraie faim.",o:[
+ ["Jamais",{},{}],["Parfois",{P1:1},{LUXO:1}],["Souvent",{P1:2},{LUXO:2}],["Presque chaque soir",{P1:3},{LUXO:3}]]},
+{c:"alim",type:"radio",t:"Quand une émotion monte (stress, ennui, fatigue), manger vous aide à l'apaiser.",o:[
+ ["Pas du tout",{},{}],["Un peu",{P1:1},{LUXO:1}],["Assez",{P1:2},{LUXO:2}],["Tout à fait",{P1:3},{LUXO:3}]]},
+{c:"alim",type:"radio",t:"Ce qui décrit le mieux votre rapport à la nourriture :",o:[
+ ["Je mange pour me réconforter",{P1:2},{LUXO:2}],["Je grignote machinalement",{P4:2},{LUXO:2}],["Je saute des repas puis je me rattrape",{P5:2},{LUXO:1}],["Je mange équilibré et pourtant je ne perds pas",{T4:2},{LUXO:1}]]},
+{c:"emo",type:"radio",t:"Vous vous sentez sous tension, « à cent à l'heure », même sans raison urgente.",o:[
+ ["Jamais",{},{}],["Parfois",{P2:1},{RELAX:1}],["Souvent",{P2:2},{RELAX:2}],["En permanence",{P2:3},{RELAX:3}]]},
+{c:"emo",type:"radio",t:"Votre charge mentale (penser à tout, tout gérer) est…",o:[
+ ["Légère",{},{}],["Présente",{P2:1},{RELAX:1}],["Lourde",{P2:2},{RELAX:2}],["Épuisante",{P2:3},{RELAX:3}]]},
+{c:"emo",type:"radio",t:"Votre sommeil :",o:[
+ ["Je dors bien",{},{}],["Un peu perturbé",{P2:1},{RELAX:1}],["Réveils nocturnes fréquents",{T1:2},{RELAX:2}],["Insomnies",{P2:2},{RELAX:3}]]},
+{c:"emo",type:"radio",t:"Vous diriez que votre humeur est…",o:[
+ ["Stable",{},{}],["Parfois irritable",{P2:1},{RELAX:1}],["Souvent à fleur de peau, instable",{P2:2},{RELAX:2}]]},
+{c:"image",type:"radio",t:"En ce moment, devant le miroir :",o:[
+ ["Je me reconnais",{},{}],["Je suis gêné(e) mais ça va",{P3:1},{RELAX:1}],["Je m'évite",{P3:3},{RELAX:2}]]},
+{c:"image",type:"radio",t:"Face aux photos de vous :",o:[
+ ["Je les regarde sans souci",{},{}],["Je les évite",{P3:2},{RELAX:1}],["Je les supprime souvent",{P3:3},{RELAX:2}]]},
+{c:"image",type:"radio",t:"Vous avez le sentiment de vous être « laissé(e) aller » et de ne plus être tout à fait vous-même.",o:[
+ ["Pas du tout",{},{}],["Un peu",{P3:1},{}],["Assez",{P3:2},{}],["Complètement",{P3:3},{}]]},
+{c:"energie",type:"radio",t:"Votre énergie au quotidien est basse ; bouger vous demande un effort.",o:[
+ ["Jamais",{},{}],["Parfois",{P4:1},{ISHAPE:1}],["Souvent",{P4:2},{ISHAPE:2}],["Presque tout le temps",{P4:3},{ISHAPE:3}]]},
+{c:"energie",type:"radio",t:"Avez-vous une activité physique régulière ?",o:[
+ ["Oui, régulière",{},{}],["De temps en temps",{P4:1},{ISHAPE:2}],["Rarement",{P4:2},{ISHAPE:3}],["Jamais",{P4:3},{ISHAPE:4}]]},
+{c:"energie",type:"radio",t:"Votre ventre / silhouette, vous le sentez plutôt :",o:[
+ ["Tonique",{},{}],["Un peu relâché",{P4:1},{ISHAPE:1}],["Relâché, manque de fermeté",{P4:2},{ISHAPE:2}]]},
+{c:"corps",type:"radio",t:"En fin de journée, vos jambes sont :",o:[
+ ["Légères",{},{}],["Un peu lourdes",{T3:1},{PRESSO:1}],["Lourdes et gonflées",{T3:2},{PRESSO:2}]]},
+{c:"corps",type:"radio",t:"Votre digestion / transit :",o:[
+ ["Réguliers",{},{}],["Ballonnements fréquents",{T5:2},{PRESSO:1}],["Constipation, sensation de lourdeur",{T5:2},{PRESSO:2}]]},
+{c:"histo",type:"radio",t:"Votre objectif de perte de poids :",o:[
+ ["1 à 5 kg",{},{LUXO:1}],["6 à 9 kg",{},{LUXO:2}],["10 kg et plus",{},{LUXO:3}]]},
+{c:"histo",type:"radio",t:"Avez-vous déjà suivi des programmes ou méthodes payantes pour votre perte de poids ?",o:[
+ ["Jamais, c'est ma première démarche",{},{},"ENG_LOW"],["Une ou deux fois",{P5:1},{}],["Plusieurs",{P5:2},{}],["Beaucoup",{P5:3},{}]]},
+{c:"histo",type:"radio",t:"Aujourd'hui, prendre soin de votre corps, c'est plutôt…",o:[
+ ["Une priorité pour laquelle je suis prêt(e) à m'investir",{},{},"ENG_HIGH"],["Une démarche que je découvre",{},{}],["Une envie que j'explore doucement",{},{},"ENG_LOW"]]}
+];
+/* ============ INBODY ENTRIES ============ */
+const IB=[
+{t:"Graisse viscérale",o:[["Basse",{},{}],["Moyenne",{T1:1},{LUXO:1}],["Élevée",{T1:2,T2:1},{LUXO:2}],["Très élevée",{T1:3,T2:1},{LUXO:3}]]},
+{t:"Masse musculaire",o:[["Très faible",{T4:2},{ISHAPE:3}],["Faible",{T4:1},{ISHAPE:2}],["Normale",{},{}],["Élevée",{},{}],["Très élevée",{},{}]]},
+{t:"Métabolisme de base",o:[["Actif",{},{}],["Normal",{},{}],["Lent",{T4:2},{ISHAPE:1}],["Très lent",{T4:3},{ISHAPE:2}]]},
+{t:"Rétention d'eau",o:[["Basse",{},{}],["Moyenne",{T3:1},{PRESSO:1}],["Élevée",{T2:1,T3:2},{PRESSO:2}]]},
+{t:"Score InBody / 100",score:true,o:[["Moins de 40",{},{}],["40 à 50",{},{}],["50 à 70",{},{}],["70 à 100",{},{}]]}
+];
+const METAB=[
+{lvl:"Très bas",col:"#B4472E",bg:"#FDF2EF",bd:"#F3D9D0",p:"Votre corps vous envoie un vrai signal. Aujourd'hui, plusieurs indicateurs sont au plus bas, et c'est exactement ce qui explique vos blocages. La bonne nouvelle : c'est là qu'on obtient les résultats les plus visibles, et tout est à gagner en commençant maintenant."},
+{lvl:"Bas",col:"#B07A1E",bg:"#FDF9EF",bd:"#EFE4C6",p:"Votre bilan révèle un terrain fragilisé. Rien d'alarmant, mais ça ne s'améliorera pas tout seul : il y a un vrai travail à mener pour relancer votre corps, et c'est le bon moment pour le faire."},
+{lvl:"Correct",col:"#2E7CA6",bg:"#F0F8FC",bd:"#CFE6F2",p:"Votre bilan est correct, mais loin de son potentiel. Vous avez une base solide, et quelques leviers bien ciblés peuvent tout faire basculer en votre faveur."},
+{lvl:"Bon",col:"#2A9D6A",bg:"#F0FaF5",bd:"#CDEEDD",p:"Votre corps part sur une bonne base, bravo. Il reste des points précis à optimiser pour atteindre vos objectifs, et c'est justement ce qu'on va affiner ensemble."}];
+/* prestation meta */
+const PRESTA={LUXO:{n:"Luxothérapie Perte de poids",d:"Relance l'élimination et le déstockage des graisses"},ISHAPE:{n:"I-Shape · électrostimulation",d:"Renforce et raffermit la masse musculaire"},PRESSO:{n:"Presso · pressodynamie",d:"Drainage, circulation, rétention d'eau"},RELAX:{n:"Luxothérapie Relaxation",d:"Détente, stress, sommeil (en complément)"}};
+const PRICE=59,GUIDE=29,TENUE=60,BILAN=87;
+const ICON={book:'<svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M18 3v14"/></svg>',heart:'<svg viewBox="0 0 24 24"><path d="M20.8 6.6a5 5 0 0 0-7.1 0L12 8.3l-1.7-1.7a5 5 0 1 0-7.1 7.1L12 22l8.8-8.3a5 5 0 0 0 0-7.1z"/></svg>',scale:'<svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 21h14"/><circle cx="12" cy="7" r="3"/></svg>',head:'<svg viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1"/><rect x="17" y="14" width="4" height="6" rx="1"/></svg>',trophy:'<svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M5 4H3v2a3 3 0 0 0 3 3M19 4h2v2a3 3 0 0 1-3 3"/></svg>',sparkle:'<svg viewBox="0 0 24 24"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>'};
+const INCLUS=[{i:"book",t:"Votre guide de rééquilibrage alimentaire",d:"4 phases sur 4 semaines, adapté à votre profil. Pas un régime, une méthode qui tient dans la durée."},{i:"heart",t:"Un suivi humain chaque semaine",d:"Une thérapeute formée en nutrition et micronutrition vous accompagne, semaine après semaine."},{i:"scale",t:"Vos bilans mensuels",d:"Sur balance médicale haut de gamme, pour voir vos progrès noir sur blanc, chaque mois."},{i:"head",t:"L'application MAbeautyplus Nutrition",d:"Un mini-cours audio et un objectif chaque semaine, pour avancer à votre rythme."},{i:"trophy",t:"Une expérience ludique",d:"Des mini-missions et des défis chaque semaine, pour garder la motivation et rendre le parcours vivant."},{i:"sparkle",t:"Votre diagnostic Empreinte",d:"Le bilan que vous venez de réaliser, votre profil et votre terrain, qui guide tout votre accompagnement."}];
+function inclCard(x){return '<div class="incl"><div class="ic">'+ICON[x.i]+'</div><div><div class="it">'+x.t+'</div><div class="id">'+x.d+'</div></div></div>';}
+/* ============ STATE ============ */
+let step=0;const ans={},ibans={};let slider=0,prenom="",formula=1,installments=null,editMode=false,devisRevealed=false,payMethod="centre";const adj={},contact={};
+const el=id=>document.getElementById(id);
+function showView(v){["welcome","quiz","result","cure","confirm"].forEach(x=>el(x).style.display=(x===v?"block":"none"));el("topwrap").className="wrap"+((v==="result"||v==="cure")?" result":"");window.scrollTo(0,0);}
+const TOTAL=Q.length+IB.length;
+/* ============ RENDER ============ */
+function renderStep(){
+ const inIB=step>=Q.length;const idx=inIB?step-Q.length:step;const s=inIB?IB[idx]:Q[step];
+ const isLast=step===TOTAL-1;
+ el("prev").hidden=step===0;const isMulti=(!inIB&&s.type==="multi");el("next").style.display=isMulti?"inline-block":"none";el("next").textContent="Continuer";
+ el("prog-count").textContent=(step+1)+" / "+TOTAL;el("prog-mask").style.width=(100-(step+1)/TOTAL*100)+"%";
+ let h="";
+ if(inIB){el("prog-label").textContent="Analyse InBody · thérapeute";
+  h+='<div class="cat-badge" style="background:#E8318A">Saisie thérapeute</div><div class="q-text">'+s.t+'</div><div class="opts">';
+  s.o.forEach((op,i)=>{h+='<div class="opt'+(ibans[idx]===i?' sel':'')+'" data-i="'+i+'"><span class="dot"></span><span>'+op[0]+'</span></div>';});h+='</div>';
+ } else {const c=CAT[s.c];el("prog-label").textContent=c[0];
+  h+='<div class="cat-badge" style="background:'+c[1]+';color:'+c[2]+'">'+c[0]+'</div><div class="q-text">'+s.t+'</div>';
+  if(s.hint)h+='<div class="hint">'+s.hint+'</div>';
+  h+='<div class="opts">';
+  s.o.forEach((op,i)=>{const sel=s.type==="multi"?(ans[step]&&ans[step].includes(i)):(ans[step]===i);
+   h+='<div class="opt'+(s.type==="multi"?" multi":"")+(sel?" sel":"")+'" data-i="'+i+'"><span class="dot"></span><span>'+op[0]+'</span></div>';});h+='</div>';
+ }
+ el("q-holder").innerHTML=h;
+ el("q-holder").querySelectorAll(".opt").forEach(o=>o.addEventListener("click",()=>{
+  const i=+o.dataset.i;
+  if(!inIB&&s.type==="multi"){
+   ans[step]=ans[step]||[];const none=s.o.length-1;
+   if(i===none){ans[step]=[none];}else{ans[step]=ans[step].filter(x=>x!==none);const p=ans[step].indexOf(i);if(p>=0)ans[step].splice(p,1);else ans[step].push(i);}
+   el("q-holder").querySelectorAll(".opt").forEach(x=>x.classList.toggle("sel",ans[step].includes(+x.dataset.i)));
+   if(i===none)setTimeout(next,220);
+  }else{if(inIB)ibans[idx]=i;else ans[step]=i;
+   el("q-holder").querySelectorAll(".opt").forEach(x=>x.classList.remove("sel"));o.classList.add("sel");setTimeout(next,200);}
+ }));
+}
+function next(){if(step<TOTAL-1){step++;renderStep();}else finish();}
+function prev(){if(step>0){step--;renderStep();}}
+el("next").addEventListener("click",next);el("prev").addEventListener("click",prev);
+/* ============ COMPUTE ============ */
+function optOf(qi,oi){return Q[qi].o[oi];}
+function compute(){
+ const sc={};[...PROF,...TERR].forEach(a=>sc[a]=0);
+ const pp={LUXO:0,RELAX:0,ISHAPE:0,PRESSO:0};
+ const ci={};let eng="MID",scoreLvl=2;
+ Q.forEach((q,qi)=>{const a=ans[qi];if(a==null)return;const list=q.type==="multi"?a:[a];
+  list.forEach(oi=>{const op=q.o[oi];if(!op)return;
+   for(const k in(op[1]||{}))sc[k]+=op[1][k];
+   const pts=op[2]||{};for(const k in pts)pp[k]+=pts[k];
+   const fl=op[3];
+   if(fl==="ENG_LOW")eng="LOW";if(fl==="ENG_HIGH")eng="HIGH";
+   if(fl&&typeof fl==="object")for(const pr in fl){if(!ci[pr]||fl[pr]==="rem")ci[pr]=fl[pr];}
+  });});
+ IB.forEach((q,ii)=>{const a=ibans[ii];if(a==null)return;const op=q.o[a];
+  for(const k in(op[1]||{}))sc[k]+=op[1][k];const pts=op[2]||{};for(const k in pts)pp[k]+=pts[k];
+  if(q.score)scoreLvl=a;});
+ const max={};[...PROF,...TERR].forEach(a=>max[a]=0);
+ Q.forEach(q=>{[...PROF,...TERR].forEach(a=>{let m=0;q.o.forEach(op=>{if(op[1]&&op[1][a])m=Math.max(m,op[1][a]);});max[a]+=m;});});
+ IB.forEach(q=>{[...PROF,...TERR].forEach(a=>{let m=0;q.o.forEach(op=>{if(op[1]&&op[1][a])m=Math.max(m,op[1][a]);});max[a]+=m;});});
+ const pct={};[...PROF,...TERR].forEach(a=>pct[a]=max[a]?Math.round(sc[a]/max[a]*100):0);
+ return {pct,sortP:[...PROF].sort((a,b)=>pct[b]-pct[a]),sortT:[...TERR].sort((a,b)=>pct[b]-pct[a]),pp,ci,eng,scoreLvl};
+}
+const BAREME={
+ LUXO:[{min:0,s:12,l:"prop"},{min:6,s:15,l:"fort"},{min:10,s:20,l:"oblig"}],
+ RELAX:[{min:0,s:0,l:null},{min:6,s:5,l:"prop"},{min:11,s:10,l:"fort"}],
+ ISHAPE:[{min:0,s:0,l:null},{min:5,s:6,l:"prop"},{min:9,s:12,l:"fort"},{min:12,s:15,l:"oblig"},{min:14,s:20,l:"oblig"}],
+ PRESSO:[{min:0,s:0,l:null},{min:3,s:6,l:"prop"},{min:5,s:12,l:"fort"}]
+};
+function baremeLookup(key,pts){const t=BAREME[key];let r=t[0];for(const x of t){if(pts>=x.min)r=x;}return r;}
+function buildCure(C){
+ const list=[];
+ const lx=baremeLookup("LUXO",C.pp.LUXO||0);
+ list.push({key:"LUXO",level:lx.l||"prop",seances:lx.s,ci:C.ci.LUXO||null});
+ ["RELAX","ISHAPE","PRESSO"].forEach(k=>{const b=baremeLookup(k,C.pp[k]||0);if(b.s>0)list.push({key:k,level:b.l||"prop",seances:b.s,ci:C.ci[k]||null});});
+ return list.filter(p=>p.seances>0);
+}
+const FORMULAS=[{f:1,n:"Intégrale",d:"Le programme complet, résultat optimal",rec:true},{f:0.8,n:"Équilibre",d:"L'essentiel, à un rythme plus accessible"},{f:0.5,n:"Découverte",d:"Pour démarrer en douceur"}];
+function currentCure(){const base=buildCure(LAST);return base.map(p=>{let sc=(adj[p.key]!=null)?adj[p.key]:Math.round(p.seances*formula);const fl=(p.key==="LUXO")?10:4;if(sc<fl)sc=fl;return {key:p.key,level:p.level,seances:sc,ci:p.ci};});}
+function renderFormulas(){const w=el("formulas");if(!w)return;w.innerHTML=FORMULAS.map(x=>'<div class="formula'+(formula===x.f?" active":"")+'" data-f="'+x.f+'"><div class="fn">'+x.n+'</div><div class="fd">'+x.d+'</div>'+(x.rec?'<div class="frec">Recommandée</div>':'')+'</div>').join('');w.querySelectorAll(".formula").forEach(c=>c.addEventListener("click",()=>{formula=+c.dataset.f;installments=null;Object.keys(adj).forEach(k=>delete adj[k]);renderCure();}));}
+function splitSeances(tot,n){const base=Math.floor(tot/n),r=tot-base*n,a=[];for(let i=0;i<n;i++)a.push(base+(i<r?1:0));return a;} // descending
+function devisCalc(cure){
+ const active=cure.filter(p=>p.ci!=="rem");
+ const hasLuxo=active.some(p=>p.key==="LUXO"||p.key==="RELAX");
+ const hasElectro=active.some(p=>p.key==="ISHAPE"&&p.seances>0);
+ let totSeances=0,maxSeances=0,prestaCount=0;
+ active.forEach(p=>{if(p.key!=="RELAX")prestaCount++;totSeances+=p.seances;maxSeances=Math.max(maxSeances,p.seances);});
+ let options=0;if(hasLuxo)options+=GUIDE;if(hasElectro)options+=TENUE;
+ const totalEuro=totSeances*PRICE+options;
+ let n=maxSeances<=13?3:maxSeances<=16?4:5;if(prestaCount>=3)n+=1;if(n<1)n=1;
+ const monthly=Math.round(totalEuro/n);
+ const perDay=(totalEuro/(n*30));
+ return {totalEuro,n,monthly,perDay,options,totSeances,hasLuxo,hasElectro};
+}
+/* ============ RESULT ============ */
+function heroCard(code,pct,num,tt,ss){const a=AX[code];const ch=a.i.map(x=>'<span class="chip">'+x+'</span>').join('');
+ return '<div class="dim"><div class="dim-head"><div class="dim-num">'+num+'</div><div class="dim-titles"><div class="t">'+tt+'</div><div class="s">'+ss+'</div></div></div><div class="dim-body"><div class="heroc"><div class="heroc-top"><div><span class="badge">'+(num===1?"Profil dominant":"Terrain dominant")+'</span><div class="nm">'+a.n+'</div><div class="sig">'+a.s+'</div></div><div class="big-pct">'+pct+'<small>%</small></div></div><div class="track"><div class="fill" data-pct="'+pct+'"></div><div class="seuil" style="left:'+SEUIL+'%"></div></div><div class="bubble"><div class="feel">'+a.f+'</div><div class="impacts-lab">Ce que cela change chez vous</div><div class="chips">'+ch+'</div></div></div><div class="also-lab">'+(num===1?"Aussi présent":"Aussi actif")+'</div><div class="seclist"></div></div></div>';}
+function miniH(code,pct){const a=AX[code],low=pct<SEUIL;return '<div class="mini'+(low?' low':'')+'"><div class="mini-top"><span class="mn">'+a.n+'</span>'+(low?'':'<span class="flag">Présent</span>')+'<span class="sp"></span><span class="mp">'+pct+'%</span></div><div class="track slim"><div class="fill '+(low?'under':'')+'" data-pct="'+pct+'"></div><div class="seuil" style="left:'+SEUIL+'%"></div></div></div>';}
+function ibSummary(){const labels=["Graisse viscérale","Masse musculaire","Métabolisme","Rétention d'eau"];let items=[];IB.forEach((q,i)=>{if(q.score)return;if(ibans[i]!=null)items.push('<span class="bc-item"><b>'+labels[i]+'</b> · '+q.o[ibans[i]][0]+'</span>');});return items.length?'<div class="bc">'+items.join('')+'</div>':"";}
+const LVLTAG={prop:['lvl-prop','Proposée'],fort:['lvl-fort','Fortement recommandée'],oblig:['lvl-oblig','Obligatoire']};
+function prestaRow(p){
+ const meta=PRESTA[p.key];let cls="presta",badge="";
+ if(p.ci==="rem"){cls+=" removed";badge='<span class="plevel lvl-rem">Retirée · contre-indication</span>';}
+ else if(p.ci==="med"){cls+=" medical";badge='<span class="plevel lvl-med">Sous avis médical</span>';}
+ else{const t=LVLTAG[p.level]||LVLTAG.prop;badge='<span class="plevel '+t[0]+'">'+t[1]+'</span>';}
+ let ctrl="";
+ if(p.ci!=="rem"){if(editMode){ctrl='<div class="pseances"><button data-k="'+p.key+'" data-d="-1"'+(p.seances<=(p.key==="LUXO"?10:4)?" disabled":"")+'>−</button><div><div class="sc">'+p.seances+'</div><div class="sl">séances</div></div><button data-k="'+p.key+'" data-d="1">+</button></div>';}else{ctrl='<div class="pseances view"><div class="sc">'+p.seances+'</div><div class="sl">séances</div></div>';}}
+ return '<div class="'+cls+'"><div class="pinfo"><div class="pn">'+meta.n+'</div><div class="pd">'+meta.d+'</div>'+badge+'</div>'+ctrl+'</div>';
+}
+let LAST={};
+function finish(){
+ const C=compute();LAST=C;
+ const domP=C.sortP[0],domT=C.sortT[0];
+ const sec=[];if(C.pct[C.sortP[1]]>=SEUIL)sec.push(AX[C.sortP[1]].n.toLowerCase());if(C.pct[C.sortT[1]]>=SEUIL)sec.push(AX[C.sortT[1]].n.toLowerCase());
+ const nuance=sec.length?(sec.length===1?" Une force secondaire la nuance : "+sec[0]+".":" Deux forces la nuancent : "+sec.join(" et ")+"."):"";
+ const who=prenom.trim()?("L'Empreinte de <b>"+prenom.trim()+"</b>"):"Votre <b>Empreinte</b>";
+ const m=METAB[C.scoreLvl]||METAB[0];
+ let h='<header class="hero"><div class="eyebrow">La conclusion de votre bilan</div><h1 class="big">'+who+'</h1>';
+ h+='<div class="empreinte-line"><span class="p">'+AX[domP].n+'</span><span class="x">×</span><span class="p">'+AX[domT].n+'</span></div>';
+ h+='<p class="synthese">Votre empreinte associe un profil <b>'+AX[domP].n+'</b> à un terrain <b>'+AX[domT].n+'</b>.'+nuance+'</p></header>';
+ h+='<div class="metab" style="background:'+m.bg+';border-color:'+m.bd+'"><div class="ml" style="color:'+m.col+'"><span>Résumé métabolique</span><span>Niveau : '+m.lvl+'</span></div><div class="mp">'+m.p+'</div></div>';
+ h+=ibSummary();
+ h+=heroCard(domP,C.pct[domP],1,"Profil comportemental","Qui vous êtes aujourd'hui");
+ h+=heroCard(domT,C.pct[domT],2,"Terrain physiologique","Ce que révèle votre corps");
+ h+='<div style="margin-top:26px;padding:28px 26px;border-radius:20px;text-align:center;background:var(--wash2);border:1px solid var(--line)"><p style="font-size:14.5px;color:#41595A;margin-bottom:18px;max-width:46ch;margin-inline:auto">Nous avons construit un accompagnement sur mesure, pensé pour votre Empreinte. Découvrez ce que contient votre cure.</p><button class="btn" id="tocure">Ma cure personnalisée →</button></div>';
+ h+='<div class="restart"><button id="again">↺ Recommencer le bilan</button></div>';
+ el("result").innerHTML=h;
+ el("result").querySelectorAll(".fill").forEach((f,i)=>{setTimeout(()=>f.style.width=f.getAttribute("data-pct")+"%",120+i*40);});
+ const secls=el("result").querySelectorAll(".seclist");
+ secls[0].innerHTML=C.sortP.slice(1).map(c=>miniH(c,C.pct[c])).join('');
+ secls[1].innerHTML=C.sortT.slice(1).map(c=>miniH(c,C.pct[c])).join('');
+ el("tocure").addEventListener("click",showCure);
+ el("again").addEventListener("click",resetAll);
+ showView("result");
+}
+function showCure(){editMode=false;devisRevealed=false;payMethod="centre";installments=null;
+ const domP=LAST.sortP[0],domT=LAST.sortT[0];
+ const who=prenom.trim()?(" de "+prenom.trim()):"";
+ let h='<header class="hero"><div class="eyebrow">Votre programme sur mesure</div><h1 class="big">La cure'+who+'</h1>';
+ h+='<div class="empreinte-line"><span class="p">'+AX[domP].n+'</span><span class="x">×</span><span class="p">'+AX[domT].n+'</span></div>';
+ h+='<p class="synthese">Un accompagnement complet, pensé pour votre Empreinte. Voici tout ce qu’il comprend.</p></header>';
+ h+='<div style="margin-bottom:6px"><div class="also-lab" style="margin:0 0 11px">Choisissez votre formule</div><div class="formulas" id="formulas"></div></div>';
+ h+='<div class="dim"><div class="dim-head"><div class="dim-num" style="font-size:15px">✦</div><div class="dim-titles"><div class="t">Vos soins sur mesure</div><div class="s">Les prestations adaptées à votre Empreinte</div></div><button class="edit-btn" id="editbtn">Modifier</button></div><div class="dim-body" id="prestabody"></div></div>';
+ h+='<div class="dim"><div class="dim-head"><div class="dim-num" style="font-size:19px">+</div><div class="dim-titles"><div class="t">Et tout ce qui est compris</div><div class="s">La force de l’accompagnement MAbeautyplus</div></div></div><div class="dim-body">'+INCLUS.map(inclCard).join('')+'</div></div>';
+ h+='<div id="devisbox"></div>';
+ h+='<div style="margin-top:10px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap"><button class="btn" id="startcure">Je démarre ma transformation</button><button class="btn ghost" id="bilanseul">Bilan seul · '+BILAN+' €</button></div>';
+ h+='<div class="restart"><button id="backemp">← Revenir à mon Empreinte</button></div>';
+ el("cure").innerHTML=h;
+ renderCure();
+ el("backemp").addEventListener("click",()=>showView("result"));
+ el("startcure").addEventListener("click",()=>showConfirm("cure"));
+ el("bilanseul").addEventListener("click",()=>showConfirm("bilan"));
+ el("editbtn").addEventListener("click",()=>{editMode=!editMode;el("editbtn").textContent=editMode?"Terminer":"Modifier";el("editbtn").classList.toggle("active",editMode);renderCure();});
+ showView("cure");
+}
+function showConfirm(kind){
+ const domP=LAST.sortP[0],domT=LAST.sortT[0];const nm=prenom.trim();
+ const check='<div class="cc-ico"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>';
+ let h;
+ if(kind==="bilan"){
+  h='<header class="hero"><div class="eyebrow">Bilan enregistré</div><h1 class="big">Merci'+(nm?" "+nm:"")+'</h1></header>'+
+    '<div class="confirm-card">'+check+
+    '<div class="cc-t">Votre bilan Empreinte est validé</div>'+
+    '<p class="cc-p">Vous repartez avec votre profil <b>'+AX[domP].n+'</b> et votre terrain <b>'+AX[domT].n+'</b>, et toutes les clés de votre transformation. Vos réponses et vos coordonnées sont enregistrées.</p>'+
+    '<div class="cc-amount">Bilan seul · <b>'+BILAN+' €</b> · sans cure</div>'+
+    '<p class="cc-note">Vous pourrez démarrer votre cure quand vous le souhaitez.</p></div>';
+ } else {
+  h='<header class="hero"><div class="eyebrow">Cure validée</div><h1 class="big">Bienvenue'+(nm?" "+nm:"")+'</h1></header>'+
+    '<div class="confirm-card">'+check+
+    '<div class="cc-t">Votre accompagnement démarre</div>'+
+    '<p class="cc-p">Profil <b>'+AX[domP].n+'</b> × terrain <b>'+AX[domT].n+'</b>. Votre programme sur mesure et votre suivi commencent dès aujourd’hui.</p></div>';
+ }
+ h+='<div class="restart"><button id="backcure">← Revenir à la cure</button></div>';
+ el("confirm").innerHTML=h;
+ el("backcure").addEventListener("click",()=>showView("cure"));
+ showView("confirm");
+}
+function renderCure(){
+ renderFormulas();
+ const cure=currentCure();
+ el("prestabody").innerHTML=cure.map(prestaRow).join('')||'<p style="font-size:13px;color:var(--grey)">Aucune prestation éligible.</p>';
+ el("prestabody").querySelectorAll(".pseances button").forEach(b=>b.addEventListener("click",()=>{
+  const k=b.dataset.k,d=+b.dataset.d;const cur=cure.find(p=>p.key===k);let v=cur.seances+d;const min=(k==="LUXO")?10:4;if(v<min)v=min;if(v>30)v=30;adj[k]=v;renderCure();
+ }));
+ const dv=devisCalc(cure);
+ const inner=devisHTML(dv,cure);
+ if(devisRevealed){el("devisbox").innerHTML=inner;}
+ else{el("devisbox").innerHTML='<div class="devis-hidden"><div class="devis-blur">'+inner+'</div><div class="devis-veil"><div class="vtext">Le récapitulatif de votre cure</div><button class="btn" id="revealdevis">Afficher la cure</button></div></div>';}
+ el("devisbox").querySelectorAll(".pay-method").forEach(pm=>pm.addEventListener("click",()=>{payMethod=pm.dataset.m;renderCure();}));
+ el("devisbox").querySelectorAll(".pay-opt").forEach(pb=>pb.addEventListener("click",()=>{installments=+pb.dataset.n;renderCure();}));
+ const rv=el("revealdevis");if(rv)rv.addEventListener("click",()=>{devisRevealed=true;renderCure();});
+}
+function devisHTML(dv,cure){
+ const active=cure.filter(p=>p.ci!=="rem");
+ const rows=active.map(p=>'<div class="drow"><span>'+PRESTA[p.key].n+' — '+p.seances+' séances</span><span>'+(p.seances*PRICE)+' €</span></div>').join('');
+ let opt="";if(dv.hasLuxo)opt+='<div class="drow"><span>Guide Nutrition <span class="internal-tag">auto</span></span><span>'+GUIDE+' €</span></div>';if(dv.hasElectro)opt+='<div class="drow"><span>Tenue d’électro <span class="internal-tag">auto</span></span><span>'+TENUE+' €</span></div>';
+ const centreOpts=[1,2,3,4], almaOpts=[2,3,4,10,12];
+ const opts=payMethod==="alma"?almaOpts:centreOpts;
+ const N=(installments&&opts.includes(installments))?installments:4;
+ const tabs='<div class="pay-methods"><button class="pay-method'+(payMethod==="centre"?" active":"")+'" data-m="centre">Au centre · chèques</button><button class="pay-method'+(payMethod==="alma"?" active":"")+'" data-m="alma">Alma · carte</button></div>';
+ const payBtns=opts.map(o=>'<button class="pay-opt'+(o===N?" active":"")+'" data-n="'+o+'">'+o+'×</button>').join('');
+ let price;
+ if(payMethod==="centre"){
+   if(N===1){
+     const tot=dv.totSeances*PRICE+dv.options;
+     price='<div class="month">'+tot+'<small> €</small></div><div class="dur">en 1 fois · sans frais</div>';
+   } else {
+     const parts=splitSeances(dv.totSeances,N);
+     const ech=parts.map((sc,i)=>sc*PRICE+(i===0?dv.options:0));
+     const restList=ech.slice(1).map((e,i)=>'<div class="ech-row"><span>Échéance '+(i+2)+'</span><span>'+e+' €</span></div>').join('');
+     price='<div class="mlabel">1re échéance · sans frais</div><div class="month">'+ech[0]+'<small> €</small></div><div class="ech-list">'+restList+'</div><div class="total">Montant total : '+dv.totalEuro+' €</div><div class="paynote">Au centre par chèque · les options ('+dv.options+' €) sont sur la 1re échéance</div>';
+   }
+ } else {
+   const feePct={2:0.87,3:1.73,4:2.58,10:6.5,12:7.5}[N]||0;
+   const clientTotal=Math.round(dv.totalEuro*(1+feePct/100));
+   const mensu=Math.round(clientTotal/N);
+   price='<div class="mlabel">'+N+' fois égales · via Alma</div><div class="month">'+mensu+'<small> €/mois</small></div><div class="dur">paiement par carte, '+N+' mensualités identiques</div><div class="total">Total avec frais Alma : '+clientTotal+' € (base '+dv.totalEuro+' €)</div><div class="paynote">Frais Alma '+String(feePct).replace(".",",")+' % à la charge de la cliente, inclus dans la mensualité</div>';
+ }
+ return '<div class="devis"><div class="devis-price"><div class="pl">Votre accompagnement personnalisé</div>'+tabs+price+'<div class="pay-opts">'+payBtns+'</div></div>'+
+  '<details class="devis-detail"><summary>Détail interne (thérapeute)</summary><div style="margin-top:12px">'+rows+opt+
+  '<div class="drow" style="font-weight:700;color:var(--ink);border-top:2px solid var(--line);margin-top:4px;padding-top:8px"><span>Total ('+dv.totSeances+' séances)</span><span>'+dv.totalEuro+' €</span></div>'+
+  '<div style="margin-top:10px;font-size:11.5px;color:var(--grey)">Prix caché côté cliente. Au centre : chèques jusqu’à 4× sans frais, échéances = multiples de 59, options sur la 1re. Alma (carte) : 2× à 12×, mensualités égales, frais selon le nombre d’échéances.</div>'+
+  '</div></details></div>';
+}
+function resetAll(){step=0;formula=1;installments=null;editMode=false;devisRevealed=false;payMethod="centre";for(const k in ans)delete ans[k];for(const k in ibans)delete ibans[k];for(const k in adj)delete adj[k];showView("welcome");}
+function calcAge(v){if(!v)return"";const d=new Date(v),n=new Date();let a=n.getFullYear()-d.getFullYear();const m=n.getMonth()-d.getMonth();if(m<0||(m===0&&n.getDate()<d.getDate()))a--;return(a>=0&&a<130)?a+" ans":"";}
+el("dob").addEventListener("input",e=>{el("age").value=calcAge(e.target.value);});
+el("go").addEventListener("click",()=>{prenom=el("prenom").value||"";["nom","email","tel","adresse","dob"].forEach(k=>{const x=el(k);if(x)contact[k]=x.value||"";});contact.age=el("age").value;step=0;renderStep();showView("quiz");});
+</script>
+</body></html>

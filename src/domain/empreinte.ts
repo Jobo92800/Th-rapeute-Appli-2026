@@ -20,17 +20,54 @@ export type Axe = AxeProfil | AxeTerrain;
 /** Au-dessus de ce pourcentage, un axe secondaire est « présent » et non « en fond ». */
 export const SEUIL_PRESENCE = 60;
 
-export type TypeEtape = 'radio' | 'slider' | 'text' | 'contact' | 'transition';
+export type TypeEtape =
+  | 'radio'
+  | 'multi'
+  | 'yesno'
+  | 'slider'
+  | 'text'
+  | 'contact'
+  | 'transition';
+
+/** Les quatre prestations que le questionnaire peut recommander. */
+export type Prestation = 'LUXO' | 'RELAX' | 'ISHAPE' | 'PRESSO';
+
+/**
+ * Ce qu'une réponse dit d'un soin :
+ *   « rem »  le soin est retiré — contre-indication franche ;
+ *   « med »  le soin reste possible, sous réserve d'un avis médical.
+ */
+export type ContreIndication = 'rem' | 'med';
+
+/**
+ * Le quatrième élément d'une option porte, selon le cas :
+ *   — des contre-indications ({ ISHAPE: 'rem' }) ;
+ *   — un drapeau d'engagement ('ENG_LOW', 'ENG_HIGH').
+ */
+export type DrapeauOption = Partial<Record<Prestation, ContreIndication>> | string;
+
+/** [libellé, points par axe, points par prestation, drapeau]. */
+export type OptionBareme = [
+  string,
+  Partial<Record<Axe, number>>,
+  Partial<Record<Prestation, number>>?,
+  DrapeauOption?,
+];
 
 export interface EtapeBareme {
   phase?: 'client' | 'analyse';
   type: TypeEtape;
+  /** Thème de la question : elig, alim, emo, image, energie, corps, histo. */
+  cat?: string;
   /** Intitulé de la question. */
   t?: string;
-  /** Options : [libellé, points par axe]. */
-  o?: Array<[string, Partial<Record<Axe, number>>]>;
+  /** Précision affichée sous la question. */
+  hint?: string;
+  o?: OptionBareme[];
   /** Question d'arbitrage, pondérée plus fort. */
   major?: boolean;
+  /** Mesure InBody qui porte le score sur 100. */
+  score?: boolean;
   left?: string;
   right?: string;
 }
@@ -43,15 +80,41 @@ export interface DescriptionAxe {
   note: string;
 }
 
+/** Un palier du barème de prescription : à partir de tant de points… */
+export interface PalierPrestation {
+  min: number;
+  /** Séances proposées à ce palier. 0 = le soin n'est pas retenu. */
+  s: number;
+  /** prop : proposé · fort : fortement conseillé · oblig : indispensable. */
+  l: 'prop' | 'fort' | 'oblig' | null;
+}
+
 export interface Bareme {
   STEPS: EtapeBareme[];
   AX: Record<Axe, DescriptionAxe>;
   CURE_PRIO: Record<AxeTerrain, string>;
   TERRAIN_COMPL: Record<AxeTerrain, { n: string; r: string }>;
+  /** Thèmes des questions : [libellé, fond, encre]. */
+  CAT?: Record<string, [string, string, string]>;
+  PRESTA?: Record<Prestation, { n: string; d: string }>;
+  BAREME_PRESTA?: Record<Prestation, PalierPrestation[]>;
+  METAB?: Array<{ lvl: string; col: string; bg: string; bd: string; p: string }>;
+  FORMULAS?: Array<{ f: number; n: string; d: string; rec?: boolean }>;
+  INCLUS?: Array<{ i: string; t: string; d: string }>;
 }
 
-/** Index de l'étape → index de l'option choisie. */
-export type Reponses = Record<number, number>;
+/**
+ * Index de l'étape → réponse. Un nombre pour un choix unique, un tableau
+ * d'index pour les questions à cases à cocher.
+ */
+export type Reponses = Record<number, number | number[]>;
+
+/** Les index choisis à une étape, quel que soit son type. */
+export function choix(reponses: Reponses, index: number): number[] {
+  const r = reponses[index];
+  if (r == null) return [];
+  return Array.isArray(r) ? r : [r];
+}
 
 export interface Empreinte {
   pourcentages: Record<Axe, number>;
@@ -66,6 +129,9 @@ export interface Empreinte {
 
 const TOUS_AXES: Axe[] = [...AXES_PROFIL, ...AXES_TERRAIN];
 
+/** Les types d'étape qui portent des options notées. */
+const EST_QUESTION: TypeEtape[] = ['radio', 'multi', 'yesno'];
+
 /**
  * Score maximum atteignable par axe. Sert à normaliser en pourcentage pour
  * que les dix jauges soient comparables entre elles.
@@ -74,7 +140,7 @@ export function scoresMaximum(bareme: Bareme): Record<Axe, number> {
   const max = Object.fromEntries(TOUS_AXES.map((a) => [a, 0])) as Record<Axe, number>;
 
   for (const etape of bareme.STEPS) {
-    if (etape.type !== 'radio' || !etape.o) continue;
+    if (!etape.o || !EST_QUESTION.includes(etape.type)) continue;
     for (const axe of TOUS_AXES) {
       let maxEtape = 0;
       for (const [, poids] of etape.o) {
@@ -92,12 +158,13 @@ export function calculerEmpreinte(bareme: Bareme, reponses: Reponses): Empreinte
   const brut = Object.fromEntries(TOUS_AXES.map((a) => [a, 0])) as Record<Axe, number>;
 
   bareme.STEPS.forEach((etape, index) => {
-    if (etape.type !== 'radio' || !etape.o) return;
-    const choix = reponses[index];
-    if (choix == null) return;
-    const poids = etape.o[choix]?.[1] ?? {};
-    for (const [axe, points] of Object.entries(poids)) {
-      brut[axe as Axe] += points as number;
+    if (!etape.o || !EST_QUESTION.includes(etape.type)) return;
+
+    for (const i of choix(reponses, index)) {
+      const poids = etape.o[i]?.[1] ?? {};
+      for (const [axe, points] of Object.entries(poids)) {
+        brut[axe as Axe] += points as number;
+      }
     }
   });
 
@@ -143,9 +210,10 @@ export function mesuresInbody(bareme: Bareme, reponses: Reponses): MesureInbody[
 
   bareme.STEPS.forEach((etape, index) => {
     if (etape.phase !== 'analyse' || etape.type !== 'radio' || !etape.o) return;
-    const choix = reponses[index];
-    if (choix != null) {
-      sortie.push({ libelle: LIBELLES_INBODY[rang] ?? etape.t ?? '', valeur: etape.o[choix][0] });
+
+    const [i] = choix(reponses, index);
+    if (i != null) {
+      sortie.push({ libelle: LIBELLES_INBODY[rang] ?? etape.t ?? '', valeur: etape.o[i][0] });
     }
     rang += 1;
   });
