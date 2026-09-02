@@ -135,7 +135,9 @@ export default function FicheCliente() {
             Clientes
           </Link>
           <h1 className="text-2xl font-bold tracking-tight text-ardoise-900">
-            {creation ? 'Nouvelle cliente' : `${cliente!.prenom} ${cliente!.nom}`}
+            {creation
+              ? 'Nouvelle fiche'
+              : `${cliente!.civilite === 'M.' ? 'M.' : 'Mme'} ${cliente!.prenom} ${cliente!.nom}`}
           </h1>
           {!creation && (
             <p className="mt-0.5 text-sm text-ardoise-500">

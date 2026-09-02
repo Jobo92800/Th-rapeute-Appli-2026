@@ -26,6 +26,8 @@ export interface ContractInstallment {
 }
 
 export interface ContractData {
+  /** « Madame » ou « Monsieur », en toutes lettres sur le contrat. */
+  clientCivility: string;
   clientFirstName: string;
   clientLastName: string;
   clientPhone: string;
@@ -141,6 +143,7 @@ export function construireContrat(args: {
     .sort((a, b) => a.rang - b.rang);
 
   return {
+    clientCivility: cliente.civilite === 'M.' ? 'Monsieur' : 'Madame',
     clientFirstName: cliente.prenom,
     clientLastName: cliente.nom,
     clientPhone: cliente.telephone ?? '',

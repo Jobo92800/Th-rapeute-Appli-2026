@@ -140,7 +140,11 @@ export async function generateSignedContractPdf(
   y = ensureSpace(doc, y, LINE_H * 2 + 4);
   setFont(doc, 9, 'bold');
   doc.text('Nom/Prénom :', MARGIN, y);
-  doc.text(`${data.clientLastName} ${data.clientFirstName}`, MARGIN + 22, y);
+  doc.text(
+    `${data.clientCivility ? data.clientCivility + ' ' : ''}${data.clientLastName} ${data.clientFirstName}`,
+    MARGIN + 22,
+    y,
+  );
   doc.text('Téléphone :', MARGIN + 80, y);
   doc.text(data.clientPhone, MARGIN + 98, y);
   doc.text('Mail :', MARGIN + 130, y);

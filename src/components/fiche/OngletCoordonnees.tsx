@@ -26,6 +26,7 @@ const SOURCES = [
 ];
 
 const VIDE: ClienteSaisie = {
+  civilite: 'Mme',
   prenom: '',
   nom: '',
   email: '',
@@ -68,6 +69,7 @@ export default function OngletCoordonnees({ centreId, cliente }: Props) {
   useEffect(() => {
     if (!cliente) return;
     setSaisie({
+      civilite: cliente.civilite ?? 'Mme',
       prenom: cliente.prenom,
       nom: cliente.nom,
       email: cliente.email ?? '',
@@ -166,6 +168,29 @@ export default function OngletCoordonnees({ centreId, cliente }: Props) {
         <section className="carte p-5">
           <h2 className="mb-4 text-sm font-semibold text-ardoise-900">Coordonnées</h2>
           <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="etiquette" htmlFor="civilite">
+                Civilité
+              </label>
+              <div className="flex gap-2">
+                {(['Mme', 'M.'] as const).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    id={c === 'Mme' ? 'civilite' : undefined}
+                    onClick={() => setSaisie((s) => ({ ...s, civilite: c }))}
+                    aria-pressed={saisie.civilite === c}
+                    className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                      saisie.civilite === c
+                        ? 'border-marine-600 bg-marine-600 text-white'
+                        : 'border-ardoise-300 bg-white text-ardoise-700 hover:border-marine-400'
+                    }`}
+                  >
+                    {c === 'Mme' ? 'Madame' : 'Monsieur'}
+                  </button>
+                ))}
+              </div>
+            </div>
             <Champ id="nom" libelle="Nom" valeur={saisie.nom} onChange={(v) => setSaisie((s) => ({ ...s, nom: v }))} onBlur={verifierHomonymes} requis />
             <Champ id="prenom" libelle="Prénom" valeur={saisie.prenom} onChange={(v) => setSaisie((s) => ({ ...s, prenom: v }))} onBlur={verifierHomonymes} requis />
             <Champ id="telephone" libelle="Téléphone" type="tel" valeur={saisie.telephone ?? ''} onChange={(v) => setSaisie((s) => ({ ...s, telephone: v }))} />

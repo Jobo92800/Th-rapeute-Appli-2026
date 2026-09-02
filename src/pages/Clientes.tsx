@@ -74,7 +74,7 @@ export default function Clientes() {
       await archiverCliente(c.id);
       qc.invalidateQueries({ queryKey: ['clientes', perimetre] });
       qc.invalidateQueries({ queryKey: ['clientes-archivees', perimetre] });
-      toast.success(`${c.prenom} ${c.nom} archivée`);
+      toast.success(`${c.prenom} ${c.nom} archivé${c.civilite === 'M.' ? '' : 'e'}`);
     } catch {
       toast.error("La fiche n'a pas pu être archivée.");
     }

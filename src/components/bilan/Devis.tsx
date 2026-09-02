@@ -6,6 +6,7 @@ import { formaterEuros, type GrilleTarifaire } from '../../domain/tarification';
 export type { Prescription };
 
 interface Contact {
+  civilite: 'Mme' | 'M.';
   prenom: string;
   nom: string;
   email: string;

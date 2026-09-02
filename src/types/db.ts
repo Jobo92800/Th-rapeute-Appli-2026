@@ -36,9 +36,13 @@ export interface Therapeute {
   ordre: number;
 }
 
+export type Civilite = 'Mme' | 'M.';
+
 export interface Cliente {
   id: string;
   centre_id: string;
+  /** Madame ou Monsieur : les centres reçoivent aussi des hommes. */
+  civilite: Civilite;
   prenom: string;
   nom: string;
   email: string | null;
@@ -67,6 +71,7 @@ export interface Cliente {
 /** Champs modifiables depuis le formulaire de fiche. */
 export type ClienteSaisie = Pick<
   Cliente,
+  | 'civilite'
   | 'prenom'
   | 'nom'
   | 'email'

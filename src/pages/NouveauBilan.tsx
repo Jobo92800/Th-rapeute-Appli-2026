@@ -30,6 +30,7 @@ import Devis, { type Prescription } from '../components/bilan/Devis';
 type Vue = 'accueil' | 'questions' | 'restitution' | 'devis' | 'fini';
 
 const CONTACT_VIDE = {
+  civilite: 'Mme' as 'Mme' | 'M.',
   prenom: '',
   nom: '',
   email: '',
@@ -131,7 +132,7 @@ export default function NouveauBilan() {
 
   async function enregistrerTout(prescription: Prescription | null) {
     if (!contact.prenom.trim() || !contact.nom.trim()) {
-      toast.error('Le nom et le prénom de la cliente sont nécessaires pour enregistrer.');
+      toast.error('Le nom et le prénom sont nécessaires pour enregistrer.');
       return;
     }
     if (!empreinte || !grille || !bareme || !baremeData) return;
@@ -139,6 +140,7 @@ export default function NouveauBilan() {
     setEnregistrement(true);
     try {
       const cliente = await creerCliente(centre.id, {
+        civilite: contact.civilite,
         prenom: contact.prenom.trim(),
         nom: contact.nom.trim(),
         email: contact.email || null,
@@ -231,7 +233,7 @@ export default function NouveauBilan() {
 
           <div className="mt-7">
             <label htmlFor="prenom-accueil" className="etiquette text-center">
-              Prénom de la cliente
+              Prénom de la personne
             </label>
             <input
               id="prenom-accueil"
@@ -442,6 +444,26 @@ export default function NouveauBilan() {
               Ces coordonnées créeront la fiche de la cliente.
             </p>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div>
+                <span className="etiquette">Civilité</span>
+                <div className="flex gap-2">
+                  {(['Mme', 'M.'] as const).map((civ) => (
+                    <button
+                      key={civ}
+                      type="button"
+                      onClick={() => setContact((c) => ({ ...c, civilite: civ }))}
+                      aria-pressed={contact.civilite === civ}
+                      className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                        contact.civilite === civ
+                          ? 'border-marine-600 bg-marine-600 text-white'
+                          : 'border-ardoise-300 bg-white text-ardoise-700 hover:border-marine-400'
+                      }`}
+                    >
+                      {civ === 'Mme' ? 'Madame' : 'Monsieur'}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <ChampContact id="c_nom" libelle="Nom" v={contact.nom} on={(v) => setContact((c) => ({ ...c, nom: v }))} />
               <ChampContact id="c_prenom" libelle="Prénom" v={contact.prenom} on={(v) => setContact((c) => ({ ...c, prenom: v }))} />
               <ChampContact id="c_tel" libelle="Téléphone" type="tel" v={contact.telephone} on={(v) => setContact((c) => ({ ...c, telephone: v }))} />
