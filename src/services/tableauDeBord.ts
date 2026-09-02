@@ -92,6 +92,16 @@ export interface DonneesTableauDeBord {
   par_centre: LigneCentre[];
   par_therapeute: LigneTherapeute[];
 
+  mensuel_par_centre: {
+    mois: string[];
+    lignes: Array<{
+      centre_id: string;
+      centre: string;
+      valeurs: Record<string, number>;
+      total: number;
+    }>;
+  };
+
   croise: {
     mois: string[];
     lignes: Array<{

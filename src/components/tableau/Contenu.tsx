@@ -3,6 +3,7 @@ import { LIBELLES_TECHNOLOGIE, formaterEuros } from '../../domain/tarification';
 import type { DonneesTableauDeBord } from '../../services/tableauDeBord';
 import Repartition from './Repartition';
 import CourbeMensuelle from './CourbeMensuelle';
+import CourbeParCentre from './CourbeParCentre';
 import TableauCroise from './TableauCroise';
 import DernieresVentes from './DernieresVentes';
 import { evolution, libelleEvolution } from '../../domain/tableauDeBord';
@@ -125,6 +126,8 @@ export default function ContenuTableauDeBord({
       </section>
 
       <CourbeMensuelle mois={data.mensuel} />
+
+      <CourbeParCentre donnees={data.mensuel_par_centre} />
 
       <section className="grid gap-4 lg:grid-cols-2">
         <Repartition
