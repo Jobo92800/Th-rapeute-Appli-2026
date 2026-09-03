@@ -16,6 +16,8 @@ import {
   type Proposition,
 } from '../src/domain/recapitulatif.ts';
 import { calculerBioPortrait } from '../src/domain/bioportrait.ts';
+import { pourPdf } from '../src/domain/texte.ts';
+import { formaterEuros } from '../src/domain/tarification.ts';
 
 export function controlerRecapitulatif() {
   const bareme = baremeLivre();
@@ -111,6 +113,24 @@ export function controlerRecapitulatif() {
     r.aussiPresents.every((a) => a.pourcentage >= 60),
     r.aussiPresents.map((a) => `${a.nom} ${a.pourcentage}`).join(', '),
   );
+
+  section('Ce qui s’imprime dans un PDF');
+
+  /*
+    Le français met une espace fine insécable entre les milliers. Elle est
+    juste, et les navigateurs la dessinent bien. Les polices d’un PDF, non :
+    elles impriment « / » à la place. Le récapitulatif est parti chez une
+    cliente avec « 1 / 977 € » sur la ligne du total.
+  */
+  verifie(
+    'un montant à quatre chiffres porte bien une espace exotique à l’écran',
+    /[\u202f\u2009\u00a0]/.test(formaterEuros(1977)),
+    JSON.stringify(formaterEuros(1977)),
+  );
+  egal('et une espace ordinaire dans le PDF', pourPdf(formaterEuros(1977)), '1 977 €');
+  egal('les deux décimales aussi', pourPdf(formaterEuros(1256.7, 2)), '1 256,70 €');
+  egal('un petit montant n’est pas touché', pourPdf(formaterEuros(354)), '354 €');
+  egal('le texte courant traverse sans dommage', pourPdf('Luxothérapie · 15 séances'), 'Luxothérapie · 15 séances');
 
   section('Le fichier joint au mail');
 

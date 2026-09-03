@@ -203,12 +203,17 @@ export function controlerMetier() {
   );
   egal('les séances offertes sont annoncées', contrat.offeredSessions, 4);
   /*
-    Le formatage français sépare les milliers par une espace insécable :
-    comparer avec une espace ordinaire échoue sans que rien ne soit faux.
-    On normalise avant de comparer.
+    Le total s'écrit avec une espace ordinaire, et c'est capital : les polices
+    d'un PDF ne savent pas dessiner l'espace fine insécable du français, et
+    l'impriment « / ». Le contrat est parti quelque temps avec « 1 / 256,70 € »
+    écrit dessus, sur un document que la cliente signe.
   */
-  const sansEspaces = contrat.totalAmount.replace(/\s|\u00a0|\u202f/g, '');
-  egal('le total comprend les frais de financement', sansEspaces, '1256,70€');
+  egal('le total comprend les frais de financement', contrat.totalAmount, '1 256,70 €');
+  verifie(
+    'aucune espace exotique dans un montant du contrat',
+    !/[\u202f\u2009\u00a0\u2007]/.test(contrat.totalAmount),
+    JSON.stringify(contrat.totalAmount),
+  );
   verifie(
     'la Relaxation ne fait pas signer un consentement de plus',
     contrat.activeServiceIds.filter((s) => s === 'luxo-pdp').length === 1,

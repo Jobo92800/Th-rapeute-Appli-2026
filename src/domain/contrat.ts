@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { Centre, Cliente, Echeance, LigneProgramme, Programme } from '../types/db';
 import type { Technologie } from './tarification';
+import { pourPdf } from './texte';
 
 export interface ContractCareItem {
   label: string;
@@ -100,8 +101,13 @@ const LIBELLE_MOYEN: Record<string, string> = {
 };
 
 function euros(n: number): string {
-  return (
-    Number(n).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
+  /*
+    `pourPdf` n'est pas cosmétique : sans lui, le séparateur de milliers du
+    français s'imprime « / » dans le contrat, et toute cure à quatre chiffres
+    part à la signature avec « 1 / 977 € » écrit dessus.
+  */
+  return pourPdf(
+    Number(n).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €',
   );
 }
 

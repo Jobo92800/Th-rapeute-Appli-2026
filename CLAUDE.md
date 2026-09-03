@@ -264,6 +264,15 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   création de comptes, le déblocage d'étapes et le dépôt de fichiers. À
   remplacer par une phrase longue, côté Netlify (podcast) **et** côté secret
   `PODCAST_ADMIN_CODE` (V2), les deux doivent rester identiques.
+- **Les espaces du français dans un PDF.** `toLocaleString('fr-FR')` sépare
+  les milliers par une espace **fine insécable** (U+202F). Elle est correcte,
+  et un navigateur la dessine parfaitement — mais les polices de base d'un
+  PDF ne la connaissent pas et impriment « / » à la place. « 1 977 € » est
+  parti chez une cliente en « 1 / 977 € », et le contrat de prestation avait
+  le même défaut sur toute cure à quatre chiffres. Tout ce qui s'écrit dans
+  un PDF passe désormais par `pourPdf()` (`src/domain/texte.ts`) ; le banc
+  d'essai le vérifie sur le contrat et sur le récapitulatif. Ne jamais
+  écrire un montant directement dans un PDF.
 - **Doublons Airtable.** Le parcours du bilan enchaîne trois écritures ;
   sans verrou, trois synchros parallèles créaient trois fiches. Réglé par
   `reclamer_taches_airtable` (SKIP LOCKED), un verrou par cliente et un

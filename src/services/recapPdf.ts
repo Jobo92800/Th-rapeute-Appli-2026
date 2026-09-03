@@ -16,6 +16,7 @@
 import { jsPDF } from 'jspdf';
 import type { DonneesRecap } from '../domain/recapitulatif';
 import { formaterEuros } from '../domain/tarification';
+import { pourPdf } from '../domain/texte';
 
 const A4_W = 210;
 const A4_H = 297;
@@ -44,11 +45,34 @@ function couleur(doc: Doc, c: [number, number, number]) {
   doc.setTextColor(c[0], c[1], c[2]);
 }
 
+/*
+  Tout ce qui s'imprime passe par ici, et par ici seulement.
+
+  Les polices de base d'un PDF ne connaissent pas l'espace fine insécable que
+  le français met entre les milliers : « 1 977 € » ressortait « 1 / 977 € ».
+  Nettoyer au moment d'écrire évite d'avoir à y penser à chaque montant, et
+  couvre aussi les textes qui viennent du barème ou de la fiche.
+*/
+function ecrire(
+  doc: Doc,
+  texte: string,
+  x: number,
+  y: number,
+  opts?: { align?: 'left' | 'center' | 'right' },
+) {
+  doc.text(pourPdf(texte), x, y, opts);
+}
+
+/** Un montant, prêt à être imprimé. */
+function euros(n: number, decimales = 0): string {
+  return pourPdf(formaterEuros(n, decimales));
+}
+
 /** Écrit un paragraphe et renvoie l'ordonnée suivante. */
 function paragraphe(doc: Doc, texte: string, x: number, y: number, largeur: number, interligne = 4.6): number {
   const lignes = doc.splitTextToSize(texte, largeur) as string[];
   for (const l of lignes) {
-    doc.text(l, x, y);
+    ecrire(doc, l, x, y);
     y += interligne;
   }
   return y;
@@ -60,35 +84,35 @@ function bandeau(doc: Doc, titre: string, sousTitre: string) {
 
   police(doc, 15, 'bold');
   doc.setTextColor(255, 255, 255);
-  doc.text('MAbeauty', MARGE, 15);
+  ecrire(doc, 'MAbeauty', MARGE, 15);
   const l = doc.getTextWidth('MAbeauty');
   couleur(doc, [247, 155, 198]);
-  doc.text('plus', MARGE + l, 15);
+  ecrire(doc, 'plus', MARGE + l, 15);
 
   police(doc, 8, 'normal');
   couleur(doc, [169, 224, 224]);
-  doc.text(titre.toUpperCase(), MARGE, 22);
+  ecrire(doc, titre.toUpperCase(), MARGE, 22);
 
   police(doc, 8, 'normal');
-  doc.text(sousTitre, A4_W - MARGE, 22, { align: 'right' });
+  ecrire(doc, sousTitre, A4_W - MARGE, 22, { align: 'right' });
 }
 
 function pied(doc: Doc, d: DonneesRecap, page: number) {
   police(doc, 7.5, 'normal');
   couleur(doc, GRIS);
-  doc.text(
+  ecrire(doc, 
     `${d.centre.nom} · ${d.centre.adresse}, ${d.centre.codePostal} ${d.centre.ville} · ${d.centre.telephone}`,
     MARGE,
     A4_H - 12,
   );
-  doc.text(String(page), A4_W - MARGE, A4_H - 12, { align: 'right' });
+  ecrire(doc, String(page), A4_W - MARGE, A4_H - 12, { align: 'right' });
 }
 
 /** Le titre d'une section, avec son filet teal. */
 function sousTitre(doc: Doc, texte: string, y: number): number {
   police(doc, 7.5, 'bold');
   couleur(doc, TEAL_SOMBRE);
-  doc.text(texte.toUpperCase(), MARGE, y);
+  ecrire(doc, texte.toUpperCase(), MARGE, y);
   doc.setDrawColor(TEAL[0], TEAL[1], TEAL[2]);
   doc.setLineWidth(0.5);
   doc.line(MARGE, y + 1.8, MARGE + 14, y + 1.8);
@@ -106,19 +130,19 @@ function carteAxe(
 
   police(doc, 7, 'bold');
   couleur(doc, GRIS);
-  doc.text(etiquette.toUpperCase(), MARGE + 5, y + 7);
+  ecrire(doc, etiquette.toUpperCase(), MARGE + 5, y + 7);
 
   police(doc, 16, 'bold');
   couleur(doc, ENCRE);
-  doc.text(axe.nom, MARGE + 5, y + 15);
+  ecrire(doc, axe.nom, MARGE + 5, y + 15);
 
   police(doc, 9, 'italic');
   couleur(doc, GRIS);
-  doc.text(axe.signature, MARGE + 5, y + 20.5);
+  ecrire(doc, axe.signature, MARGE + 5, y + 20.5);
 
   police(doc, 20, 'bold');
   couleur(doc, TEAL_SOMBRE);
-  doc.text(`${axe.pourcentage} %`, A4_W - MARGE - 5, y + 16, { align: 'right' });
+  ecrire(doc, `${axe.pourcentage} %`, A4_W - MARGE - 5, y + 16, { align: 'right' });
 
   let curseur = y + 28;
   police(doc, 9, 'normal');
@@ -128,7 +152,7 @@ function carteAxe(
   curseur += 2;
   police(doc, 7, 'bold');
   couleur(doc, GRIS);
-  doc.text('CE QUE CELA CHANGE CHEZ VOUS', MARGE + 5, curseur);
+  ecrire(doc, 'CE QUE CELA CHANGE CHEZ VOUS', MARGE + 5, curseur);
   curseur += 5;
 
   police(doc, 9, 'normal');
@@ -136,7 +160,7 @@ function carteAxe(
   for (const impact of axe.impacts) {
     doc.setFillColor(TEAL[0], TEAL[1], TEAL[2]);
     doc.circle(MARGE + 7, curseur - 1.2, 0.9, 'F');
-    doc.text(impact, MARGE + 11, curseur);
+    ecrire(doc, impact, MARGE + 11, curseur);
     curseur += 5;
   }
 
@@ -158,14 +182,14 @@ function ligneTableau(
 ): number {
   police(doc, 9.5, gras ? 'bold' : 'normal');
   couleur(doc, gras ? ENCRE : [65, 89, 90]);
-  doc.text(gauche, MARGE + 3, y);
+  ecrire(doc, gauche, MARGE + 3, y);
   if (milieu) {
     couleur(doc, GRIS);
-    doc.text(milieu, A4_W - MARGE - 40, y, { align: 'right' });
+    ecrire(doc, milieu, A4_W - MARGE - 40, y, { align: 'right' });
   }
   police(doc, 9.5, gras ? 'bold' : 'normal');
   couleur(doc, gras ? ENCRE : [65, 89, 90]);
-  doc.text(droite, A4_W - MARGE - 3, y, { align: 'right' });
+  ecrire(doc, droite, A4_W - MARGE - 3, y, { align: 'right' });
 
   doc.setDrawColor(TRAIT[0], TRAIT[1], TRAIT[2]);
   doc.setLineWidth(0.2);
@@ -185,22 +209,22 @@ export function genererRecapPdf(d: DonneesRecap): jsPDF {
   let y = 44;
   police(doc, 22, 'normal');
   couleur(doc, ENCRE);
-  doc.text('Votre ', MARGE, y);
+  ecrire(doc, 'Votre ', MARGE, y);
   const largeurVotre = doc.getTextWidth('Votre ');
   police(doc, 22, 'bold');
-  doc.text('BioPortrait', MARGE + largeurVotre, y);
+  ecrire(doc, 'BioPortrait', MARGE + largeurVotre, y);
 
   y += 8;
   police(doc, 10, 'normal');
   couleur(doc, GRIS);
-  doc.text(`${d.civilite} ${d.prenom} ${d.nom}`, MARGE, y);
+  ecrire(doc, `${d.civilite} ${d.prenom} ${d.nom}`, MARGE, y);
 
   y += 10;
   doc.setFillColor(FOND[0], FOND[1], FOND[2]);
   doc.roundedRect(MARGE, y - 6, LARGEUR, 12, 2, 2, 'F');
   police(doc, 11, 'bold');
   couleur(doc, TEAL_SOMBRE);
-  doc.text(`${d.profil.nom}  ×  ${d.terrain.nom}`, A4_W / 2, y + 1.5, { align: 'center' });
+  ecrire(doc, `${d.profil.nom}  ×  ${d.terrain.nom}`, A4_W / 2, y + 1.5, { align: 'center' });
 
   y += 16;
   y = sousTitre(doc, 'Votre profil comportemental', y);
@@ -213,7 +237,7 @@ export function genererRecapPdf(d: DonneesRecap): jsPDF {
     y = sousTitre(doc, 'Aussi présent chez vous', y);
     police(doc, 9, 'normal');
     couleur(doc, [65, 89, 90]);
-    doc.text(
+    ecrire(doc, 
       d.aussiPresents.map((a) => `${a.nom} ${a.pourcentage} %`).join('   ·   '),
       MARGE,
       y,
@@ -226,10 +250,10 @@ export function genererRecapPdf(d: DonneesRecap): jsPDF {
     police(doc, 9, 'normal');
     for (const m of d.inbody) {
       couleur(doc, GRIS);
-      doc.text(m.libelle, MARGE + 3, y);
+      ecrire(doc, m.libelle, MARGE + 3, y);
       couleur(doc, ENCRE);
       police(doc, 9, 'bold');
-      doc.text(m.valeur, A4_W - MARGE - 3, y, { align: 'right' });
+      ecrire(doc, m.valeur, A4_W - MARGE - 3, y, { align: 'right' });
       police(doc, 9, 'normal');
       doc.setDrawColor(TRAIT[0], TRAIT[1], TRAIT[2]);
       doc.setLineWidth(0.2);
@@ -250,10 +274,10 @@ export function genererRecapPdf(d: DonneesRecap): jsPDF {
   y = 44;
   police(doc, 22, 'normal');
   couleur(doc, ENCRE);
-  doc.text('Votre cure ', MARGE, y);
+  ecrire(doc, 'Votre cure ', MARGE, y);
   const largeurCure = doc.getTextWidth('Votre cure ');
   police(doc, 22, 'bold');
-  doc.text('sur mesure', MARGE + largeurCure, y);
+  ecrire(doc, 'sur mesure', MARGE + largeurCure, y);
 
   y += 8;
   police(doc, 10, 'normal');
@@ -270,12 +294,12 @@ export function genererRecapPdf(d: DonneesRecap): jsPDF {
   y += 6;
   y = sousTitre(doc, 'Vos soins', y);
   for (const s of d.soins) {
-    y = ligneTableau(doc, s.libelle, `${s.seances} séances`, formaterEuros(s.montant), y);
+    y = ligneTableau(doc, s.libelle, `${s.seances} séances`, euros(s.montant), y);
   }
   for (const o of d.options) {
-    y = ligneTableau(doc, o.libelle, '', formaterEuros(o.montant), y);
+    y = ligneTableau(doc, o.libelle, '', euros(o.montant), y);
   }
-  y = ligneTableau(doc, `Total · ${d.totalSeances} séances`, '', formaterEuros(d.montantTotal), y, true);
+  y = ligneTableau(doc, `Total · ${d.totalSeances} séances`, '', euros(d.montantTotal), y, true);
 
   y += 6;
 
@@ -285,23 +309,23 @@ export function genererRecapPdf(d: DonneesRecap): jsPDF {
 
   police(doc, 7.5, 'bold');
   couleur(doc, [159, 214, 214]);
-  doc.text('VOTRE ACCOMPAGNEMENT', MARGE + 6, y + 8);
+  ecrire(doc, 'VOTRE ACCOMPAGNEMENT', MARGE + 6, y + 8);
 
   police(doc, 20, 'bold');
   doc.setTextColor(255, 255, 255);
-  doc.text(formaterEuros(d.montantRegle), MARGE + 6, y + 18);
+  ecrire(doc, euros(d.montantRegle), MARGE + 6, y + 18);
 
   police(doc, 9, 'normal');
   couleur(doc, [191, 230, 230]);
-  doc.text(d.reglement, MARGE + 6, y + 24);
+  ecrire(doc, d.reglement, MARGE + 6, y + 24);
 
   if (d.echeances.length > 1) {
     police(doc, 8.5, 'normal');
     couleur(doc, [191, 230, 230]);
     const texteEcheances = d.echeances
-      .map((e, i) => `${i === 0 ? '1re' : `${e.rang}e`} : ${formaterEuros(Number(e.montant))}`)
+      .map((e, i) => `${i === 0 ? '1re' : `${e.rang}e`} : ${euros(Number(e.montant))}`)
       .join('   ·   ');
-    doc.text(texteEcheances, MARGE + 6, y + 33);
+    ecrire(doc, texteEcheances, MARGE + 6, y + 33);
   }
 
   y += (d.echeances.length > 1 ? 40 : 28) + 10;
@@ -313,7 +337,7 @@ export function genererRecapPdf(d: DonneesRecap): jsPDF {
     couleur(doc, ENCRE);
     doc.setFillColor(TEAL[0], TEAL[1], TEAL[2]);
     doc.circle(MARGE + 2, y - 1.2, 0.9, 'F');
-    doc.text(i.titre, MARGE + 6, y);
+    ecrire(doc, i.titre, MARGE + 6, y);
     y += 4.4;
     police(doc, 8.5, 'normal');
     couleur(doc, GRIS);
@@ -326,7 +350,7 @@ export function genererRecapPdf(d: DonneesRecap): jsPDF {
     doc.roundedRect(MARGE, y, LARGEUR, 14, 2, 2, 'F');
     police(doc, 9, 'normal');
     couleur(doc, TEAL_SOMBRE);
-    doc.text(
+    ecrire(doc, 
       `Une question, une hésitation ? Appelez-nous au ${d.centre.telephone}.`,
       A4_W / 2,
       y + 8.5,
