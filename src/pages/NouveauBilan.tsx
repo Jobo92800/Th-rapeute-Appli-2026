@@ -290,7 +290,9 @@ export default function NouveauBilan() {
             centre,
             dateBilan: new Date().toISOString().slice(0, 10),
           });
-          toast.success('Bilan enregistré · le récapitulatif part par mail');
+          toast.success(
+            `Bilan enregistré (${formaterEuros(grille.bilan)} à facturer) · le récapitulatif part par mail`,
+          );
         } catch (err) {
           console.error(err);
           toast.error(

@@ -475,10 +475,10 @@ export default function CureEtDevis({
             onClick={() => onRecap(propositionCourante())}
             disabled={enregistrement || totalSeances === 0}
             className="bouton-discret"
-            title="Enregistre le bilan et envoie à la cliente son BioPortrait et cette proposition, par mail."
+            title="Le bilan est facturé, la cure n'est pas ouverte, et la cliente reçoit par mail son BioPortrait avec cette proposition."
           >
             <Mail className="h-4 w-4" />
-            Envoyer le récap
+            Envoyer le récap · {formaterEuros(grille.bilan)}
           </button>
           <button
             onClick={() => onBilanSeul(propositionCourante())}
