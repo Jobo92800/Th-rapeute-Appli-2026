@@ -12,6 +12,8 @@ import {
 import {
   ECHEANCES_ALMA,
   ECHEANCES_CENTRE,
+  dureeCureEnMois,
+  echeancesCentrePossibles,
   FRAIS_ALMA,
   LIBELLES_TECHNOLOGIE,
   construireEcheancierCure,
@@ -115,15 +117,35 @@ export default function CureEtDevis({
   const electro = retenues.some((l) => l.presta === 'ISHAPE');
   const options = (luxo ? grille.guide : 0) + (electro ? grille.tenue : 0);
 
+  /*
+    La durée de la cure plafonne le nombre de chèques : on n'encaisse pas un
+    règlement après la dernière séance. Elle se recalcule à chaque
+    changement de formule ou d'ajustement, donc le choix se resserre tout
+    seul quand la thérapeute réduit l'offre.
+  */
+  const soinsPrincipaux = retenues.filter((l) => l.presta !== 'RELAX').length;
+  const seancesDuPlusLong = retenues.reduce((n, l) => Math.max(n, l.seances), 0);
+  const dureeMois = dureeCureEnMois(seancesDuPlusLong, soinsPrincipaux);
+
+  const choixEcheances =
+    methode === 'centre' ? echeancesCentrePossibles(dureeMois) : ECHEANCES_ALMA;
+
+  /*
+    Le nombre retenu, et non celui qui traîne dans l'état : la thérapeute a
+    pu choisir 4 chèques puis raccourcir la cure. Sans ce garde-fou, l'écran
+    afficherait un échéancier que le plafond n'autorise plus.
+  */
+  const nRetenu = choixEcheances.includes(nEcheances)
+    ? nEcheances
+    : (choixEcheances[choixEcheances.length - 1] ?? 1);
+
   const echeancier = construireEcheancierCure({
     seances: totalSeances,
     prixSeance: grille.seance,
     options,
     methode,
-    n: nEcheances,
+    n: nRetenu,
   });
-
-  const choixEcheances = methode === 'centre' ? ECHEANCES_CENTRE : ECHEANCES_ALMA;
 
   function ajuster(presta: Prestation, delta: number) {
     const actuelle = cure.find((l) => l.presta === presta)?.seances ?? 0;
@@ -415,6 +437,17 @@ export default function CureEtDevis({
                 ? `Par chèques au centre. Le guide et la tenue (${formaterEuros(options)}) sont sur la première échéance.`
                 : `Frais Alma de ${String(FRAIS_ALMA[echeancier.n] ?? 0).replace('.', ',')} %, à la charge de la cliente, compris dans la mensualité.`}
             </p>
+
+            {/*
+              La thérapeute doit comprendre pourquoi le 4× a disparu, sinon
+              elle croit à une panne et cherche le bouton manquant.
+            */}
+            {methode === 'centre' && choixEcheances.length < ECHEANCES_CENTRE.length && (
+              <p className="mx-auto mt-1.5 max-w-sm text-[11px] text-marine-300">
+                Cette cure dure {dureeMois} mois : au-delà de {choixEcheances.length} chèques, le
+                dernier serait encaissé après la dernière séance.
+              </p>
+            )}
           </div>
 
           <div className="bg-white px-6 py-4 text-[13px] text-ardoise-600">

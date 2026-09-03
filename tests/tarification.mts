@@ -17,6 +17,8 @@ import {
   prixUnitaireParDefaut,
   repartirSeances,
   type GrilleTarifaire,
+  dureeCureEnMois,
+  echeancesCentrePossibles,
 } from '../src/domain/tarification.ts';
 
 const GRILLE: GrilleTarifaire = {
@@ -198,4 +200,34 @@ export function controlerTarification() {
 
   const repris = construireEcheancier(900, 'inconnu');
   egal('une cure reprise du CRM n’invente pas d’échéancier', repris.echeances.length, 0);
+
+  section('La durée de la cure plafonne les chèques');
+
+  /*
+    On n'encaisse pas un chèque après la dernière séance. Les paliers
+    viennent de la maquette du diagnostic : le soin le plus long donne le
+    tempo, et trois soins principaux ajoutent un mois.
+  */
+  egal('dix séances tiennent en trois mois', dureeCureEnMois(10, 1), 3);
+  egal('treize aussi', dureeCureEnMois(13, 1), 3);
+  egal('quatorze font quatre mois', dureeCureEnMois(14, 1), 4);
+  egal('seize aussi', dureeCureEnMois(16, 2), 4);
+  egal('dix-sept font cinq mois', dureeCureEnMois(17, 1), 5);
+  egal('trois soins principaux ajoutent un mois', dureeCureEnMois(12, 3), 4);
+  egal('deux soins n’ajoutent rien', dureeCureEnMois(12, 2), 3);
+  egal('une cure vide ne dure pas zéro mois', dureeCureEnMois(0, 0), 1);
+
+  egal('une cure de trois mois n’accepte que trois chèques', echeancesCentrePossibles(3), [1, 2, 3]);
+  egal('quatre mois rouvrent le quatrième', echeancesCentrePossibles(4), [1, 2, 3, 4]);
+  egal('cinq mois ne vont pas au-delà de quatre', echeancesCentrePossibles(5), [1, 2, 3, 4]);
+  egal('un mois ne laisse que le comptant', echeancesCentrePossibles(1), [1]);
+
+  /*
+    Le cas qui a motivé la règle : la thérapeute réduit l'offre, et le
+    quatrième chèque doit disparaître de lui-même.
+  */
+  const pleine = dureeCureEnMois(20, 2);
+  const reduite = dureeCureEnMois(Math.round(20 * 0.5), 2);
+  egal('la cure entière tient sur quatre chèques', echeancesCentrePossibles(pleine).length, 4);
+  egal('la formule Découverte les ramène à trois', echeancesCentrePossibles(reduite).length, 3);
 }

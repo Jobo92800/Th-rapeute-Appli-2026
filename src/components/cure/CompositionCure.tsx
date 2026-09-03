@@ -3,6 +3,8 @@ import { Check, Gift, Minus, Plus } from 'lucide-react';
 import {
   ECHEANCES_ALMA,
   ECHEANCES_CENTRE,
+  dureeCureEnMois,
+  echeancesCentrePossibles,
   FRAIS_ALMA,
   LIBELLES_TECHNOLOGIE,
   calculerMontant,
@@ -121,6 +123,20 @@ export default function CompositionCure({
 
   const offertesPosees = Math.min(offertes, seancesOffertes);
 
+  /*
+    Le même plafond qu'au bilan : la cure ne se règle pas plus longtemps
+    qu'elle ne dure. La Relaxation ne compte pas parmi les soins principaux,
+    elle s'ajoute à une venue existante.
+  */
+  const soinsPrincipaux = lignes.filter((l) => l.seances > 0 && l.technologie !== 'relax').length;
+  const seancesDuPlusLong = lignes.reduce((n, l) => Math.max(n, l.seances), 0);
+  const dureeMois = dureeCureEnMois(seancesDuPlusLong, soinsPrincipaux);
+  const choixEcheances =
+    methode === 'centre' ? echeancesCentrePossibles(dureeMois) : ECHEANCES_ALMA;
+  const nRetenu = choixEcheances.includes(nEcheances)
+    ? nEcheances
+    : (choixEcheances[choixEcheances.length - 1] ?? 1);
+
   const echeancier = useMemo(
     () =>
       construireEcheancierCure({
@@ -129,9 +145,9 @@ export default function CompositionCure({
         montantSeances: detail.montantSeances,
         options: detail.montantGuide + detail.montantTenue,
         methode,
-        n: nEcheances,
+        n: nRetenu,
       }),
-    [detail, grille.seance, methode, nEcheances],
+    [detail, grille.seance, methode, nRetenu],
   );
 
   useEffect(() => {
@@ -353,7 +369,7 @@ export default function CompositionCure({
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2">
-          {(methode === 'centre' ? ECHEANCES_CENTRE : ECHEANCES_ALMA).map((n) => (
+          {choixEcheances.map((n) => (
             <button
               key={n}
               type="button"
@@ -368,6 +384,17 @@ export default function CompositionCure({
             </button>
           ))}
         </div>
+
+        {/*
+          Sans cette phrase, la thérapeute croit à une panne : le 4× était là
+          il y a dix secondes, et il a disparu quand elle a retiré des séances.
+        */}
+        {methode === 'centre' && choixEcheances.length < ECHEANCES_CENTRE.length && (
+          <p className="mt-3 text-xs text-ardoise-500">
+            Cette cure dure {dureeMois} mois : au-delà de {choixEcheances.length} chèques, le
+            dernier serait encaissé après la dernière séance.
+          </p>
+        )}
 
         {methode === 'alma' && detail.total > 0 && (
           <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">

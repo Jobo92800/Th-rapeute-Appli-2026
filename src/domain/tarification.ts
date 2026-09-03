@@ -125,6 +125,41 @@ export const FRAIS_ALMA: Record<number, number> = {
 export const ECHEANCES_CENTRE = [1, 2, 3, 4];
 export const ECHEANCES_ALMA = [2, 3, 4, 10, 12];
 
+/**
+ * Combien de mois dure une cure.
+ *
+ * La durée ne se déduit pas du total des séances : les soins se font en
+ * parallèle, sur les mêmes venues. C'est le soin le plus long qui donne le
+ * tempo — une cure de 20 luxo et 4 presso dure le temps des 20 luxo.
+ *
+ * Un mois de plus dès trois soins principaux : il y a plus à caser dans une
+ * semaine, et le rythme s'étire. La Relaxation ne compte pas dans ces trois,
+ * elle s'ajoute à une venue existante.
+ *
+ * Les paliers viennent de la maquette du diagnostic, ils ne sont pas de moi.
+ */
+export function dureeCureEnMois(seancesDuSoinLePlusLong: number, soinsPrincipaux: number): number {
+  if (seancesDuSoinLePlusLong <= 0) return 1;
+  const mois = seancesDuSoinLePlusLong <= 13 ? 3 : seancesDuSoinLePlusLong <= 16 ? 4 : 5;
+  return soinsPrincipaux >= 3 ? mois + 1 : mois;
+}
+
+/**
+ * Les nombres de chèques proposables, plafonnés par la durée de la cure.
+ *
+ * On ne fait pas payer une cliente plus longtemps que son accompagnement ne
+ * dure : quatre chèques sur une cure de trois mois, c'est un chèque encaissé
+ * après la dernière séance. Quand la thérapeute réduit l'offre, la cure
+ * raccourcit et le choix se resserre tout seul.
+ *
+ * Alma n'est pas concerné : c'est un crédit avancé par Alma, le centre est
+ * payé tout de suite, la durée de la cure ne l'engage pas.
+ */
+export function echeancesCentrePossibles(dureeMois: number): number[] {
+  const plafond = Math.max(1, dureeMois);
+  return ECHEANCES_CENTRE.filter((n) => n <= plafond);
+}
+
 export function modeReglement(methode: 'centre' | 'alma', n: number): ModeReglement {
   if (methode === 'centre') return n <= 1 ? 'comptant' : (`centre_${n}x` as ModeReglement);
   return `alma_${n}x` as ModeReglement;
