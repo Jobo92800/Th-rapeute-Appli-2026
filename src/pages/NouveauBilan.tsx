@@ -15,6 +15,7 @@ import { useCentre, useSession } from '../lib/session';
 import { lireBaremeActif, lireGrilleTarifaire } from '../services/metier';
 import { creerCliente } from '../services/clientes';
 import { formaterEuros } from '../domain/tarification';
+import { envoyerRecap } from '../services/recap';
 import { enregistrerBilan, creerProgramme } from '../services/metier';
 import {
   choix,
@@ -184,7 +185,20 @@ export default function NouveauBilan() {
     setTimeout(suivant, 220);
   }
 
-  async function enregistrerTout(prescription: PrescriptionValidee | null) {
+  /**
+   * L'enregistrement de fin de bilan, dans ses trois issues.
+   *
+   * `proposition` est toujours ce qui était à l'écran — on l'écrit sur le
+   * bilan quoi qu'il arrive. Sans elle, un récapitulatif renvoyé trois
+   * semaines plus tard annoncerait un autre prix que celui prononcé devant
+   * la cliente, parce que la thérapeute ajuste et que les ajustements ne se
+   * recalculent pas.
+   */
+  async function enregistrerTout(
+    proposition: PrescriptionValidee,
+    issue: { valider: boolean; recap: boolean },
+  ) {
+    const prescription = issue.valider ? proposition : null;
     if (!contact.prenom.trim() || !contact.nom.trim()) {
       toast.error('Le nom et le prénom sont nécessaires pour enregistrer.');
       return;
@@ -224,6 +238,11 @@ export default function NouveauBilan() {
         terrains_secondaires: bioportrait.terrainsSecondaires,
         facturation: prescription ? 'offert' : 'facture',
         montant_facture: prescription ? 0 : grille.bilan,
+        proposition: {
+          ...proposition,
+          prixGuide: grille.guide,
+          prixTenue: grille.tenue,
+        } as unknown as Record<string, unknown>,
       });
 
       if (prescription) {
@@ -246,13 +265,47 @@ export default function NouveauBilan() {
         });
       }
 
-      // Le montant vient de la grille, jamais d'un nombre écrit ici : sinon
-      // le message et la facture se contrediraient au prochain changement.
-      toast.success(
-        prescription
-          ? 'Cure validée et enregistrée'
-          : `Bilan enregistré (${formaterEuros(grille.bilan)} à facturer)`,
-      );
+      /*
+        Le récapitulatif part après l'enregistrement, jamais avant : s'il
+        échouait, le bilan serait quand même sauvé, et la thérapeute pourra
+        le renvoyer depuis la fiche.
+      */
+      if (issue.recap) {
+        try {
+          await envoyerRecap({
+            bilanId: bilan.id,
+            bareme,
+            bioportrait,
+            inbody: mesuresInbody(bareme, reponses),
+            proposition: {
+              ...proposition,
+              prixGuide: grille.guide,
+              prixTenue: grille.tenue,
+            },
+            cliente: {
+              civilite: contact.civilite,
+              prenom: contact.prenom.trim(),
+              nom: contact.nom.trim(),
+            },
+            centre,
+            dateBilan: new Date().toISOString().slice(0, 10),
+          });
+          toast.success('Bilan enregistré · le récapitulatif part par mail');
+        } catch (err) {
+          console.error(err);
+          toast.error(
+            "Le bilan est enregistré, mais le récapitulatif n'a pas pu partir. Renvoyez-le depuis sa fiche.",
+          );
+        }
+      } else {
+        // Le montant vient de la grille, jamais d'un nombre écrit ici : sinon
+        // le message et la facture se contrediraient au prochain changement.
+        toast.success(
+          prescription
+            ? 'Cure validée et enregistrée'
+            : `Bilan enregistré (${formaterEuros(grille.bilan)} à facturer)`,
+        );
+      }
       navigate(`/clientes/${cliente.id}`);
     } catch (e) {
       console.error(e);
@@ -384,8 +437,9 @@ export default function NouveauBilan() {
         prenom={prenomAffiche}
         enregistrement={enregistrement}
         onRetour={() => setVue('restitution')}
-        onBilanSeul={() => enregistrerTout(null)}
-        onValider={(p) => enregistrerTout(p)}
+        onBilanSeul={(p) => enregistrerTout(p, { valider: false, recap: false })}
+        onRecap={(p) => enregistrerTout(p, { valider: false, recap: true })}
+        onValider={(p) => enregistrerTout(p, { valider: true, recap: false })}
       />
     );
   }

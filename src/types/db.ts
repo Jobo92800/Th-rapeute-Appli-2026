@@ -154,6 +154,12 @@ export interface Bilan {
   terrains_secondaires: string[];
   facturation: Facturation;
   montant_facture: number | null;
+  /** La cure telle qu'elle a été présentée : elle ne se recalcule pas. */
+  proposition: Record<string, unknown> | null;
+  /** Le récapitulatif en PDF, base64. Absent tant qu'aucun n'a été établi. */
+  recap_pdf: string | null;
+  recap_demande_le: string | null;
+  recap_envoye_le: string | null;
   cree_le: string;
   maj_le: string;
 }

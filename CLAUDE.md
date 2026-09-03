@@ -333,14 +333,17 @@ curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
-Migrations passées jusqu'à **034** incluse. Trois attendent d'être collées,
-dans l'ordre : la **035** (l'exception de cure part dans Airtable), la
-**036** (le BioPortrait, questionnaire version 3 — elle s'active toute seule
-à la fin du fichier) et la **037** (arrêt de cure et avoirs).
+Migrations passées jusqu'à **037** incluse, et `synchro-airtable`
+redéployée dans la foulée. Deux attendent d'être collées : la **038** (le
+bilan seul passe à 129 €) et la **039** (le récapitulatif BioPortrait).
 
-La 037 s'accompagne d'un **redéploiement de `synchro-airtable`** : sans lui,
-le champ `Avoir` du CRM resterait vide et une cure arrêtée continuerait de
-s'annoncer « en cours ». La migration d'abord, la fonction ensuite.
+La 039 demande **deux champs à créer dans Airtable** — « Récapitulatif
+BioPortrait » en pièce jointe, « Récap envoyé le » en date — et une
+automatisation qui envoie le mail quand la date se remplit. Les étapes sont
+écrites en bas du fichier de migration. Elle demande aussi un
+**redéploiement de `synchro-airtable`**, et que le jeton Airtable porte le
+droit **`schema.bases:read`** : la fonction cherche l'identifiant du champ
+pièce jointe par son nom, faute de le connaître à l'avance.
 
 Deux diagnostics, dans `supabase/diagnostics/`, ne modifient rien et se
 relancent à volonté : `controle_coherence.sql` (quinze vérifications) et

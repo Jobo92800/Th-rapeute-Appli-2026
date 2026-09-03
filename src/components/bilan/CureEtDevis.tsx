@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Ban, Eye, Loader2, Minus, Pencil, Plus, Stethoscope } from 'lucide-react';
+import { AlertTriangle, Ban, Eye, Loader2, Mail, Minus, Pencil, Plus, Stethoscope } from 'lucide-react';
 import type { Bareme, Prestation } from '../../domain/bioportrait';
 import {
   LIBELLES_NIVEAU,
@@ -53,7 +53,10 @@ interface Props {
   prenom: string;
   enregistrement: boolean;
   onRetour: () => void;
-  onBilanSeul: () => void;
+  /** La cliente ne démarre pas : on garde le bilan, et ce qu'on lui a proposé. */
+  onBilanSeul: (propose: PrescriptionValidee) => void;
+  /** Elle veut réfléchir : même chose, plus le récapitulatif par mail. */
+  onRecap: (propose: PrescriptionValidee) => void;
   onValider: (p: PrescriptionValidee) => void;
 }
 
@@ -78,6 +81,7 @@ export default function CureEtDevis({
   enregistrement,
   onRetour,
   onBilanSeul,
+  onRecap,
   onValider,
 }: Props) {
   const formules = bareme.FORMULAS ?? [];
@@ -126,8 +130,13 @@ export default function CureEtDevis({
     setAjusts((a) => ({ ...a, [presta]: Math.max(0, actuelle + delta) }));
   }
 
-  function valider() {
-    onValider({
+  /*
+    Ce qui est à l'écran à cet instant : c'est ce que la cliente a sous les
+    yeux et ce qu'on lui a annoncé. Les trois boutons du bas en partent, pour
+    qu'aucun ne puisse raconter autre chose que les deux autres.
+  */
+  function propositionCourante(): PrescriptionValidee {
+    return {
       lignes: retenues.map((l) => ({
         technologie: TECHNO[l.presta],
         seances: l.seances,
@@ -140,7 +149,11 @@ export default function CureEtDevis({
       modeReglement: echeancier.mode,
       frais: echeancier.frais,
       echeances: echeancier.echeances,
-    });
+    };
+  }
+
+  function valider() {
+    onValider(propositionCourante());
   }
 
   return (
@@ -458,7 +471,20 @@ export default function CureEtDevis({
         </button>
 
         <div className="flex flex-wrap gap-3">
-          <button onClick={onBilanSeul} disabled={enregistrement} className="bouton-discret">
+          <button
+            onClick={() => onRecap(propositionCourante())}
+            disabled={enregistrement || totalSeances === 0}
+            className="bouton-discret"
+            title="Enregistre le bilan et envoie à la cliente son BioPortrait et cette proposition, par mail."
+          >
+            <Mail className="h-4 w-4" />
+            Envoyer le récap
+          </button>
+          <button
+            onClick={() => onBilanSeul(propositionCourante())}
+            disabled={enregistrement}
+            className="bouton-discret"
+          >
             Bilan seul · {formaterEuros(grille.bilan)}
           </button>
           <button

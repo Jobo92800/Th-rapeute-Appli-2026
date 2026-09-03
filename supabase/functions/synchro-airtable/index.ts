@@ -84,6 +84,13 @@ const NOM_TERRAIN: Record<string, string> = {
 
 /** Champs pièces jointes de la table Clients. */
 const CHAMP_CONTRAT = 'fldxJHrZBuFN75wMr';
+/*
+  Le récapitulatif est joint à un champ créé après coup, dont on ne connaît
+  pas l'identifiant à l'avance. On le cherche par son nom dans le schéma
+  Airtable — l'API des pièces jointes, elle, exige l'identifiant.
+*/
+const CHAMP_RECAP_NOM = 'Récapitulatif BioPortrait';
+const CHAMP_RECAP_DATE = 'Récap envoyé le';
 const CHAMP_CONSENTEMENTS = 'fldn4f3NScLrXj31C';
 
 /** « Montant Cure » pour la première, « Montant cure N » ensuite. */
@@ -212,6 +219,95 @@ Deno.serve(async (req: Request) => {
         `Airtable pièce jointe ${r.status} : ${corps?.error?.message ?? JSON.stringify(corps).slice(0, 200)}`,
       );
     }
+  }
+
+  /**
+   * L'identifiant d'un champ, cherché par son nom.
+   *
+   * Retenu le temps de l'appel : la file passe par lots, et il n'y a aucune
+   * raison de redemander le schéma pour chaque récapitulatif.
+   */
+  let idChampRecap: string | null = null;
+
+  async function idDuChamp(nom: string): Promise<string> {
+    if (idChampRecap) return idChampRecap;
+
+    const r = await fetch(`https://api.airtable.com/v0/meta/bases/${base}/tables`, {
+      headers: enTetesAirtable,
+    });
+    const corps = await r.json().catch(() => ({}));
+
+    if (!r.ok) {
+      throw new Error(
+        `Airtable refuse de donner la liste des champs (${r.status}). Le jeton doit avoir le droit « schema.bases:read ».`,
+      );
+    }
+
+    const tableTrouvee = (corps.tables ?? []).find((x: { id: string }) => x.id === table);
+    const champ = (tableTrouvee?.fields ?? []).find((x: { name: string }) => x.name === nom);
+
+    if (!champ) {
+      throw new Error(
+        `Le champ « ${nom} » n'existe pas dans la table Clients d'Airtable. Créez-le (type Pièce jointe) et relancez.`,
+      );
+    }
+
+    idChampRecap = champ.id as string;
+    return idChampRecap;
+  }
+
+  /**
+   * Dépose le récapitulatif BioPortrait sur la fiche, puis date l'envoi.
+   *
+   * L'ordre compte : c'est la date qui déclenche l'automatisation d'envoi du
+   * mail. La poser avant la pièce jointe ferait partir un mail sans document.
+   */
+  async function traiterRecap(bilanId: string) {
+    const { data: b } = await db
+      .from('bilans')
+      .select('id, cliente_id, recap_pdf, date_bilan')
+      .eq('id', bilanId)
+      .maybeSingle();
+
+    if (!b) throw new Error('Bilan introuvable.');
+    if (!b.recap_pdf) throw new Error("Aucun récapitulatif n'a été établi pour ce bilan.");
+
+    const { data: cliente } = await db
+      .from('clientes')
+      .select('prenom, nom, email, airtable_record_id')
+      .eq('id', b.cliente_id)
+      .maybeSingle();
+
+    if (!cliente) throw new Error('Cliente introuvable.');
+    if (!cliente.airtable_record_id) {
+      throw new Error("La fiche cliente n'est pas encore dans Airtable, nouvelle tentative plus tard.");
+    }
+    if (!cliente.email) {
+      throw new Error(
+        `${cliente.prenom} ${cliente.nom} n'a pas d'adresse email : le récapitulatif n'a pas de destinataire. Complétez sa fiche, puis renvoyez-le.`,
+      );
+    }
+
+    const suffixe = `${cliente.nom}_${cliente.prenom}`.replace(/[^\w\-]+/g, '_');
+    await joindrePdf(
+      cliente.airtable_record_id,
+      await idDuChamp(CHAMP_RECAP_NOM),
+      `BioPortrait_${suffixe}.pdf`,
+      b.recap_pdf,
+    );
+
+    await airtable(`/${cliente.airtable_record_id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        fields: { [CHAMP_RECAP_DATE]: new Date().toISOString().slice(0, 10) },
+        typecast: true,
+      }),
+    });
+
+    await db
+      .from('bilans')
+      .update({ recap_envoye_le: new Date().toISOString() })
+      .eq('id', bilanId);
   }
 
   /**
@@ -499,6 +595,13 @@ Deno.serve(async (req: Request) => {
     // pas des champs de la fiche.
     if (tache.entite === 'contrat') {
       await traiterContrat(tache.entite_id);
+      return;
+    }
+
+    // Le récapitulatif aussi : une pièce jointe, puis une date qui déclenche
+    // l'envoi du mail depuis Airtable.
+    if (tache.entite === 'recap') {
+      await traiterRecap(tache.entite_id);
       return;
     }
 
