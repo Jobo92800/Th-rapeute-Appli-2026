@@ -14,6 +14,7 @@ import ChoisirUnCentre from '../components/ChoisirUnCentre';
 import { useCentre, useSession } from '../lib/session';
 import { lireBaremeActif, lireGrilleTarifaire } from '../services/metier';
 import { creerCliente } from '../services/clientes';
+import { formaterEuros } from '../domain/tarification';
 import { enregistrerBilan, creerProgramme } from '../services/metier';
 import {
   choix,
@@ -245,8 +246,12 @@ export default function NouveauBilan() {
         });
       }
 
+      // Le montant vient de la grille, jamais d'un nombre écrit ici : sinon
+      // le message et la facture se contrediraient au prochain changement.
       toast.success(
-        prescription ? 'Cure validée et enregistrée' : 'Bilan enregistré (87 € à facturer)',
+        prescription
+          ? 'Cure validée et enregistrée'
+          : `Bilan enregistré (${formaterEuros(grille.bilan)} à facturer)`,
       );
       navigate(`/clientes/${cliente.id}`);
     } catch (e) {
