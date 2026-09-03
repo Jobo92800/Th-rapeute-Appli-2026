@@ -12,8 +12,10 @@ import {
 import {
   ECHEANCES_ALMA,
   ECHEANCES_CENTRE,
+  creneauxParDefaut,
   dureeCureEnMois,
   echeancesCentrePossibles,
+  montantAcompte,
   FRAIS_ALMA,
   LIBELLES_TECHNOLOGIE,
   construireEcheancierCure,
@@ -32,7 +34,7 @@ export interface PrescriptionValidee {
   montantTotal: number;
   modeReglement: ModeReglement;
   frais: number;
-  echeances: Array<{ rang: number; montant: number }>;
+  echeances: Array<{ rang: number; montant: number; type?: 'acompte' | 'echeance' }>;
 }
 
 const TECHNO: Record<Prestation, Technologie> = {
@@ -91,6 +93,13 @@ export default function CureEtDevis({
   const [ajusts, setAjusts] = useState<Partial<Record<Prestation, number>>>({});
   const [methode, setMethode] = useState<'centre' | 'alma'>('centre');
   const [nEcheances, setNEcheances] = useState(4);
+  /*
+    L'acompte : pour la cliente qui dit oui mais ne peut pas tout régler
+    aujourd'hui. Il couvre le bilan et les créneaux déjà bloqués pour elle.
+    Rangé par défaut — le cas courant est de ne pas en demander.
+  */
+  const [acompteOuvert, setAcompteOuvert] = useState(false);
+  const [creneaux, setCreneaux] = useState<number | null>(null);
   const [devisRevele, setDevisRevele] = useState(false);
   /*
     Les réglages restent rangés. L'écran se présente à la cliente : des
@@ -135,6 +144,16 @@ export default function CureEtDevis({
     pu choisir 4 chèques puis raccourcir la cure. Sans ce garde-fou, l'écran
     afficherait un échéancier que le plafond n'autorise plus.
   */
+  const creneauxRetenus = creneaux ?? creneauxParDefaut(retenues.length);
+  const acompte =
+    acompteOuvert && methode === 'centre'
+      ? montantAcompte({
+          prixBilan: grille.bilan,
+          creneauxReserves: creneauxRetenus,
+          prixSeance: grille.seance,
+        })
+      : 0;
+
   const nRetenu = choixEcheances.includes(nEcheances)
     ? nEcheances
     : (choixEcheances[choixEcheances.length - 1] ?? 1);
@@ -145,6 +164,7 @@ export default function CureEtDevis({
     options,
     methode,
     n: nRetenu,
+    acompte,
   });
 
   function ajuster(presta: Prestation, delta: number) {
@@ -382,7 +402,9 @@ export default function CureEtDevis({
               <>
                 <div className="mt-5 text-[11px] font-semibold uppercase tracking-[0.15em] text-marine-300">
                   {methode === 'centre'
-                    ? '1re échéance · sans frais'
+                    ? acompte > 0
+                      ? 'Acompte · avant la prochaine séance'
+                      : '1re échéance · sans frais'
                     : `${echeancier.n} fois égales · via Alma`}
                 </div>
                 <div className="chiffres mt-1 text-5xl font-bold">
@@ -397,7 +419,7 @@ export default function CureEtDevis({
                         key={e.rang}
                         className="flex justify-between border-b border-white/15 py-1 text-[13px] text-marine-100"
                       >
-                        <span>Échéance {e.rang}</span>
+                        <span>{e.type === 'acompte' ? 'Acompte' : `Échéance ${e.rang}`}</span>
                         <span className="chiffres font-semibold text-white">
                           {formaterEuros(e.montant, 2)}
                         </span>
@@ -434,9 +456,66 @@ export default function CureEtDevis({
 
             <p className="mx-auto mt-3 max-w-sm text-[11px] text-marine-300">
               {methode === 'centre'
-                ? `Par chèques au centre. Le guide et la tenue (${formaterEuros(options)}) sont sur la première échéance.`
+                ? acompte > 0
+                  ? `Par chèques au centre. L’acompte se déduit du total ; le reste, guide et tenue compris (${formaterEuros(options)}), se répartit sur les échéances.`
+                  : `Par chèques au centre. Le guide et la tenue (${formaterEuros(options)}) sont sur la première échéance.`
                 : `Frais Alma de ${String(FRAIS_ALMA[echeancier.n] ?? 0).replace('.', ',')} %, à la charge de la cliente, compris dans la mensualité.`}
             </p>
+
+            {/* L'acompte, rangé tant qu'on n'en a pas besoin. */}
+            {methode === 'centre' && (
+              <div className="mx-auto mt-4 max-w-sm border-t border-white/15 pt-3">
+                {!acompteOuvert ? (
+                  <button
+                    type="button"
+                    onClick={() => setAcompteOuvert(true)}
+                    className="text-[11px] font-semibold text-marine-200 underline underline-offset-2 hover:text-white"
+                  >
+                    Elle ne peut pas tout régler aujourd’hui ?
+                  </button>
+                ) : (
+                  <div className="text-[11px] text-marine-200">
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <span>Acompte avant la prochaine séance ·</span>
+                      <button
+                        type="button"
+                        onClick={() => setCreneaux(Math.max(0, creneauxRetenus - 1))}
+                        className="h-5 w-5 rounded-md border border-white/25 leading-none text-white hover:bg-white/15"
+                        aria-label="Un créneau de moins"
+                      >
+                        −
+                      </button>
+                      <span className="chiffres font-semibold text-white">
+                        {creneauxRetenus} créneau{creneauxRetenus > 1 ? 'x' : ''}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setCreneaux(creneauxRetenus + 1)}
+                        className="h-5 w-5 rounded-md border border-white/25 leading-none text-white hover:bg-white/15"
+                        aria-label="Un créneau de plus"
+                      >
+                        +
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAcompteOuvert(false);
+                          setCreneaux(null);
+                        }}
+                        className="underline underline-offset-2 hover:text-white"
+                      >
+                        retirer
+                      </button>
+                    </div>
+                    <p className="mt-1.5">
+                      Le bilan ({formaterEuros(grille.bilan)}) et {creneauxRetenus} créneau
+                      {creneauxRetenus > 1 ? 'x' : ''} de 30 minutes bloqué
+                      {creneauxRetenus > 1 ? 's' : ''} dans le planning. Il se déduit du total.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/*
               La thérapeute doit comprendre pourquoi le 4× a disparu, sinon

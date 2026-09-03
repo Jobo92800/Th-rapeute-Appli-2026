@@ -183,6 +183,35 @@ export const LIBELLES_MODE_REGLEMENT: Record<ModeReglement, string> = {
 export interface Echeance {
   rang: number;
   montant: number;
+  /** « acompte » pour le premier versement, quand il y en a un. */
+  type?: 'acompte' | 'echeance';
+}
+
+/**
+ * L'acompte demandé à une cliente qui dit oui mais ne peut pas tout régler
+ * tout de suite.
+ *
+ * Il couvre exactement ce que le centre a déjà engagé pour elle : le bilan
+ * qui vient d'être fait, et les créneaux bloqués dans le planning pour sa
+ * prochaine venue — une demi-heure par soin. Trois soins enchaînés, c'est
+ * une heure et demie réservée, donc trois séances dues.
+ *
+ * Il ne s'ajoute pas à la cure, il en fait partie : c'est son premier
+ * règlement. Le bilan reste offert puisqu'elle démarre — les 129 € ne
+ * servent qu'à mesurer ce que le centre perdrait si elle ne revenait pas.
+ */
+export function montantAcompte(args: {
+  prixBilan: number;
+  creneauxReserves: number;
+  prixSeance: number;
+}): number {
+  const creneaux = Math.max(0, Math.floor(args.creneauxReserves));
+  return arrondir(args.prixBilan + creneaux * args.prixSeance);
+}
+
+/** Autant de créneaux que de soins différents : ils s'enchaînent sur une venue. */
+export function creneauxParDefaut(soinsRetenus: number): number {
+  return Math.max(1, soinsRetenus);
 }
 
 export interface Echeancier {
@@ -287,7 +316,7 @@ export interface EcheancierCure {
   frais: number;
   /** Ce que la cliente règle en tout, frais compris. */
   montantARegler: number;
-  echeances: Array<{ rang: number; montant: number }>;
+  echeances: Echeance[];
 }
 
 /**
@@ -320,6 +349,12 @@ export function construireEcheancierCure(args: {
   methode: 'centre' | 'alma';
   n: number;
   /**
+   * Premier versement, réglé avant la prochaine séance. Il se déduit du
+   * total : le reste se répartit sur les échéances suivantes. Au centre
+   * seulement — chez Alma, le crédit couvre déjà la totalité.
+   */
+  acompte?: number;
+  /**
    * Montant des séances, quand tous les soins n'ont pas le même prix — le
    * Dôme est moins cher. Sans lui, on multiplie simplement le nombre de
    * séances par le prix unitaire.
@@ -333,6 +368,37 @@ export function construireEcheancierCure(args: {
 
   if (methode === 'centre') {
     const n = Math.max(1, Math.min(4, args.n));
+
+    /*
+      Avec un acompte, il vient en tête et se déduit du total. Le reste suit
+      les séances comme d'habitude, à ceci près que le guide et la tenue ne
+      sont plus portés par la première échéance : l'acompte a déjà chargé le
+      début du parcours, inutile d'en rajouter.
+    */
+    const acompte = arrondir(Math.max(0, Math.min(args.acompte ?? 0, base)));
+
+    if (acompte > 0) {
+      const reste = arrondir(base - acompte);
+      const parts = repartirSeances(seances, n);
+      const parPart = parts.map((s) => arrondir((reste * s) / Math.max(1, seances)));
+      const ecart = arrondir(reste - parPart.reduce((a, b) => a + b, 0));
+
+      return {
+        methode,
+        n,
+        mode,
+        frais: 0,
+        montantARegler: base,
+        echeances: [
+          { rang: 1, montant: acompte, type: 'acompte' as const },
+          ...parPart.map((m, i) => ({
+            rang: i + 1,
+            montant: arrondir(m + (i === 0 ? ecart : 0)),
+            type: 'echeance' as const,
+          })),
+        ],
+      };
+    }
 
     if (n === 1) {
       return {

@@ -19,6 +19,8 @@ import {
   type GrilleTarifaire,
   dureeCureEnMois,
   echeancesCentrePossibles,
+  creneauxParDefaut,
+  montantAcompte,
 } from '../src/domain/tarification.ts';
 
 const GRILLE: GrilleTarifaire = {
@@ -230,4 +232,89 @@ export function controlerTarification() {
   const reduite = dureeCureEnMois(Math.round(20 * 0.5), 2);
   egal('la cure entière tient sur quatre chèques', echeancesCentrePossibles(pleine).length, 4);
   egal('la formule Découverte les ramène à trois', echeancesCentrePossibles(reduite).length, 3);
+
+  section('L’acompte de celle qui ne peut pas tout régler');
+
+  /*
+    La règle de Jonathan, mot pour mot : le prix du bilan, plus une séance
+    par créneau bloqué dans le planning. Trois soins enchaînés, c'est 1h30
+    réservée, donc trois séances dues.
+  */
+  egalEuros(
+    'bilan + trois créneaux = 306 €',
+    montantAcompte({ prixBilan: 129, creneauxReserves: 3, prixSeance: 59 }),
+    306,
+  );
+  egalEuros(
+    'un seul créneau, un seul soin',
+    montantAcompte({ prixBilan: 129, creneauxReserves: 1, prixSeance: 59 }),
+    188,
+  );
+  egalEuros(
+    'aucun créneau réservé : le bilan seul',
+    montantAcompte({ prixBilan: 129, creneauxReserves: 0, prixSeance: 59 }),
+    129,
+  );
+  egal('autant de créneaux que de soins', creneauxParDefaut(3), 3);
+  egal('jamais zéro créneau par défaut', creneauxParDefaut(0), 1);
+
+  section('L’acompte se déduit, il ne s’ajoute pas');
+
+  const avecAcompte = construireEcheancierCure({
+    seances: 27,
+    prixSeance: 59,
+    options: 89,
+    methode: 'centre',
+    n: 3,
+    acompte: 306,
+  });
+
+  egalEuros('le total ne bouge pas', avecAcompte.montantARegler, 27 * 59 + 89);
+  egal('l’acompte est la première ligne', avecAcompte.echeances[0].type, 'acompte');
+  egalEuros('et vaut ce qui a été calculé', avecAcompte.echeances[0].montant, 306);
+  egal('les suivantes sont des échéances', avecAcompte.echeances[1].type, 'echeance');
+  egal('trois échéances après l’acompte', avecAcompte.echeances.filter((e) => e.type === 'echeance').length, 3);
+  egalEuros(
+    'tout est réparti, rien n’est perdu',
+    avecAcompte.echeances.reduce((n, e) => n + e.montant, 0),
+    27 * 59 + 89,
+  );
+
+  section('Sans acompte, rien ne change');
+
+  const sansAcompte = construireEcheancierCure({
+    seances: 27,
+    prixSeance: 59,
+    options: 89,
+    methode: 'centre',
+    n: 3,
+  });
+  egal('aucune ligne d’acompte', sansAcompte.echeances.some((e) => e.type === 'acompte'), false);
+  egal('trois échéances', sansAcompte.echeances.length, 3);
+  egalEuros('même total', sansAcompte.montantARegler, avecAcompte.montantARegler);
+
+  section('Les cas limites de l’acompte');
+
+  const comptantAvecAcompte = construireEcheancierCure({
+    seances: 12, prixSeance: 59, options: 29, methode: 'centre', n: 1, acompte: 188,
+  });
+  egal(
+    'un acompte n’est jamais avalé par le règlement comptant',
+    comptantAvecAcompte.echeances[0].type,
+    'acompte',
+  );
+  egalEuros(
+    'et le solde suit',
+    comptantAvecAcompte.echeances.reduce((n, e) => n + e.montant, 0),
+    12 * 59 + 29,
+  );
+
+  const trop = construireEcheancierCure({
+    seances: 10, prixSeance: 59, options: 29, methode: 'centre', n: 2, acompte: 5000,
+  });
+  egalEuros(
+    'un acompte plus gros que la cure se ramène à la cure',
+    trop.echeances.reduce((n, e) => n + e.montant, 0),
+    10 * 59 + 29,
+  );
 }

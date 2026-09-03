@@ -145,7 +145,7 @@ export interface NouveauProgramme {
   montantTotal: number;
   modeReglement: Programme['mode_reglement'];
   fraisFinancement: number;
-  echeances: Array<{ rang: number; montant: number }>;
+  echeances: Array<{ rang: number; montant: number; type?: 'acompte' | 'echeance' }>;
   complementRecommande: string | null;
   /** Séances gagnées par parrainage, posées sur une technologie. Jamais facturées. */
   offertes?: { technologie: Technologie; seances: number } | null;
@@ -223,7 +223,9 @@ export async function creerProgramme(n: NouveauProgramme): Promise<Programme> {
     const { error: e } = await supabase.from('echeances').insert(
       n.echeances.map((ech, i) => ({
         programme_id: programme.id,
-        type: 'echeance' as const,
+        // L'acompte porte son propre type : le contrat l'annonce à part, et
+        // l'échéancier de la fiche ne doit pas le confondre avec une mensualité.
+        type: ech.type ?? ('echeance' as const),
         rang: ech.rang,
         montant: ech.montant,
         date_prevue: dates[i],
