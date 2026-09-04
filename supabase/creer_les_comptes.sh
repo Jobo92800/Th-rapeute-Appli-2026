@@ -41,23 +41,35 @@ if [ -z "$URL" ]; then
   exit 1
 fi
 
-if [ -z "${CLE_SERVICE:-}" ]; then
+# Une clé Supabase est un jeton JWT : elle commence toujours par « eyJ ».
+#
+# On ignore délibérément une variable d'environnement qui ne ressemble pas à
+# une clé : une tentative précédente peut en avoir laissé une mauvaise dans
+# le shell, et le script la reprendrait sans rien demander. C'est arrivé.
+case "${CLE_SERVICE:-}" in
+  eyJ*) ;;
+  *)    CLE_SERVICE="" ;;
+esac
+
+essais=0
+while [ -z "$CLE_SERVICE" ]; do
+  essais=$((essais + 1))
+  if [ "$essais" -gt 3 ]; then
+    echo "✗ Trois essais, on s'arrête. Créez les comptes à la main dans"
+    echo "  Supabase → Authentication → Users."
+    exit 1
+  fi
   echo "Clé de service Supabase — Project Settings → API → service_role → Reveal"
   printf "Collez-la puis Entrée (elle ne s'affichera pas) : "
-  read -rs CLE_SERVICE
+  read -rs saisie
   echo
-fi
-
-# Une clé Supabase est un jeton JWT : elle commence toujours par « eyJ ».
-# Ce contrôle attrape le collage de travers avant treize appels pour rien.
-case "$CLE_SERVICE" in
-  eyJ*) ;;
-  "")   echo "✗ Aucune clé saisie."; exit 1 ;;
-  *)    echo "✗ Cette clé ne ressemble pas à une clé Supabase : elle devrait"
-        echo "  commencer par « eyJ ». Un morceau de texte s'est peut-être"
-        echo "  collé devant. Relancez et collez la clé seule."
-        exit 1 ;;
-esac
+  case "$saisie" in
+    eyJ*) CLE_SERVICE="$saisie" ;;
+    "")   echo "  Rien n'a été collé. On recommence." ;;
+    *)    echo "  Ça ne ressemble pas à une clé : elle commence par « eyJ »."
+          echo "  Du texte s'est peut-être collé devant. On recommence." ;;
+  esac
+done
 
 printf "Mot de passe de départ (il ne s'affichera pas) : "
 read -rs MDP
