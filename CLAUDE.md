@@ -349,18 +349,15 @@ curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
-Migrations passées jusqu'à **037** incluse, et `synchro-airtable`
-redéployée dans la foulée. Deux attendent d'être collées : la **038** (le
-bilan seul passe à 129 €), la **039** (le récapitulatif BioPortrait), la **040** (les commandes SQL
-refermées) et la **041** (le droit implicite coupé pour l'avenir).
+Migrations passées jusqu'à **040** incluse, `synchro-airtable` redéployée,
+et les deux champs du récapitulatif créés dans Airtable. La **041** (le
+droit implicite coupé pour les commandes futures) attend d'être collée.
 
-La 039 demande **deux champs à créer dans Airtable** — « Récapitulatif
-BioPortrait » en pièce jointe, « Récap envoyé le » en date — et une
-automatisation qui envoie le mail quand la date se remplit. Les étapes sont
-écrites en bas du fichier de migration. Elle demande aussi un
-**redéploiement de `synchro-airtable`**, et que le jeton Airtable porte le
-droit **`schema.bases:read`** : la fonction cherche l'identifiant du champ
-pièce jointe par son nom, faute de le connaître à l'avance.
+La fermeture des commandes (040) a été **vérifiée des deux côtés** le
+3 septembre 2026 : depuis l'extérieur, les neuf commandes répondent
+« permission denied » avec la clé publique ; la synchro, qui se présente
+avec la clé de service, continue de répondre `{"traitees":0,"echecs":0}` ;
+et l'application connectée fonctionne normalement.
 
 Deux diagnostics, dans `supabase/diagnostics/`, ne modifient rien et se
 relancent à volonté : `controle_coherence.sql` (quinze vérifications) et
