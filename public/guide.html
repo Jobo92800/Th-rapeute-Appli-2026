@@ -1,0 +1,1484 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex, nofollow"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>MAbeautyplus au comptoir</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+
+<style>
+  :root {
+    color-scheme: light;
+    --encre:      #152B2C;
+    --encre-doux: #41595A;
+    --gris:       #5E7273;
+    --gris-clair: #9BABAB;
+    --papier:     #F6FAFA;
+    --carte:      #FFFFFF;
+    --trait:      #DCE9E9;
+    --trait-fin:  #EAF3F3;
+    --teal:       #3BBFBF;
+    --teal-fonce: #1F8484;
+    --teal-pale:  #EAF7F7;
+    --magenta:    #CE1E73;
+    --magenta-pale:#FDE9F2;
+    --ambre:      #9A6410;
+    --ambre-pale: #FDF3E2;
+    --ombre:      0 1px 2px rgba(21,43,44,.05), 0 14px 34px -26px rgba(21,43,44,.4);
+
+    --serif: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
+    --titre: 'Poppins', 'Segoe UI', system-ui, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --encre:      #EAF3F3;
+      --encre-doux: #C3D6D6;
+      --gris:       #9BABAB;
+      --gris-clair: #6E8283;
+      --papier:     #0B1819;
+      --carte:      #132526;
+      --trait:      #274041;
+      --trait-fin:  #1D3334;
+      --teal:       #4ECFCF;
+      --teal-fonce: #8BDCDC;
+      --teal-pale:  #12302F;
+      --magenta:    #F79BC6;
+      --magenta-pale:#3A1027;
+      --ambre:      #E8BE7C;
+      --ambre-pale: #33260F;
+      --ombre:      0 1px 2px rgba(0,0,0,.4), 0 14px 34px -26px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --encre:      #EAF3F3;
+    --encre-doux: #C3D6D6;
+    --gris:       #9BABAB;
+    --gris-clair: #6E8283;
+    --papier:     #0B1819;
+    --carte:      #132526;
+    --trait:      #274041;
+    --trait-fin:  #1D3334;
+    --teal:       #4ECFCF;
+    --teal-fonce: #8BDCDC;
+    --teal-pale:  #12302F;
+    --magenta:    #F79BC6;
+    --magenta-pale:#3A1027;
+    --ambre:      #E8BE7C;
+    --ambre-pale: #33260F;
+    --ombre:      0 1px 2px rgba(0,0,0,.4), 0 14px 34px -26px rgba(0,0,0,.8);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--papier);
+    color: var(--encre);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page { max-width: 50rem; margin: 0 auto; padding: 0 1.5rem 6rem; }
+
+  /* ---------- En-tête ---------- */
+
+  .bandeau {
+    background: linear-gradient(160deg, #0F4344 0%, #166363 55%, #1F8484 100%);
+    color: #EAF7F7;
+    padding: 3.5rem 0 3rem;
+    margin-bottom: 3rem;
+  }
+  .bandeau .page { padding-bottom: 0; }
+  .logotype {
+    font-family: var(--titre);
+    font-weight: 700;
+    font-size: .95rem;
+    letter-spacing: .04em;
+    color: #A9E0E0;
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .logotype span { color: #F79BC6; }
+  .bandeau h1 {
+    font-family: var(--titre);
+    font-weight: 700;
+    font-size: clamp(2.2rem, 6vw, 3.1rem);
+    line-height: 1.06;
+    letter-spacing: -.02em;
+    margin: 1.1rem 0 0;
+    text-wrap: balance;
+    color: #FFFFFF;
+  }
+  .bandeau .chapo {
+    margin: 1rem 0 0;
+    font-size: 1.12rem;
+    max-width: 34rem;
+    color: #CFECEC;
+  }
+  .bandeau .meta {
+    margin-top: 2rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(169,224,224,.28);
+    display: flex; flex-wrap: wrap; gap: 1.75rem;
+    font-size: .82rem;
+    color: #A9E0E0;
+  }
+  .bandeau .meta b {
+    display: block;
+    font-family: var(--titre);
+    font-weight: 600;
+    font-size: .68rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #6FCDCD;
+    margin-bottom: .15rem;
+  }
+
+  /* ---------- Titres ---------- */
+
+  h2 {
+    font-family: var(--titre);
+    font-weight: 600;
+    font-size: 1.6rem;
+    letter-spacing: -.015em;
+    line-height: 1.2;
+    margin: 0;
+    text-wrap: balance;
+  }
+  h3 {
+    font-family: var(--titre);
+    font-weight: 600;
+    font-size: 1.02rem;
+    margin: 0 0 .35rem;
+    letter-spacing: -.005em;
+  }
+  p { margin: 0 0 .9rem; }
+  p:last-child { margin-bottom: 0; }
+
+  .oeil {
+    font-family: var(--titre);
+    font-weight: 600;
+    font-size: .68rem;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--teal-fonce);
+    display: block;
+    margin-bottom: .45rem;
+  }
+
+  /* ---------- Sommaire ---------- */
+
+  .sommaire {
+    background: var(--carte);
+    border: 1px solid var(--trait);
+    border-radius: 14px;
+    padding: 1.6rem 1.75rem;
+    box-shadow: var(--ombre);
+    margin-bottom: 3.5rem;
+  }
+  .sommaire ol {
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: .1rem;
+    counter-reset: som;
+  }
+  .sommaire li { counter-increment: som; }
+  .sommaire a {
+    display: flex; align-items: baseline; gap: .8rem;
+    padding: .42rem .5rem;
+    margin: 0 -.5rem;
+    border-radius: 8px;
+    color: var(--encre);
+    text-decoration: none;
+    font-size: .97rem;
+  }
+  .sommaire a::before {
+    content: counter(som, decimal-leading-zero);
+    font-family: var(--titre);
+    font-size: .72rem;
+    font-weight: 600;
+    color: var(--gris-clair);
+    font-variant-numeric: tabular-nums;
+    min-width: 1.5rem;
+  }
+  .sommaire a:hover, .sommaire a:focus-visible {
+    background: var(--teal-pale);
+    color: var(--teal-fonce);
+    outline: none;
+  }
+  .sommaire a:hover::before, .sommaire a:focus-visible::before { color: var(--teal-fonce); }
+
+  /* ---------- Sections ---------- */
+
+  section { margin-bottom: 3.75rem; scroll-margin-top: 1.5rem; }
+  .intro { margin: .8rem 0 1.75rem; color: var(--encre-doux); }
+  .intro-large { max-width: 42rem; }
+
+  /* ---------- Cartes de repère ---------- */
+
+  .reperes { display: grid; gap: 1rem; }
+  @media (min-width: 40rem) { .reperes { grid-template-columns: repeat(3, 1fr); } }
+  .repere {
+    background: var(--carte);
+    border: 1px solid var(--trait);
+    border-radius: 12px;
+    padding: 1.1rem 1.2rem;
+  }
+  .repere h3 { color: var(--teal-fonce); font-size: .95rem; }
+  .repere p { font-size: .92rem; color: var(--encre-doux); }
+
+  /* ---------- Lexique ---------- */
+
+  .lexique { display: grid; gap: 0; border-top: 1px solid var(--trait); }
+  .lexique > div {
+    display: grid; gap: .15rem .5rem;
+    padding: .85rem 0;
+    border-bottom: 1px solid var(--trait-fin);
+  }
+  @media (min-width: 34rem) {
+    .lexique > div { grid-template-columns: 10.5rem 1fr; gap: 1.25rem; }
+  }
+  .lexique dt {
+    font-family: var(--titre);
+    font-weight: 600;
+    font-size: .93rem;
+    color: var(--encre);
+  }
+  .lexique dd { margin: 0; font-size: .95rem; color: var(--encre-doux); }
+
+  /* ---------- Un geste ---------- */
+
+  .geste {
+    background: var(--carte);
+    border: 1px solid var(--trait);
+    border-radius: 16px;
+    box-shadow: var(--ombre);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+  .geste > header {
+    padding: 1.25rem 1.6rem 1.1rem;
+    border-bottom: 1px solid var(--trait-fin);
+    background: linear-gradient(180deg, var(--teal-pale), transparent);
+  }
+  .geste > header h2 { font-size: 1.28rem; }
+  .geste > header p { margin: .4rem 0 0; font-size: .95rem; color: var(--encre-doux); }
+  .geste-corps { padding: 1.4rem 1.6rem 1.6rem; }
+
+  ol.etapes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: etape;
+    display: grid;
+    gap: 1rem;
+  }
+  ol.etapes > li {
+    counter-increment: etape;
+    display: grid;
+    grid-template-columns: 1.85rem 1fr;
+    gap: .9rem;
+    align-items: start;
+  }
+  ol.etapes > li::before {
+    content: counter(etape);
+    font-family: var(--titre);
+    font-weight: 600;
+    font-size: .82rem;
+    line-height: 1.75rem;
+    height: 1.75rem;
+    text-align: center;
+    border-radius: 50%;
+    background: var(--teal-pale);
+    color: var(--teal-fonce);
+    font-variant-numeric: tabular-nums;
+  }
+  ol.etapes p { font-size: .98rem; margin-bottom: .45rem; }
+  ol.etapes strong { font-weight: 600; }
+
+  .bouton-dit {
+    font-family: var(--titre);
+    font-weight: 500;
+    font-size: .84rem;
+    background: var(--teal-fonce);
+    color: #FFFFFF;
+    padding: .12em .55em;
+    border-radius: 5px;
+    white-space: nowrap;
+    display: inline-block;
+    line-height: 1.5;
+  }
+  .champ-dit {
+    font-family: var(--titre);
+    font-weight: 500;
+    font-size: .84rem;
+    border: 1px solid var(--trait);
+    background: var(--papier);
+    color: var(--encre);
+    padding: .1em .5em;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+
+  /* ---------- Encarts ---------- */
+
+  .note, .attention, .astuce {
+    border-radius: 10px;
+    padding: .85rem 1.1rem;
+    font-size: .93rem;
+    margin: .9rem 0 0;
+    border: 1px solid;
+  }
+  .note      { background: var(--teal-pale);    border-color: color-mix(in srgb, var(--teal) 35%, transparent); }
+  .attention { background: var(--magenta-pale); border-color: color-mix(in srgb, var(--magenta) 35%, transparent); }
+  .astuce    { background: var(--ambre-pale);   border-color: color-mix(in srgb, var(--ambre) 32%, transparent); }
+  .note b, .attention b, .astuce b {
+    font-family: var(--titre);
+    font-weight: 600;
+    font-size: .68rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: .2rem;
+  }
+  .note b      { color: var(--teal-fonce); }
+  .attention b { color: var(--magenta); }
+  .astuce b    { color: var(--ambre); }
+  .note p, .attention p, .astuce p { margin: 0; color: var(--encre-doux); }
+
+  /* ---------- Reproductions d'écran ---------- */
+
+  figure.ecran { margin: 1.4rem 0 0; }
+  .fenetre {
+    border: 1px solid var(--trait);
+    border-radius: 11px;
+    overflow: hidden;
+    background: var(--papier);
+    font-family: var(--titre);
+  }
+  .fenetre-barre {
+    display: flex; align-items: center; gap: .4rem;
+    padding: .5rem .75rem;
+    background: var(--trait-fin);
+    border-bottom: 1px solid var(--trait);
+  }
+  .pastille { width: .55rem; height: .55rem; border-radius: 50%; background: var(--gris-clair); opacity: .55; }
+  .fenetre-url {
+    margin-left: .5rem;
+    font-size: .68rem;
+    color: var(--gris);
+    letter-spacing: .01em;
+  }
+  .fenetre-corps { display: flex; min-height: 8rem; }
+
+  .rail {
+    width: 8.5rem;
+    flex: none;
+    background: var(--carte);
+    border-right: 1px solid var(--trait);
+    padding: .7rem .55rem;
+    display: none;
+  }
+  @media (min-width: 34rem) { .rail { display: block; } }
+  .rail-marque {
+    font-size: .74rem; font-weight: 700; color: var(--teal-fonce);
+    padding: 0 .35rem .55rem;
+  }
+  .rail-marque i { font-style: normal; color: var(--magenta); }
+  .rail a, .rail span {
+    display: block;
+    font-size: .72rem;
+    color: var(--gris);
+    padding: .3rem .4rem;
+    border-radius: 6px;
+    text-decoration: none;
+  }
+  .rail .actif { background: var(--teal-pale); color: var(--teal-fonce); font-weight: 600; }
+
+  .vue { flex: 1; padding: .85rem .95rem; min-width: 0; display: grid; gap: .6rem; align-content: start; }
+  .vue-titre { font-size: .88rem; font-weight: 600; }
+  .vue-sous { font-size: .68rem; color: var(--gris); margin-top: -.45rem; }
+
+  .bloc {
+    background: var(--carte);
+    border: 1px solid var(--trait);
+    border-radius: 8px;
+    padding: .55rem .7rem;
+    font-size: .72rem;
+    color: var(--encre-doux);
+    display: grid;
+    gap: .32rem;
+  }
+  .bloc-titre { font-size: .68rem; font-weight: 600; color: var(--encre); }
+  .ligne { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+  .ligne + .ligne { border-top: 1px solid var(--trait-fin); padding-top: .32rem; }
+  .chiffre { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--encre); }
+  .rouge { color: var(--magenta); }
+  .vert  { color: var(--teal-fonce); }
+
+  .cases { display: flex; flex-wrap: wrap; gap: .35rem; }
+  .case {
+    border: 1px solid var(--trait);
+    background: var(--carte);
+    border-radius: 6px;
+    padding: .22rem .5rem;
+    font-size: .68rem;
+    color: var(--gris);
+  }
+  .case.on { background: var(--teal-pale); border-color: var(--teal); color: var(--teal-fonce); font-weight: 600; }
+  .bt {
+    display: inline-block;
+    background: var(--teal-fonce);
+    color: #fff;
+    border-radius: 6px;
+    padding: .28rem .65rem;
+    font-size: .7rem;
+    font-weight: 500;
+  }
+  .bt.creux { background: transparent; border: 1px solid var(--trait); color: var(--encre-doux); }
+  .bt.fort  { background: var(--magenta); }
+
+  /* pastille numérotée collée à un élément de l'écran */
+  .pin {
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    width: 1.05rem; height: 1.05rem;
+    border-radius: 50%;
+    background: var(--magenta);
+    color: #fff;
+    font-size: .62rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    margin-right: .3rem;
+    flex: none;
+    vertical-align: middle;
+  }
+
+  figcaption {
+    font-family: var(--serif);
+    font-size: .84rem;
+    color: var(--gris);
+    margin-top: .55rem;
+    display: grid;
+    gap: .2rem;
+  }
+  figcaption .leg { display: flex; align-items: baseline; gap: .35rem; }
+  figcaption .pin { position: relative; top: .12rem; }
+
+  /* ---------- Table de dépannage ---------- */
+
+  .depannage { display: grid; gap: 0; border-top: 1px solid var(--trait); }
+  .depannage > div {
+    padding: .95rem 0;
+    border-bottom: 1px solid var(--trait-fin);
+    display: grid; gap: .25rem;
+  }
+  @media (min-width: 40rem) {
+    .depannage > div { grid-template-columns: 17rem 1fr; gap: 1.5rem; }
+  }
+  .depannage .quoi {
+    font-family: var(--titre);
+    font-weight: 500;
+    font-size: .93rem;
+    color: var(--magenta);
+  }
+  .depannage .quoi::before { content: "« "; }
+  .depannage .quoi::after  { content: " »"; }
+  .depannage .fix { font-size: .95rem; color: var(--encre-doux); }
+
+  /* ---------- Aide-mémoire ---------- */
+
+  .memo {
+    background: var(--carte);
+    border: 2px solid var(--teal-fonce);
+    border-radius: 16px;
+    padding: 1.75rem;
+    box-shadow: var(--ombre);
+  }
+  .memo-grille { display: grid; gap: 1.4rem; margin-top: 1.25rem; }
+  @media (min-width: 38rem) { .memo-grille { grid-template-columns: 1fr 1fr; } }
+  .memo h3 { color: var(--teal-fonce); font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; }
+  .memo ul { margin: .5rem 0 0; padding-left: 1.1rem; display: grid; gap: .3rem; }
+  .memo li { font-size: .93rem; color: var(--encre-doux); }
+  .memo li::marker { color: var(--teal); }
+
+  /* ---------- Pied ---------- */
+
+  footer {
+    border-top: 1px solid var(--trait);
+    padding-top: 1.5rem;
+    font-size: .88rem;
+    color: var(--gris);
+  }
+
+  .imprimer {
+    font-family: var(--titre);
+    font-size: .82rem;
+    font-weight: 500;
+    background: transparent;
+    border: 1px solid rgba(169,224,224,.5);
+    color: #EAF7F7;
+    border-radius: 8px;
+    padding: .45rem .95rem;
+    cursor: pointer;
+    margin-top: 1.75rem;
+  }
+  .imprimer:hover, .imprimer:focus-visible { background: rgba(234,247,247,.12); outline: none; }
+
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+
+  @media print {
+    /*
+      Le sélecteur doit être au moins aussi spécifique que celui du mode
+      sombre (:root:not([data-theme="light"])), sinon un ordinateur réglé en
+      thème sombre imprime des cartes noires avec du texte noir dessus.
+      C'est arrivé.
+    */
+    :root, :root:not([data-theme="light"]), :root[data-theme="dark"] {
+      color-scheme: light;
+      --encre:      #152B2C;
+      --encre-doux: #41595A;
+      --gris:       #5E7273;
+      --gris-clair: #9BABAB;
+      --papier:     #FFFFFF;
+      --carte:      #FFFFFF;
+      --trait:      #DCE9E9;
+      --trait-fin:  #EAF3F3;
+      --teal:       #3BBFBF;
+      --teal-fonce: #1F8484;
+      --teal-pale:  #EAF7F7;
+      --magenta:    #CE1E73;
+      --magenta-pale:#FDE9F2;
+      --ambre:      #9A6410;
+      --ambre-pale: #FDF3E2;
+      --ombre:      none;
+    }
+    body { background: #fff; color: #000; font-size: 11pt; }
+    .bandeau { background: #fff; color: #000; padding: 0 0 1rem; border-bottom: 3px solid #1F8484; }
+    .bandeau h1, .bandeau .chapo, .bandeau .meta { color: #000; }
+    .bandeau .meta b, .logotype { color: #1F8484; }
+    .imprimer { display: none; }
+    .geste, .memo, .sommaire { break-inside: avoid; box-shadow: none; }
+    section { break-inside: avoid-page; }
+    .page { max-width: none; padding: 0; }
+    a { color: #000; text-decoration: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+
+<div class="bandeau">
+  <div class="page">
+    <div class="logotype">MAbeauty<span>plus</span></div>
+    <h1>MAbeautyplus au comptoir</h1>
+    <p class="chapo">
+      Tout ce qu'une thérapeute fait dans la journée, geste par geste :
+      accueillir une nouvelle cliente, faire son bilan, signer son contrat,
+      la suivre séance après séance, encaisser, tenir le rayon.
+    </p>
+    <div class="meta">
+      <div><b>Pour qui</b>Les thérapeutes des 5 centres</div>
+      <div><b>Aucune connaissance requise</b>Si vous savez cliquer, vous savez faire</div>
+      <div><b>À garder</b>Imprimez-le, posez-le près de l'écran</div>
+    </div>
+    <button class="imprimer" type="button" id="imprimer">Imprimer ce guide</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <nav class="sommaire" aria-label="Sommaire">
+    <span class="oeil">Ce que vous trouverez ici</span>
+    <h2>Le guide en treize gestes</h2>
+    <ol>
+      <li><a href="#rassurance">Trois choses à savoir avant de commencer</a></li>
+      <li><a href="#mots">Les six mots de l'application</a></li>
+      <li><a href="#connexion">Se connecter le matin</a></li>
+      <li><a href="#accueil">Lire son écran d'accueil</a></li>
+      <li><a href="#trouver">Retrouver une cliente</a></li>
+      <li><a href="#bilan">Faire un Bilan BioPortrait</a></li>
+      <li><a href="#contrat">Signer le contrat</a></li>
+      <li><a href="#seance">Faire une séance</a></li>
+      <li><a href="#encaisser">Encaisser une échéance</a></li>
+      <li><a href="#arret">Arrêter une cure, faire un avoir</a></li>
+      <li><a href="#complement">Vendre un complément</a></li>
+      <li><a href="#stock">Tenir le rayon</a></li>
+      <li><a href="#notes">Notes, exception cure et parrainage</a></li>
+      <li><a href="#soucis">Quand quelque chose ne va pas</a></li>
+      <li><a href="#memo">L'aide-mémoire à afficher</a></li>
+    </ol>
+  </nav>
+
+  <!-- ======================= RASSURANCE ======================= -->
+  <section id="rassurance">
+    <span class="oeil">Avant tout</span>
+    <h2>Trois choses à savoir avant de commencer</h2>
+    <p class="intro intro-large">
+      La plupart des hésitations devant un ordinateur viennent de la peur de
+      casser quelque chose. Voici pourquoi cela n'arrivera pas.
+    </p>
+
+    <div class="reperes">
+      <div class="repere">
+        <h3>Rien ne se perd</h3>
+        <p>
+          Une fiche que vous ne voulez plus voir dans la liste,
+          vous l'<strong>archivez</strong> : elle sort des listes, elle
+          existe toujours. Seule la direction peut supprimer pour de bon.
+        </p>
+      </div>
+      <div class="repere">
+        <h3>Tout se corrige</h3>
+        <p>
+          Une séance mal saisie, un poids inversé, une note à réécrire :
+          vous rouvrez et vous modifiez. L'application recalcule ce qui
+          dépend de votre correction.
+        </p>
+      </div>
+      <div class="repere">
+        <h3>Vous ne comptez rien</h3>
+        <p>
+          Les séances restantes, ce qui reste à encaisser, la quantité en
+          rayon : l'application les calcule seule. Vous n'avez jamais à
+          tenir un compteur à jour.
+        </p>
+      </div>
+    </div>
+
+    <div class="note">
+      <b>Une seule règle d'or</b>
+      <p>
+        Quand vous ne savez pas, ne devinez pas : laissez le champ vide et
+        demandez. Un champ vide se remplit plus tard ; une information fausse
+        se retrouve sur le contrat de la cliente.
+      </p>
+    </div>
+  </section>
+
+  <!-- ======================= LEXIQUE ======================= -->
+  <section id="mots">
+    <span class="oeil">Le vocabulaire</span>
+    <h2>Les six mots de l'application</h2>
+    <p class="intro intro-large">
+      Ces six mots reviennent partout. Une fois qu'ils sont clairs, le reste
+      se lit tout seul.
+    </p>
+
+    <dl class="lexique">
+      <div>
+        <dt>La fiche</dt>
+        <dd>La cliente elle-même : son nom, son téléphone, son centre. Une cliente = une fiche, pour toujours.</dd>
+      </div>
+      <div>
+        <dt>Le bilan</dt>
+        <dd>Les 28 questions plus les mesures InBody. Il donne son profil et son terrain — son <em>BioPortrait</em>.</dd>
+      </div>
+      <div>
+        <dt>La cure</dt>
+        <dd>Ce qu'elle achète : un nombre de séances, une répartition entre les soins, un montant. Quand elle revient plus tard, c'est une <strong>nouvelle</strong> cure.</dd>
+      </div>
+      <div>
+        <dt>La séance</dt>
+        <dd>Un passage au centre. Vous notez le poids, le jeu du jour, un commentaire, et vous clôturez.</dd>
+      </div>
+      <div>
+        <dt>L'échéance</dt>
+        <dd>Un paiement prévu à une date. Tant qu'elle n'est pas marquée réglée, elle apparaît à encaisser — puis en retard.</dd>
+      </div>
+      <div>
+        <dt>Le mouvement</dt>
+        <dd>Tout ce qui entre ou sort du rayon. Une vente en est un, et il s'écrit tout seul.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <!-- ======================= CONNEXION ======================= -->
+  <section id="connexion">
+    <article class="geste">
+      <header>
+        <h2>Se connecter le matin</h2>
+        <p>Chaque thérapeute a son propre compte. On ne se prête pas un compte : c'est votre nom qui reste sur les fiches que vous remplissez.</p>
+      </header>
+      <div class="geste-corps">
+        <ol class="etapes">
+          <li>
+            <div>
+              <p>Ouvrez l'application dans le navigateur. Tapez votre <strong>adresse email</strong> et votre <strong>mot de passe</strong>, puis <span class="bouton-dit">Se connecter</span>.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p>En haut à gauche, vérifiez le <strong>centre</strong> affiché. Tout ce que vous ferez ensuite — nouvelle fiche, bilan, stock — se rangera dans ce centre-là.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p>Le soir, <span class="bouton-dit">Déconnexion</span> en bas du menu si l'ordinateur est partagé.</p>
+            </div>
+          </li>
+        </ol>
+
+        <div class="attention">
+          <b>Si le message « Identifiant ou mot de passe incorrect » s'affiche</b>
+          <p>
+            Neuf fois sur dix, c'est une majuscule ou un espace en trop à la fin
+            de l'adresse. Retapez lentement. Si cela résiste, appelez la
+            direction : personne d'autre ne peut réinitialiser un mot de passe.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ======================= ACCUEIL ======================= -->
+  <section id="accueil">
+    <article class="geste">
+      <header>
+        <h2>Lire son écran d'accueil</h2>
+        <p>Ce que l'application sait de votre journée, en un coup d'œil. Prenez-en trente secondes en arrivant.</p>
+      </header>
+      <div class="geste-corps">
+
+        <figure class="ecran">
+          <div class="fenetre">
+            <div class="fenetre-barre">
+              <span class="pastille"></span><span class="pastille"></span><span class="pastille"></span>
+              <span class="fenetre-url">MAbeautyplus — Accueil</span>
+            </div>
+            <div class="fenetre-corps">
+              <nav class="rail">
+                <div class="rail-marque">MAbeauty<i>plus</i></div>
+                <span class="actif">Accueil</span>
+                <span>Clientes</span>
+                <span>Nouveau bilan</span>
+                <span>Stock</span>
+              </nav>
+              <div class="vue">
+                <div class="vue-titre">Bonjour Nadia</div>
+                <div class="vue-sous">Le Crès · mardi 2 septembre</div>
+
+                <div class="bloc">
+                  <div class="bloc-titre"><span class="pin">1</span>À encaisser</div>
+                  <div class="ligne"><span>Sophie M. — échéance d'aujourd'hui</span><span class="chiffre rouge">295,00 €</span></div>
+                  <div class="ligne"><span>Karine D. — en retard de 6 jours</span><span class="chiffre rouge">295,00 €</span></div>
+                </div>
+
+                <div class="bloc">
+                  <div class="bloc-titre"><span class="pin">2</span>Séances aujourd'hui</div>
+                  <div class="ligne"><span>Séances clôturées depuis ce matin</span><span class="chiffre">7</span></div>
+                </div>
+
+                <div class="bloc">
+                  <div class="bloc-titre"><span class="pin">3</span>Compléments à renouveler</div>
+                  <div class="ligne"><span>Sophie M. — boîte prise il y a 28 jours</span><span class="vert">Proposer</span></div>
+                </div>
+
+                <div class="bloc">
+                  <div class="bloc-titre"><span class="pin">4</span>Stock à recommander</div>
+                  <div class="ligne"><span>Tenue I-Shape — taille M</span><span class="chiffre rouge">1</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <figcaption>
+            <div class="leg"><span class="pin">1</span><span>Ce que vous devez demander aujourd'hui. En rouge, ce qui est déjà en retard.</span></div>
+            <div class="leg"><span class="pin">2</span><span>Le nombre de séances déjà clôturées aujourd'hui, dans votre centre. L'application ne connaît pas vos rendez-vous : votre planning reste dans Planity.</span></div>
+            <div class="leg"><span class="pin">3</span><span>Celles dont la boîte de compléments arrive à sa fin. Une occasion de vente, pas une obligation.</span></div>
+            <div class="leg"><span class="pin">4</span><span>Ce qui va manquer au rayon. Prévenez avant d'être à zéro.</span></div>
+          </figcaption>
+        </figure>
+
+        <div class="attention">
+          <b>L'application ne connaît pas vos rendez-vous</b>
+          <p>
+            Le planning reste dans Planity, les deux ne se parlent pas. Vous ne trouverez donc
+            nulle part la liste des clientes attendues ni leurs horaires. « Séances aujourd'hui »
+            compte ce que le centre a <em>déjà</em> fait depuis ce matin, pas ce qui reste à faire.
+          </p>
+        </div>
+
+        <div class="astuce">
+          <b>Le bon réflexe</b>
+          <p>
+            Regardez « À encaisser » <em>avant</em> que la cliente arrive, pas
+            pendant qu'elle se rhabille. Demander un règlement se prépare.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ======================= TROUVER ======================= -->
+  <section id="trouver">
+    <article class="geste">
+      <header>
+        <h2>Retrouver une cliente, ou en créer une</h2>
+        <p>Avant de créer une fiche, cherchez toujours : la cliente existe peut-être déjà, y compris dans un autre centre.</p>
+      </header>
+      <div class="geste-corps">
+        <ol class="etapes">
+          <li>
+            <div>
+              <p>Dans le menu de gauche, cliquez <span class="bouton-dit">Clientes</span>.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p>Tapez les <strong>trois premières lettres</strong> du nom dans la barre de recherche. Inutile de tout écrire, et la casse n'a pas d'importance.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p>Elle apparaît ? Cliquez sur la ligne, vous êtes sur sa fiche.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p>Elle n'apparaît pas ? Cliquez <span class="bouton-dit">Nouvelle fiche</span> en haut à droite. Nom, prénom, civilité, téléphone : c'est tout ce qu'il faut pour commencer.</p>
+            </div>
+          </li>
+        </ol>
+
+        <figure class="ecran">
+          <div class="fenetre">
+            <div class="fenetre-barre">
+              <span class="pastille"></span><span class="pastille"></span><span class="pastille"></span>
+              <span class="fenetre-url">MAbeautyplus — Clientes</span>
+            </div>
+            <div class="fenetre-corps">
+              <nav class="rail">
+                <div class="rail-marque">MAbeauty<i>plus</i></div>
+                <span>Accueil</span>
+                <span class="actif">Clientes</span>
+                <span>Nouveau bilan</span>
+                <span>Stock</span>
+              </nav>
+              <div class="vue">
+                <div class="ligne">
+                  <div class="vue-titre">Clientes</div>
+                  <span class="bt">Nouvelle fiche</span>
+                </div>
+                <div class="cases">
+                  <span class="case on">Rechercher : mar</span>
+                  <span class="case">Toutes les thérapeutes</span>
+                  <span class="case">Plus récentes</span>
+                </div>
+                <div class="bloc">
+                  <div class="ligne">
+                    <span><strong>Marchand Sophie</strong> · 06 12 34 56 78</span>
+                    <span class="chiffre rouge">1 échéance en retard</span>
+                  </div>
+                  <div class="ligne">
+                    <span><strong>Marin Karine</strong> · 06 98 76 54 32</span>
+                    <span class="chiffre vert">À jour</span>
+                  </div>
+                  <div class="ligne">
+                    <span><strong>Martinez Léa</strong> · 07 45 67 89 01</span>
+                    <span class="chiffre vert">À jour</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <figcaption>
+            <div class="leg"><span>La pastille de droite vous dit tout de suite si la cliente doit de l'argent, sans ouvrir sa fiche.</span></div>
+          </figcaption>
+        </figure>
+
+        <div class="attention">
+          <b>Le doublon, c'est l'ennemi</b>
+          <p>
+            Deux fiches pour la même personne, et son suivi se coupe en deux :
+            ses séances d'un côté, ses règlements de l'autre. Si l'application
+            vous prévient qu'« une fiche porte déjà ce nom dans ce centre »,
+            arrêtez-vous et vérifiez.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ======================= BILAN ======================= -->
+  <section id="bilan">
+    <article class="geste">
+      <header>
+        <h2>Faire un Bilan BioPortrait</h2>
+        <p>Le moment le plus important, et le plus long : comptez trois quarts d'heure. Il se fait sur tablette, à côté de la cliente. L'application vous guide écran par écran — vous n'avez qu'à avancer.</p>
+      </header>
+      <div class="geste-corps">
+        <ol class="etapes">
+          <li>
+            <div>
+              <p><strong>Ses coordonnées.</strong> Civilité, nom, prénom, date de naissance, téléphone, email. C'est le premier écran, et il ne revient plus après.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p><strong>Les 28 questions.</strong> Vous lisez, la cliente répond, vous cliquez sa réponse. L'écran passe tout seul à la question suivante — laissez-le faire, ne cliquez pas deux fois.</p>
+              <div class="note">
+                <b>Les questions marquées « Saisie thérapeute »</b>
+                <p>Ce sont les mesures InBody. C'est vous qui les relevez sur la machine et les recopiez, pas la cliente qui répond.</p>
+              </div>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p><strong>Son BioPortrait.</strong> L'application affiche son profil et son terrain, avec « Ce que cela change chez elle ». Prenez le temps de le lui lire : c'est là que la cure prend son sens.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p><strong>Sa cure.</strong> Cliquez <span class="bouton-dit">Voir la cure préconisée</span>. Les soins et le nombre de séances sont déjà proposés à partir de ses réponses.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p>Un soin apparaît <strong>barré</strong> ou signalé <span class="champ-dit">Avis médical</span> ? C'est une contre-indication venue de ses réponses de santé. <strong>Ne la contournez jamais</strong> sans l'accord écrit de son médecin.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p>Pour ajuster, cliquez <span class="bouton-dit">Modifier</span> : les boutons + et − apparaissent sur chaque soin. Cliquez à nouveau pour les ranger avant de montrer l'écran à la cliente.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p><strong>Le devis.</strong> Il reste flouté jusqu'à ce que vous cliquiez <span class="bouton-dit">Afficher la cure</span>. Choisissez alors le règlement : <span class="champ-dit">Au centre · chèques</span> ou <span class="champ-dit">Alma · carte</span>.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p>Elle dit oui mais ne peut pas tout régler aujourd'hui ? Cliquez <span class="champ-dit">Elle ne peut pas tout régler aujourd'hui ?</span> sous le prix. L'application propose un <strong>acompte</strong> : le bilan, plus une demi-heure par soin réservé dans le planning. Il se déduit du total, ce n'est pas un supplément.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p><strong>Trois fins possibles</strong>, selon ce qu'elle décide :</p>
+            </div>
+          </li>
+        </ol>
+
+        <dl class="lexique">
+          <div>
+            <dt>Valider la cure</dt>
+            <dd>Elle démarre. La cure est enregistrée, le bilan lui est offert, et vous enchaînez sur le contrat.</dd>
+          </div>
+          <div>
+            <dt>Envoyer le récap · 129 €</dt>
+            <dd>
+              Elle veut réfléchir. Le bilan lui est <strong>facturé 129 €</strong>, aucune cure n'est
+              ouverte, et elle reçoit par mail son BioPortrait avec cette proposition et son prix.
+              Vérifiez qu'elle a bien une adresse email, sinon le mail ne partira pas.
+            </dd>
+          </div>
+          <div>
+            <dt>Bilan seul · 129 €</dt>
+            <dd>La même chose, sans le mail. Pour celle qui ne veut rien recevoir.</dd>
+          </div>
+        </dl>
+
+        <figure class="ecran">
+          <div class="fenetre">
+            <div class="fenetre-barre">
+              <span class="pastille"></span><span class="pastille"></span><span class="pastille"></span>
+              <span class="fenetre-url">MAbeautyplus — Nouveau bilan · le récapitulatif</span>
+            </div>
+            <div class="fenetre-corps">
+              <div class="vue">
+                <div class="vue-titre">Votre programme sur mesure</div>
+                <div class="vue-sous">Sophie Marchand · profil Réconfort · terrain Circulatoire</div>
+
+                <div class="bloc">
+                  <div class="bloc-titre">Le rythme de la cure</div>
+                  <div class="ligne"><span><span class="pin">1</span>Luxothérapie</span><span class="chiffre">12 séances</span></div>
+                  <div class="ligne"><span>Pressodynamie</span><span class="chiffre">8 séances</span></div>
+                  <div class="ligne"><span style="text-decoration: line-through; opacity:.6"><span class="pin">2</span>I-Shape</span><span class="chiffre rouge">Retiré</span></div>
+                </div>
+
+                <div class="bloc">
+                  <div class="bloc-titre">Ce qui est compris, quoi qu'il arrive</div>
+                  <div class="ligne"><span>Guide de rééquilibrage alimentaire</span><span class="vert">Inclus</span></div>
+                  <div class="ligne"><span>Application podcasts et jeu à chaque séance</span><span class="vert">Inclus</span></div>
+                </div>
+
+                <div class="bloc">
+                  <div class="bloc-titre"><span class="pin">3</span>Le récapitulatif de votre cure</div>
+                  <div class="ligne"><span>20 séances + guide</span><span class="chiffre">1 209,00 €</span></div>
+                  <div class="ligne"><span>Au centre · 4 fois sans frais</span><span class="chiffre">302,25 €/mois</span></div>
+                </div>
+
+                <div class="cases">
+                  <span class="case">Revenir au BioPortrait</span>
+                  <span class="case on"><span class="pin">4</span>Modifier</span>
+                  <span class="case on">Terminer</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <figcaption>
+            <div class="leg"><span class="pin">1</span><span>Les séances proposées d'après ses réponses. Rien n'est figé, mais le point de départ est calculé.</span></div>
+            <div class="leg"><span class="pin">2</span><span>Un soin barré est un soin contre-indiqué. Il reste affiché pour que vous puissiez l'expliquer.</span></div>
+            <div class="leg"><span class="pin">3</span><span>Le montant se calcule seul : 59 € la séance, plus le guide, plus la tenue si électrostimulation.</span></div>
+            <div class="leg"><span class="pin">4</span><span>« Modifier » fait apparaître les + et − . Rangez-les avant de tourner l'écran vers la cliente.</span></div>
+          </figcaption>
+        </figure>
+
+        <div class="attention">
+          <b>Avancez au rythme de la cliente, pas au vôtre</b>
+          <p>
+            L'écran enchaîne tout seul après chaque réponse. Si vous cliquez
+            très vite en rafale, vous répondez à la question suivante sans
+            l'avoir lue. Un clic, une réponse.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ======================= CONTRAT ======================= -->
+  <section id="contrat">
+    <article class="geste">
+      <header>
+        <h2>Signer le contrat</h2>
+        <p>C'est l'engagement de la cliente. Tout se fait à l'écran, avec elle, dans l'ordre — l'application ne vous laissera pas sauter une étape.</p>
+      </header>
+      <div class="geste-corps">
+        <ol class="etapes">
+          <li>
+            <div>
+              <p>Sur sa fiche, onglet <span class="champ-dit">Contrat</span>, cliquez <span class="bouton-dit">Établir le contrat</span>.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p><strong>À lire avec la cliente.</strong> Le contrat et les consentements des soins prescrits. Chacun doit être ouvert : le bouton de signature reste éteint tant qu'il en reste un non lu. Ce n'est pas une formalité — c'est ce qui vous protège toutes les deux.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p><strong>À cocher avec la cliente.</strong> Les quatre engagements, cochés devant elle.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p><strong>La taille de la tenue I-Shape.</strong> Obligatoire si la cure comporte de l'électrostimulation. La tenue sort du rayon à cet instant précis, puisqu'elle repart avec.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p><strong>Le parcours audio.</strong> Choisissez A, B ou C, puis <strong>tapez avec elle un mot de passe</strong>. Elle pourra se connecter tout de suite, au comptoir, sur son téléphone.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p><strong>La signature.</strong> Elle signe au doigt dans le cadre, sous « Lu et approuvé ». Un trait raté ? <span class="bouton-dit">Effacer</span>, elle recommence.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p><span class="bouton-dit">Signer le contrat</span>. Le PDF part dans le CRM, la cure est validée, l'échéancier démarre.</p>
+            </div>
+          </li>
+        </ol>
+
+        <div class="note">
+          <b>Le mot de passe du parcours audio</b>
+          <p>
+            Choisissez-le <em>avec</em> la cliente et notez-le-lui. L'invitation
+            par email existe encore en secours, mais son lien expire en 24 h :
+            c'est la cause n°1 des « je n'arrive pas à me connecter » quelques
+            jours plus tard.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ======================= SÉANCE ======================= -->
+  <section id="seance">
+    <article class="geste">
+      <header>
+        <h2>Faire une séance</h2>
+        <p>Le geste que vous répéterez le plus. Une minute au début, une minute à la fin.</p>
+      </header>
+      <div class="geste-corps">
+        <ol class="etapes">
+          <li>
+            <div>
+              <p>Sur sa fiche, onglet <span class="champ-dit">Séances</span>, cliquez <span class="bouton-dit">Démarrer une séance</span>.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p>L'écran affiche <strong>le matériel à sortir</strong> et <strong>le jeu du jour</strong>. Le jeu est choisi pour elle : ne le remplacez pas par habitude.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p>Notez son <strong>poids</strong>, un <strong>commentaire</strong> si quelque chose s'est dit, et cochez <span class="champ-dit">Photo prise</span> le cas échéant.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p>Validez le jeu, puis <span class="bouton-dit">Clôturer la séance</span>. Le compteur de séances restantes se met à jour tout seul.</p>
+            </div>
+          </li>
+        </ol>
+
+        <div class="note">
+          <b>Corriger une séance passée</b>
+          <p>
+            Dans la liste des séances réalisées, cliquez sur celle à reprendre :
+            <span class="champ-dit">Corriger la séance</span> vous laisse changer
+            la date, le poids ou le commentaire. La courbe de poids se redessine
+            aussitôt, avec l'écart depuis la séance précédente.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ======================= ENCAISSER ======================= -->
+  <section id="encaisser">
+    <article class="geste">
+      <header>
+        <h2>Encaisser une échéance</h2>
+        <p>Deux clics. Le plus dur est de penser à le faire au moment où la cliente paie, pas le soir.</p>
+      </header>
+      <div class="geste-corps">
+        <ol class="etapes">
+          <li>
+            <div>
+              <p>Sur sa fiche, onglet <span class="champ-dit">Cure &amp; règlement</span>. L'échéancier liste chaque paiement prévu avec sa date.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p>Sur la ligne réglée, choisissez le <strong>moyen</strong> : carte bancaire, chèque, espèces, virement ou Alma.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p>C'est fait. La ligne quitte « À encaisser », le reste dû se recalcule, et le CRM suit.</p>
+            </div>
+          </li>
+        </ol>
+
+        <div class="astuce">
+          <b>Une échéance en retard n'est pas une faute</b>
+          <p>
+            C'est un rappel à passer. La ligne rouge sur la liste des clientes et
+            sur votre accueil est là pour ça — pour que personne ne l'oublie
+            pendant six mois.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ======================= ARRÊT ET AVOIR ======================= -->
+  <section id="arret">
+    <article class="geste">
+      <header>
+        <h2>Arrêter une cure, faire un avoir</h2>
+        <p>Une cliente s'arrête en route : déménagement, grossesse, santé, ou elle ne revient plus. Le geste se date, s'explique, et se défait.</p>
+      </header>
+      <div class="geste-corps">
+        <ol class="etapes">
+          <li>
+            <div>
+              <p>Sur sa fiche, onglet <span class="champ-dit">Cure &amp; règlement</span>, en bas de la cure : <span class="bouton-dit">Arrêter cette cure</span>.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p>L'écran fait le <strong>décompte devant vous</strong> : ce qu'elle a réglé, moins les séances qu'elle a réellement faites, moins le guide et la tenue qu'elle a emportés. La différence en sa faveur est proposée en avoir.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p>Le montant proposé <strong>se corrige</strong>. Un geste commercial, une séance offerte pour finir en bons termes : c'est vous qui tranchez, pas l'application.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p>Datez, écrivez <strong>pourquoi</strong> elle s'arrête, et validez. Ses échéances non réglées sont annulées — on ne réclame pas de l'argent pour des séances qui n'auront pas lieu.</p>
+            </div>
+          </li>
+        </ol>
+
+        <div class="note">
+          <b>Ce que devient son avoir</b>
+          <p>
+            Il s'affiche en haut de l'onglet Cure &amp; règlement. Deux boutons : <strong>Utiliser
+            sur une cure</strong>, qui le déduit de son échéancier, ou <strong>Rembourser en
+            argent</strong>. Il vaut dans les cinq centres — ce qu'elle a au Crès, elle peut le
+            dépenser à Avignon.
+          </p>
+        </div>
+
+        <div class="astuce">
+          <b>Vous vous êtes trompée ?</b>
+          <p>
+            Un bouton <strong>Rouvrir</strong> apparaît sur la cure arrêtée. Il refuse — en
+            disant pourquoi — si l'avoir a déjà été dépensé ou remboursé : mieux vaut un refus
+            clair qu'un trou dans les comptes.
+          </p>
+        </div>
+
+        <div class="attention">
+          <b>Elle a reçu plus qu'elle n'a payé ?</b>
+          <p>
+            Il n'y a alors pas d'avoir à lui faire, et l'écran vous le dit. À vous de décider si
+            vous réclamez la différence ou si vous passez l'éponge.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ======================= COMPLÉMENT ======================= -->
+  <section id="complement">
+    <article class="geste">
+      <header>
+        <h2>Vendre un complément</h2>
+        <p>La vente se note sur la fiche de la cliente, jamais dans le stock : le rayon se décompte tout seul.</p>
+      </header>
+      <div class="geste-corps">
+        <ol class="etapes">
+          <li>
+            <div>
+              <p>Sur sa fiche, onglet <span class="champ-dit">Compléments</span>. Ce qui lui a été recommandé au bilan est rappelé en haut.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p>Choisissez le <strong>complément</strong>, le nombre de <strong>boîtes</strong>, vérifiez le <strong>prix la boîte</strong>, puis <span class="bouton-dit">Enregistrer</span>.</p>
+            </div>
+          </li>
+        </ol>
+
+        <div class="attention">
+          <b>Ne saisissez jamais une vente deux fois</b>
+          <p>
+            Ni « une fois sur la fiche, une fois dans le stock » : l'application
+            fait la sortie de rayon elle-même. La saisir en double ferait mentir
+            le rayon d'autant.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ======================= STOCK ======================= -->
+  <section id="stock">
+    <article class="geste">
+      <header>
+        <h2>Tenir le rayon</h2>
+        <p>Trois gestes seulement : ce qui rentre, ce qui sort autrement qu'en vente, et le comptage.</p>
+      </header>
+      <div class="geste-corps">
+        <ol class="etapes">
+          <li>
+            <div>
+              <p><strong>Une livraison arrive</strong> → <span class="bouton-dit">Ça rentre</span>, quantité reçue.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p><strong>Un produit part sans vente</strong> (cadeau, casse, cosmétique KOS vendu au comptoir) → <span class="bouton-dit">Ça sort</span>, avec le motif.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <p><strong>Vous avez compté le rayon</strong> → <span class="bouton-dit">J'ai compté, dans le rayon</span>, et saisissez ce que vous voyez réellement sur l'étagère. L'application fait l'ajustement.</p>
+            </div>
+          </li>
+        </ol>
+
+        <div class="note">
+          <b>Un stock négatif n'est pas une panne</b>
+          <p>
+            Cela veut dire qu'il est sorti plus de produits qu'il n'en est
+            rentré dans l'application : une livraison n'a pas été saisie. Comptez
+            l'étagère et corrigez avec « J'ai compté ». L'application ne refusera
+            jamais une vente réelle sous prétexte que son compte est faux.
+          </p>
+        </div>
+
+        <div class="astuce">
+          <b>Qui a vendu quoi</b>
+          <p>
+            La liste des derniers mouvements indique la thérapeute et, pour une
+            vente, la cliente. Ce n'est pas de la surveillance : c'est ce qui
+            permet de retrouver l'erreur quand un compte ne tombe pas juste.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ======================= NOTES ======================= -->
+  <section id="notes">
+    <article class="geste">
+      <header>
+        <h2>Notes, exception cure et parrainage</h2>
+        <p>Trois endroits pour trois choses différentes. Les confondre, c'est risquer qu'une information vitale passe inaperçue.</p>
+      </header>
+      <div class="geste-corps">
+        <dl class="lexique">
+          <div>
+            <dt>Les notes</dt>
+            <dd>
+              Le quotidien : « part en vacances en août », « préfère le
+              mardi ». Visibles par toute l'équipe du centre. Épinglez-en une
+              en haut de la fiche si elle doit sauter aux yeux.
+            </dd>
+          </div>
+          <div>
+            <dt>L'exception cure</dt>
+            <dd>
+              <strong>Uniquement</strong> ce qui touche à sa santé ou à sa
+              sécurité : une pathologie, une contre-indication, un accord
+              médical particulier. Elle s'affiche en rouge, en haut de la
+              fiche, impossible à manquer. N'y mettez rien d'autre — si tout
+              devient rouge, plus rien n'est rouge.
+            </dd>
+          </div>
+          <div>
+            <dt>Le parrainage</dt>
+            <dd>
+              Une cliente vous dit qui l'a envoyée : notez-la dans « Qui l'a
+              parrainée ». Sa marraine gagne 2 séances offertes quand la
+              filleule <strong>signe son contrat</strong>, jusqu'à 10 au total.
+              Ces séances ne touchent pas la cure en cours : elles s'ajoutent à
+              sa cure suivante.
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </article>
+  </section>
+
+  <!-- ======================= SOUCIS ======================= -->
+  <section id="soucis">
+    <span class="oeil">Dépannage</span>
+    <h2>Quand quelque chose ne va pas</h2>
+    <p class="intro intro-large">
+      Voici ce que vous risquez de rencontrer, et le geste qui règle chaque
+      cas. Aucun d'eux n'abîme quoi que ce soit.
+    </p>
+
+    <div class="depannage">
+      <div>
+        <div class="quoi">L'écran est resté blanc</div>
+        <div class="fix">Rechargez la page. Rien n'est perdu : tout ce qui était validé est enregistré. Si l'écran blanc revient au même endroit à chaque fois, notez à quel moment exactement, et prévenez.</div>
+      </div>
+      <div>
+        <div class="quoi">Ça tourne, ça ne s'affiche pas</div>
+        <div class="fix">Vérifiez la connexion internet du centre. L'application a besoin d'internet en permanence.</div>
+      </div>
+      <div>
+        <div class="quoi">Je me suis trompée de cliente</div>
+        <div class="fix">Rien de grave. Corrigez la séance ou la vente sur la bonne fiche, et supprimez la mauvaise saisie là où elle a été faite.</div>
+      </div>
+      <div>
+        <div class="quoi">Une fiche en double</div>
+        <div class="fix">Ne supprimez rien vous-même. Archivez celle qui est vide et signalez-le à la direction, qui fusionnera.</div>
+      </div>
+      <div>
+        <div class="quoi">La cliente ne se connecte pas au parcours audio</div>
+        <div class="fix">Son mot de passe a probablement été envoyé par email et le lien a expiré. Rouvrez sa fiche, carte Parcours audio, et refaites-lui un accès avec un mot de passe choisi ensemble.</div>
+      </div>
+      <div>
+        <div class="quoi">La synchronisation affiche des erreurs</div>
+        <div class="fix">Ce n'est pas votre travail : prévenez la direction. Vos saisies sont enregistrées de toute façon, seul l'envoi vers le CRM attend.</div>
+      </div>
+      <div>
+        <div class="quoi">Un montant me semble faux</div>
+        <div class="fix">Ne le corrigez pas à la main sur le contrat. Signalez-le : les prix sont calculés à partir d'une grille, et si elle se trompe, elle se trompe pour toutes.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= MÉMO ======================= -->
+  <section id="memo">
+    <span class="oeil">À découper</span>
+    <h2>L'aide-mémoire à afficher près de l'écran</h2>
+    <p class="intro intro-large">
+      Si vous ne devez retenir qu'une chose de ce guide, que ce soit cette
+      page.
+    </p>
+
+    <div class="memo">
+      <div class="memo-grille">
+        <div>
+          <h3>Toujours</h3>
+          <ul>
+            <li>Chercher la cliente avant d'en créer une.</li>
+            <li>Encaisser au moment où elle paie.</li>
+            <li>Faire lire les documents avant de faire signer.</li>
+            <li>Demander la taille de la tenue à la signature.</li>
+            <li>Choisir le mot de passe du parcours audio <em>avec</em> elle.</li>
+            <li>Laisser vide ce dont vous n'êtes pas sûre.</li>
+            <li>Écrire pourquoi une cure s'arrête.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Jamais</h3>
+          <ul>
+            <li>Passer outre un soin barré ou un « Avis médical ».</li>
+            <li>Saisir une vente deux fois.</li>
+            <li>Supprimer une fiche : archivez.</li>
+            <li>Utiliser le compte d'une collègue.</li>
+            <li>Mettre autre chose qu'une consigne de santé en exception cure.</li>
+            <li>Cliquer en rafale pendant le questionnaire.</li>
+            <li>Chercher vos rendez-vous ici : ils sont dans Planity.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>La journée type</h3>
+          <ul>
+            <li><strong>En arrivant</strong> — l'accueil : qui doit de l'argent, quel produit manque.</li>
+            <li><strong>À chaque cliente</strong> — sa fiche, sa séance, son poids.</li>
+            <li><strong>Nouvelle cliente</strong> — bilan, cure, contrat signé.</li>
+            <li><strong>En partant</strong> — un œil sur le rayon, déconnexion.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>En cas de doute</h3>
+          <ul>
+            <li>Rien n'est cassable, tout se corrige.</li>
+            <li>Une information fausse est pire qu'un champ vide.</li>
+            <li>Un écran blanc : rechargez la page.</li>
+            <li>Une question sur un montant ou un doublon : la direction.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      Guide des thérapeutes MAbeautyplus — septembre 2026. Il décrit
+      l'application telle qu'elle fonctionne aujourd'hui : si un écran ne
+      ressemble plus à ce qui est décrit ici, c'est le guide qu'il faut
+      mettre à jour, pas vous qui vous trompez.
+    </p>
+  </footer>
+
+</div>
+
+<script>
+  document.getElementById('imprimer').addEventListener('click', function () {
+    window.print();
+  });
+</script>
+</body></html>

@@ -1,5 +1,14 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Package, LogOut, ChevronDown, Sparkles, BarChart3 } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Users,
+  Package,
+  LogOut,
+  ChevronDown,
+  Sparkles,
+  BarChart3,
+  BookOpen,
+} from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { TOUS_LES_CENTRES, useSession } from '../lib/session';
 
@@ -51,6 +60,22 @@ export default function Layout({ children }: { children: ReactNode }) {
               {libelle}
             </NavLink>
           ))}
+
+          {/*
+            Le guide des thérapeutes. Un lien, pas un onglet : on ne le
+            consulte pas au fil de la journée, on l'ouvre quand on bloque.
+            Il s'ouvre à côté pour ne pas faire perdre à la thérapeute ce
+            qu'elle était en train de saisir.
+          */}
+          <a
+            href="/guide.html"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-auto flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-ardoise-500 transition-colors hover:bg-ardoise-50 hover:text-ardoise-900"
+          >
+            <BookOpen className="h-4 w-4" />
+            Tuto
+          </a>
         </nav>
 
         <div className="relative border-t border-ardoise-200 p-3">
@@ -165,6 +190,14 @@ export default function Layout({ children }: { children: ReactNode }) {
               {libelle}
             </NavLink>
           ))}
+          <a
+            href="/guide.html"
+            target="_blank"
+            rel="noreferrer"
+            className="ml-auto rounded-lg px-3 py-1.5 text-sm font-medium text-ardoise-500"
+          >
+            Tuto
+          </a>
         </nav>
 
         <main className="flex-1 px-5 py-6 lg:px-8 lg:py-8">

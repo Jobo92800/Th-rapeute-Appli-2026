@@ -116,6 +116,7 @@ donc dans `tailwind.config.js` et `src/index.css`, sans toucher aux écrans.
 src/domain/        règles métier pures (tarification, bioportrait, jeuDuJour, reglement, contrat, stock, parrainage)
 src/services/      accès aux données (clientes, metier, stock, parrainage, tableauDeBord, contratPdf, consentementsPdf)
 src/lib/           supabase, session
+public/guide.html  le guide des thérapeutes, servi tel quel — lien « Tuto » dans le menu
 src/pages/         Accueil, Clientes, FicheCliente, NouveauBilan, Stock, TableauDeBord, Connexion
 src/components/    bilan/, contrat/, cure/, fiche/, stock/, tableau/, Layout
 supabase/migrations/   le schéma, numéroté, à exécuter dans l'ordre
