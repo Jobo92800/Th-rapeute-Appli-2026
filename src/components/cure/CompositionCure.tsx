@@ -5,7 +5,7 @@ import {
   ECHEANCES_CENTRE,
   dureeCureEnMois,
   echeancesCentrePossibles,
-  FRAIS_ALMA,
+  tauxFraisAlma,
   LIBELLES_TECHNOLOGIE,
   calculerMontant,
   construireEcheancierCure,
@@ -398,7 +398,7 @@ export default function CompositionCure({
 
         {methode === 'alma' && detail.total > 0 && (
           <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-            Frais Alma de {String(FRAIS_ALMA[echeancier.n] ?? 0).replace('.', ',')} % —{' '}
+            Frais Alma de {String(tauxFraisAlma(echeancier.n, detail.total)).replace('.', ',')} % —{' '}
             {formaterEuros(echeancier.frais, 2)} à la charge de la cliente. Total réglé :{' '}
             <strong className="font-semibold">{formaterEuros(echeancier.montantARegler, 2)}</strong>.
           </p>

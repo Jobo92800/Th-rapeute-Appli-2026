@@ -9,7 +9,6 @@ import { section, verifie, egal, egalEuros } from './harnais.mts';
 import {
   ECHEANCES_ALMA,
   ECHEANCES_CENTRE,
-  FRAIS_ALMA,
   calculerMontant,
   construireEcheancier,
   construireEcheancierCure,
@@ -21,6 +20,8 @@ import {
   echeancesCentrePossibles,
   creneauxParDefaut,
   montantAcompte,
+  fraisAlma,
+  tauxFraisAlma,
 } from '../src/domain/tarification.ts';
 
 const GRILLE: GrilleTarifaire = {
@@ -148,7 +149,7 @@ export function controlerTarification() {
 
     const base = 20 * 59 + 89;
     egal(`${n}× : mode enregistré`, alma.mode, `alma_${n}x`);
-    egalEuros(`${n}× : les frais suivent le barème`, alma.frais, Math.round(base * FRAIS_ALMA[n]) / 100 * 1, 0.02);
+    egalEuros(`${n}× : les frais suivent le barème`, alma.frais, fraisAlma(n, base), 0.005);
     egalEuros(
       `${n}× : la somme des mensualités fait le total`,
       alma.echeances.reduce((s, e) => s + e.montant, 0),
@@ -316,5 +317,86 @@ export function controlerTarification() {
     'un acompte plus gros que la cure se ramène à la cure',
     trop.echeances.reduce((n, e) => n + e.montant, 0),
     10 * 59 + 29,
+  );
+
+  section('Les frais Alma, relevés sur le compte MB3PRO');
+
+  /*
+    Dix simulations réelles, faites par Jonathan le 4 septembre 2026 dans son
+    propre compte Alma. Ce ne sont pas des valeurs théoriques : c'est ce qui
+    est prélevé sur le compte de la cliente.
+
+    Le piège qui nous avait fait facturer 11 € de trop : le tableau de bord
+    Alma affiche le taux client ET le taux d'usure juste en dessous, en
+    rouge. Le 4× avait été saisi à 2,58 %, son taux d'usure, au lieu de 1,9 %.
+  */
+  const relevesAlma: Array<[number, number, number]> = [
+    // [montant, échéances, frais réellement prélevés]
+    [1800, 3, 31.14],
+    [1623, 4, 30.84],
+    [1800, 4, 34.2],
+    [1853, 4, 35.21],
+    [2153, 4, 40.91],
+    [973, 10, 67.61],
+    [2153, 10, 149.61],
+    [973, 12, 78.87],
+    [2153, 12, 174.53],
+  ];
+
+  for (const [montant, n, attendu] of relevesAlma) {
+    egalEuros(`${montant} € en ${n}×`, fraisAlma(n, montant), attendu, 0.005);
+  }
+
+  /*
+    Le seul écart connu : 1 623 € en 3×. Alma prélève 28,07 €, notre taux
+    publié de 1,73 % donne 28,08 €. Un centime, sur un cas sur dix. On garde
+    le taux qu'Alma publie plutôt que d'en inventer un pour rattraper un
+    arrondi.
+  */
+  egalEuros('1 623 € en 3× : un centime au-dessus d’Alma, assumé', fraisAlma(3, 1623), 28.08, 0.005);
+
+  egalEuros('le 4× n’est plus au taux d’usure', tauxFraisAlma(4, 1000), 1.9);
+  egalEuros('le 10× baisse au-delà de 3 333 €', tauxFraisAlma(10, 3400), 5.4297);
+  egalEuros('le 12× baisse au-delà de 3 273 €', tauxFraisAlma(12, 3300), 6.6894);
+  egalEuros('en dessous du seuil, le taux plein', tauxFraisAlma(10, 3000), 6.9489);
+
+  section('Alma ne répartit pas pareil selon la formule');
+
+  /*
+    2×, 3×, 4× : la totalité des frais tombe sur le premier versement.
+    Relevé : 1 623 € en 3× → 569,07 aujourd'hui, puis 541,00 et 541,00.
+  */
+  const fractionne = construireEcheancierCure({
+    seances: 27, prixSeance: 59, options: 30, methode: 'alma', n: 3,
+  });
+  egalEuros('le montant de la cure est bien 1 623 €', fractionne.montantARegler - fractionne.frais, 1623);
+  egalEuros('les deux dernières valent le montant divisé, rond', fractionne.echeances[1].montant, 541);
+  egalEuros('la dernière aussi', fractionne.echeances[2].montant, 541);
+  egalEuros(
+    'la première porte toute la charge des frais',
+    fractionne.echeances[0].montant,
+    541 + fractionne.frais,
+  );
+  egalEuros(
+    'et rien ne se perd',
+    fractionne.echeances.reduce((n, e) => n + e.montant, 0),
+    fractionne.montantARegler,
+  );
+
+  /*
+    10× et 12× : crédit amorti, mensualités égales, reliquat sur la première.
+    Relevé : 973 € en 12× → 87,72 puis onze fois 87,65.
+  */
+  const credit = construireEcheancierCure({
+    seances: 16, prixSeance: 59, options: 29, methode: 'alma', n: 12,
+  });
+  egalEuros('le montant de la cure est bien 973 €', credit.montantARegler - credit.frais, 973);
+  egalEuros('douze mensualités', credit.echeances.length, 12);
+  egalEuros('la première absorbe le reliquat', credit.echeances[0].montant, 87.72);
+  egalEuros('les onze suivantes sont égales', credit.echeances[11].montant, 87.65);
+  egalEuros(
+    'et rien ne se perd non plus',
+    credit.echeances.reduce((n, e) => n + e.montant, 0),
+    credit.montantARegler,
   );
 }

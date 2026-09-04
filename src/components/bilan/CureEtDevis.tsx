@@ -16,7 +16,7 @@ import {
   dureeCureEnMois,
   echeancesCentrePossibles,
   montantAcompte,
-  FRAIS_ALMA,
+  tauxFraisAlma,
   LIBELLES_TECHNOLOGIE,
   construireEcheancierCure,
   formaterEuros,
@@ -459,7 +459,7 @@ export default function CureEtDevis({
                 ? acompte > 0
                   ? `Par chèques au centre. L’acompte se déduit du total ; le reste, guide et tenue compris (${formaterEuros(options)}), se répartit sur les échéances.`
                   : `Par chèques au centre. Le guide et la tenue (${formaterEuros(options)}) sont sur la première échéance.`
-                : `Frais Alma de ${String(FRAIS_ALMA[echeancier.n] ?? 0).replace('.', ',')} %, à la charge de la cliente, compris dans la mensualité.`}
+                : `Frais Alma de ${String(tauxFraisAlma(echeancier.n, totalSeances * grille.seance + options)).replace('.', ',')} %, à la charge de la cliente, compris dans la mensualité.`}
             </p>
 
             {/* L'acompte, rangé tant qu'on n'en a pas besoin. */}

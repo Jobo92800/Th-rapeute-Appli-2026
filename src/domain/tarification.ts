@@ -114,13 +114,57 @@ export type ModeReglement =
   | 'inconnu';
 
 /** Frais Alma, en pourcentage du montant, selon le nombre d'échéances. */
-export const FRAIS_ALMA: Record<number, number> = {
-  2: 0.87,
-  3: 1.73,
-  4: 2.58,
-  10: 6.5,
-  12: 7.5,
+/*
+  Frais Alma à la charge de la cliente, en pourcentage du montant de la cure.
+
+  D'OÙ VIENNENT CES CHIFFRES. Du tableau de bord Alma du compte MB3PRO,
+  page Conditions, relevés le 4 septembre 2026 — et recoupés avec dix
+  simulations réelles, montant par montant.
+
+  ATTENTION AU PIÈGE QUI NOUS A COÛTÉ UNE ERREUR. Le tableau de bord affiche
+  deux nombres par formule : le **taux de frais client**, qui est celui-ci,
+  et le **taux d'usure**, écrit juste en dessous en rouge — un plafond légal
+  qui ne se facture à personne. Le 4× avait été saisi à 2,58 %, qui est son
+  taux d'usure ; le vrai taux client est 1,9 %. Sur une cure à 1 623 €, on
+  réclamait 11 € de trop à la cliente.
+
+  ET POURQUOI 10× ET 12× NE PORTENT PAS LES TAUX AFFICHÉS. Alma annonce
+  6,5 % et 7,5 %, mais les applique au **total avec frais**, pas au montant
+  de la cure. Rapporté au montant, ça fait 6,9489 % et 8,1063 % — les deux
+  valeurs ci-dessous, calées au centime sur les relevés. La V1 avait déjà
+  trouvé 6,9488 % de cette façon.
+
+  Au-delà d'un certain montant, Alma baisse son taux. Ces paliers hauts sont
+  convertis de la même façon, mais **n'ont pas été vérifiés sur une
+  simulation réelle** : aucune cure d'essai n'a dépassé le seuil.
+*/
+interface PalierAlma {
+  /** Montant au-delà duquel le taux baisse. Absent = un seul taux. */
+  seuil?: number;
+  taux: number;
+  tauxAuDela?: number;
+}
+
+const TAUX_ALMA: Record<number, PalierAlma> = {
+  2: { taux: 0.87 },
+  3: { taux: 1.73 },
+  4: { taux: 1.9 },
+  10: { seuil: 3333, taux: 6.9489, tauxAuDela: 5.4297 },
+  12: { seuil: 3273, taux: 8.1063, tauxAuDela: 6.6894 },
 };
+
+/** Le taux applicable, en pourcentage, pour ce nombre d'échéances et ce montant. */
+export function tauxFraisAlma(n: number, montant: number): number {
+  const p = TAUX_ALMA[n];
+  if (!p) return 0;
+  if (p.seuil != null && p.tauxAuDela != null && montant > p.seuil) return p.tauxAuDela;
+  return p.taux;
+}
+
+/** Les frais en euros, à la charge de la cliente. */
+export function fraisAlma(n: number, montant: number): number {
+  return arrondir((montant * tauxFraisAlma(n, montant)) / 100);
+}
 
 export const ECHEANCES_CENTRE = [1, 2, 3, 4];
 export const ECHEANCES_ALMA = [2, 3, 4, 10, 12];
@@ -429,11 +473,41 @@ export function construireEcheancierCure(args: {
   }
 
   const n = ECHEANCES_ALMA.includes(args.n) ? args.n : 4;
-  const taux = FRAIS_ALMA[n] ?? 0;
-  const frais = arrondir((base * taux) / 100);
+  const frais = fraisAlma(n, base);
   const total = arrondir(base + frais);
 
-  // Mensualités égales : le reste de la division tombe sur la première.
+  /*
+    Alma ne répartit pas de la même façon selon la formule, et il faut le
+    suivre : le contrat annonce des montants qui seront débités sur le compte
+    de la cliente. Se tromper, c'est lui promettre 550 € et lui en prélever
+    569 le premier mois.
+
+    2×, 3×, 4× — paiement fractionné. Alma prend **la totalité des frais sur
+    le premier versement** ; les suivants valent le montant divisé, rond.
+    Vérifié sur six simulations : 1 623 € en 3× donne 569,07 puis 541 et 541.
+  */
+  if (n <= 4) {
+    const part = Math.floor((base / n) * 100) / 100;
+    const reliquat = arrondir(base - part * n);
+
+    return {
+      methode,
+      n,
+      mode,
+      frais,
+      montantARegler: total,
+      echeances: Array.from({ length: n }, (_, i) => ({
+        rang: i + 1,
+        montant: i === 0 ? arrondir(part + reliquat + frais) : part,
+      })),
+    };
+  }
+
+  /*
+    10× et 12× — crédit amorti. Là, Alma lisse : mensualités égales, le
+    reliquat d'arrondi sur la première. Vérifié sur quatre simulations :
+    973 € en 12× donne 87,72 puis onze fois 87,65.
+  */
   const mensualite = Math.floor((total / n) * 100) / 100;
   const reste = arrondir(total - mensualite * n);
 
