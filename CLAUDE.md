@@ -324,7 +324,15 @@ Node exige et que Vite devine. Il ne concerne que les tests.
 Dépôt : `Jobo92800/Th-rapeute-Appli-2026` (public pour l'instant — contient
 le questionnaire BioPortrait, les 60 jeux, les textes de contrat et la grille
 tarifaire ; à repasser en privé). Netlify déploie automatiquement sur chaque
-poussée. Variables à définir côté Netlify : `VITE_SUPABASE_URL` et
+poussée.
+
+**Ne jamais pousser sans que Jonathan le demande.** Chaque poussée
+reconstruit le site et lui coûte des crédits Netlify — autant pour une
+correction d'une ligne que pour une livraison entière. On commite en local,
+il regarde le résultat dans `npm run dev` ouvert à côté de la conversation,
+et on ne pousse qu'une fois une série de modifications terminée, sur sa
+demande explicite. À la fin d'une série, lui dire en une ligne ce qui attend
+d'être poussé — sans le faire. Variables à définir côté Netlify : `VITE_SUPABASE_URL` et
 `VITE_SUPABASE_ANON_KEY`.
 
 ## Commandes
