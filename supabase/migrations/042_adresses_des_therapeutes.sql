@@ -70,11 +70,6 @@ UPDATE therapeutes SET email = 'alex@mabeautyplus.fr'
 UPDATE therapeutes SET email = 'alexandra@mabeautyplus.fr'
  WHERE centre_id = 'avignon' AND prenom = 'Alexandra';
 
--- Son prénom prend deux L, son adresse un seul : c'est celle qui a été créée
--- dans Supabase, et c'est l'adresse qui sert au rattachement, pas le prénom.
-UPDATE therapeutes SET email = 'carol@mabeautyplus.fr'
- WHERE centre_id = 'serignan' AND prenom = 'Caroll';
-
 -- ===========================================================================
 -- 3. LES DÉPARTS, ET FLORA
 --
