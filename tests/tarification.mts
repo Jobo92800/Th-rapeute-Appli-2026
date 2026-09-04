@@ -356,8 +356,29 @@ export function controlerTarification() {
   egalEuros('1 623 € en 3× : un centime au-dessus d’Alma, assumé', fraisAlma(3, 1623), 28.08, 0.005);
 
   egalEuros('le 4× n’est plus au taux d’usure', tauxFraisAlma(4, 1000), 1.9);
-  egalEuros('le 10× baisse au-delà de 3 333 €', tauxFraisAlma(10, 3400), 5.4297);
+  egalEuros('le 10× baisse au-delà de 3 333 €', tauxFraisAlma(10, 3400), 5.4336);
   egalEuros('le 12× baisse au-delà de 3 273 €', tauxFraisAlma(12, 3300), 6.6894);
+
+  /*
+    Les paliers hauts, vérifiés sur une cure de 3 865 € — le seul montant
+    d'essai qui ait dépassé les deux seuils.
+  */
+  egalEuros('3 865 € en 10× : les frais d’Alma', fraisAlma(10, 3865), 210.01, 0.005);
+  egalEuros('3 865 € en 12× : les frais d’Alma', fraisAlma(12, 3865), 258.55, 0.005);
+
+  const gros10 = construireEcheancierCure({
+    seances: 3865 / 59, prixSeance: 59, options: 0, methode: 'alma', n: 10,
+  });
+  egalEuros('3 865 € en 10× : le total', gros10.montantARegler, 4075.01, 0.005);
+  egalEuros('3 865 € en 10× : le premier prélèvement', gros10.echeances[0].montant, 407.51, 0.005);
+  egalEuros('3 865 € en 10× : les neuf suivants', gros10.echeances[9].montant, 407.5, 0.005);
+
+  const gros12 = construireEcheancierCure({
+    seances: 3865 / 59, prixSeance: 59, options: 0, methode: 'alma', n: 12,
+  });
+  egalEuros('3 865 € en 12× : le total', gros12.montantARegler, 4123.55, 0.005);
+  egalEuros('3 865 € en 12× : le premier prélèvement', gros12.echeances[0].montant, 343.73, 0.005);
+  egalEuros('3 865 € en 12× : les onze suivants', gros12.echeances[11].montant, 343.62, 0.005);
   egalEuros('en dessous du seuil, le taux plein', tauxFraisAlma(10, 3000), 6.9489);
 
   section('Alma ne répartit pas pareil selon la formule');

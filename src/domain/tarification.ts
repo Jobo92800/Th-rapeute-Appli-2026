@@ -134,9 +134,11 @@ export type ModeReglement =
   valeurs ci-dessous, calées au centime sur les relevés. La V1 avait déjà
   trouvé 6,9488 % de cette façon.
 
-  Au-delà d'un certain montant, Alma baisse son taux. Ces paliers hauts sont
-  convertis de la même façon, mais **n'ont pas été vérifiés sur une
-  simulation réelle** : aucune cure d'essai n'a dépassé le seuil.
+  Au-delà d'un certain montant, Alma baisse son taux. Ces paliers hauts ont
+  été vérifiés à leur tour, sur une cure de 3 865 € : le 12× tombe au centime
+  avec la conversion, le 10× demandait un léger recalage — 5,4336 % au lieu
+  des 5,4297 % que donnait le calcul, soit quinze centimes sur 4 075 €. Il
+  repose sur une seule mesure, faute d'une seconde cure au-dessus du seuil.
 */
 interface PalierAlma {
   /** Montant au-delà duquel le taux baisse. Absent = un seul taux. */
@@ -149,7 +151,7 @@ const TAUX_ALMA: Record<number, PalierAlma> = {
   2: { taux: 0.87 },
   3: { taux: 1.73 },
   4: { taux: 1.9 },
-  10: { seuil: 3333, taux: 6.9489, tauxAuDela: 5.4297 },
+  10: { seuil: 3333, taux: 6.9489, tauxAuDela: 5.4336 },
   12: { seuil: 3273, taux: 8.1063, tauxAuDela: 6.6894 },
 };
 
