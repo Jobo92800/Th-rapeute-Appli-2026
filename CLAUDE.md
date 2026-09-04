@@ -204,8 +204,12 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   réel, pas théorique — l'appel à `reclamer_taches_airtable` depuis
   l'extérieur, avec la seule clé publique du site, a bien rendu un ticket de
   synchro le 3 septembre 2026. Neuf fonctions refermées, et
-  `ALTER DEFAULT PRIVILEGES` coupe le droit implicite pour toutes celles à
-  venir. **Conséquence pour la suite : toute nouvelle fonction doit porter
+  `ALTER DEFAULT PRIVILEGES` (migration 041, séparée exprès) coupe le droit
+  implicite pour toutes celles à venir. **La 040 nomme les commandes en
+  interrogeant la base, jamais à la main** : une première version les listait
+  en dur, une signature a échoué, et PostgreSQL annulant tout un script d'un
+  bloc, rien n'avait été appliqué — sans que ça se voie. Elle se termine
+  désormais par une requête de contrôle qui doit ne rien renvoyer. **Conséquence pour la suite : toute nouvelle fonction doit porter
   son propre `GRANT EXECUTE`**, sans quoi elle ne sera appelable par
   personne. C'est volontaire : un échec bruyant vaut mieux qu'un trou
   silencieux.
@@ -347,8 +351,8 @@ Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 
 Migrations passées jusqu'à **037** incluse, et `synchro-airtable`
 redéployée dans la foulée. Deux attendent d'être collées : la **038** (le
-bilan seul passe à 129 €), la **039** (le récapitulatif BioPortrait) et la
-**040** (les commandes SQL refermées).
+bilan seul passe à 129 €), la **039** (le récapitulatif BioPortrait), la **040** (les commandes SQL
+refermées) et la **041** (le droit implicite coupé pour l'avenir).
 
 La 039 demande **deux champs à créer dans Airtable** — « Récapitulatif
 BioPortrait » en pièce jointe, « Récap envoyé le » en date — et une
