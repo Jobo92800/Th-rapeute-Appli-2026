@@ -9,24 +9,23 @@
 # part jamais ailleurs que chez Supabase.
 #
 # ─────────────────────────────────────────────────────────────────────────
-# COMMENT S'EN SERVIR
+# COMMENT S'EN SERVIR — une seule commande, rien à éditer
 #
 #   1. Récupérer la clé de service dans Supabase :
 #        Project Settings → API → « service_role » → Reveal → copier
-#      C'est une clé qui ouvre tout : ne la collez nulle part ailleurs.
 #
-#   2. Dans le Terminal, coller ceci en remplaçant ce qu'il y a entre
-#      guillemets par la clé copiée :
-#
-#        export CLE_SERVICE="collez-la-clé-ici"
-#
-#   3. Puis lancer :
+#   2. Lancer :
 #
 #        bash ~/Desktop/mabeautyplus-v2/supabase/creer_les_comptes.sh
 #
-#      Il demande le mot de passe de départ, puis crée les comptes.
+#      Il demande la clé, puis le mot de passe. Collez, appuyez sur Entrée :
+#      ni l'une ni l'autre ne s'affiche, et ni l'une ni l'autre n'entre dans
+#      l'historique du Terminal.
 #
-#   4. Fermer le Terminal quand c'est fini : la clé disparaît avec lui.
+# Une première version demandait d'écrire la clé dans une commande, entre
+# guillemets. C'était une mauvaise idée : la clé finissait dans l'historique
+# du shell, visible à qui rouvre le Terminal — et il suffisait de coller au
+# mauvais endroit pour que rien ne marche. Les deux sont arrivés.
 #
 # Le script est rejouable : un compte déjà créé est signalé et laissé
 # tranquille. Rien n'est écrasé.
@@ -37,16 +36,28 @@ set -u
 RACINE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 URL="$(grep -m1 '^VITE_SUPABASE_URL=' "$RACINE/.env" | cut -d= -f2- | tr -d '"'"'"' \r')"
 
-if [ -z "${CLE_SERVICE:-}" ]; then
-  echo "✗ La clé de service manque."
-  echo "  Faites d'abord :  export CLE_SERVICE=\"votre-clé-service_role\""
-  exit 1
-fi
-
 if [ -z "$URL" ]; then
   echo "✗ Adresse Supabase introuvable dans .env"
   exit 1
 fi
+
+if [ -z "${CLE_SERVICE:-}" ]; then
+  echo "Clé de service Supabase — Project Settings → API → service_role → Reveal"
+  printf "Collez-la puis Entrée (elle ne s'affichera pas) : "
+  read -rs CLE_SERVICE
+  echo
+fi
+
+# Une clé Supabase est un jeton JWT : elle commence toujours par « eyJ ».
+# Ce contrôle attrape le collage de travers avant treize appels pour rien.
+case "$CLE_SERVICE" in
+  eyJ*) ;;
+  "")   echo "✗ Aucune clé saisie."; exit 1 ;;
+  *)    echo "✗ Cette clé ne ressemble pas à une clé Supabase : elle devrait"
+        echo "  commencer par « eyJ ». Un morceau de texte s'est peut-être"
+        echo "  collé devant. Relancez et collez la clé seule."
+        exit 1 ;;
+esac
 
 printf "Mot de passe de départ (il ne s'affichera pas) : "
 read -rs MDP
@@ -119,4 +130,4 @@ echo
 echo "  Il reste à relier ces comptes aux thérapeutes : collez"
 echo "  supabase/rattacher_les_comptes.sql dans l'éditeur SQL."
 echo
-echo "  Puis fermez ce Terminal, pour que la clé de service disparaisse."
+echo "  La clé n'a été écrite nulle part : elle disparaît avec ce Terminal."
