@@ -200,14 +200,15 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   secret `RESEND_API_KEY`. **À arbitrer** : les documents arrivant désormais
   en pièces jointes dans Airtable, l'envoi peut aussi se faire depuis les
   automatisations Airtable — c'est peut-être plus simple que Resend.
-- **Sécurité des fonctions SQL** : les fonctions `SECURITY DEFINER` reçoivent
-  un `GRANT` à `service_role` ou `authenticated`, mais personne ne retire le
-  droit implicite que PostgreSQL donne à `PUBLIC`. N'importe qui muni de la
-  clé publique du site peut donc appeler `reclamer_taches_airtable` et vider
-  la file de synchro en la marquant « en cours ». Aucune donnée cliente ne
-  fuit ; la synchro, elle, s'arrêterait sans un mot. À refermer par une
-  migration `REVOKE EXECUTE … FROM PUBLIC, anon` sur les six fonctions
-  concernées (001, 010, 012, 014).
+- **Sécurité des fonctions SQL** : réglé par la migration 040. Le trou était
+  réel, pas théorique — l'appel à `reclamer_taches_airtable` depuis
+  l'extérieur, avec la seule clé publique du site, a bien rendu un ticket de
+  synchro le 3 septembre 2026. Neuf fonctions refermées, et
+  `ALTER DEFAULT PRIVILEGES` coupe le droit implicite pour toutes celles à
+  venir. **Conséquence pour la suite : toute nouvelle fonction doit porter
+  son propre `GRANT EXECUTE`**, sans quoi elle ne sera appelable par
+  personne. C'est volontaire : un échec bruyant vaut mieux qu'un trou
+  silencieux.
 - **Vente des cosmétiques KOS** : ils sont au stock, mais aucune interface ne
   les vend. Une vente se note en sortie manuelle (« Ça sort »). Seuls les
   compléments se vendent depuis la fiche cliente.
@@ -346,7 +347,8 @@ Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 
 Migrations passées jusqu'à **037** incluse, et `synchro-airtable`
 redéployée dans la foulée. Deux attendent d'être collées : la **038** (le
-bilan seul passe à 129 €) et la **039** (le récapitulatif BioPortrait).
+bilan seul passe à 129 €), la **039** (le récapitulatif BioPortrait) et la
+**040** (les commandes SQL refermées).
 
 La 039 demande **deux champs à créer dans Airtable** — « Récapitulatif
 BioPortrait » en pièce jointe, « Récap envoyé le » en date — et une
