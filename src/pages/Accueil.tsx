@@ -95,10 +95,12 @@ export default function Accueil() {
           </p>
         ) : (
           <div className="flex flex-wrap gap-2">
-            <Link to="/clientes/nouvelle" className="bouton-discret">
-              <UserPlus className="h-4 w-4" />
-              Fiche seule
-            </Link>
+            {/*
+              « Fiche seule » a été retiré : depuis l'accueil, on démarre un
+              bilan. Créer une fiche sans bilan reste possible, à sa place —
+              sur la liste des clientes, où l'on va justement quand on cherche
+              quelqu'un et qu'on ne le trouve pas.
+            */}
             <Link to="/bilan" className="bouton-fort">
               <Sparkles className="h-4 w-4" />
               Nouveau bilan
