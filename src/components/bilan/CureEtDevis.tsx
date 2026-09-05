@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Ban, Eye, Loader2, Mail, Minus, Pencil, Plus, Stethoscope } from 'lucide-react';
 import type { Bareme, Prestation } from '../../domain/bioportrait';
+import { detailInclus, type DetailInclus } from '../../domain/inclus';
+import BulleInclus from './BulleInclus';
 import {
   LIBELLES_NIVEAU,
   appliquerFormule,
@@ -101,6 +103,7 @@ export default function CureEtDevis({
   const [acompteOuvert, setAcompteOuvert] = useState(false);
   const [creneaux, setCreneaux] = useState<number | null>(null);
   const [devisRevele, setDevisRevele] = useState(false);
+  const [bulle, setBulle] = useState<DetailInclus | null>(null);
   /*
     Les réglages restent rangés. L'écran se présente à la cliente : des
     boutons plus et moins à côté de chaque soin invitent à négocier le
@@ -350,18 +353,38 @@ export default function CureEtDevis({
         <section>
           <h2 className="surtitre mb-2">Ce qui est compris, quoi qu'il arrive</h2>
           <div className="space-y-2">
-            {bareme.INCLUS.map((x) => (
-              <div key={x.t} className="carte flex gap-3.5 p-4">
-                <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-marine-500" />
-                <div>
-                  <div className="text-sm font-semibold text-ardoise-900">{x.t}</div>
-                  <div className="mt-0.5 text-[13px] leading-relaxed text-ardoise-600">{x.d}</div>
+            {bareme.INCLUS.map((x) => {
+              const detail = detailInclus(x.i);
+              return (
+                <div key={x.t} className="carte flex items-start gap-3.5 p-4">
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-marine-500" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold text-ardoise-900">{x.t}</div>
+                    <div className="mt-0.5 text-[13px] leading-relaxed text-ardoise-600">{x.d}</div>
+                  </div>
+                  {/*
+                    Deux lignes seulement portent ce bouton : le guide et
+                    l'application audio, les deux choses que la cliente ne peut
+                    pas voir au comptoir.
+                  */}
+                  {detail && (
+                    <button
+                      type="button"
+                      onClick={() => setBulle(detail)}
+                      aria-label={`En savoir plus : ${x.t}`}
+                      className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-marine-400 text-xs font-bold text-marine-700 transition-colors hover:bg-marine-50"
+                    >
+                      i
+                    </button>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
+
+      {bulle && <BulleInclus detail={bulle} onFerme={() => setBulle(null)} />}
 
       {/* Le devis -------------------------------------------------------- */}
       <section className="relative overflow-hidden rounded-3xl">

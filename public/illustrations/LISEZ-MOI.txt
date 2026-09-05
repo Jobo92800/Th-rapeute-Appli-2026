@@ -1,0 +1,11 @@
+Les deux images des bulles « ce qui est compris », sur l'écran de proposition
+de cure. Déposez-les ici, avec exactement ces noms :
+
+    parcours-audio.png       la capture de l'application Mon Parcours
+    guide-alimentaire.png    le visuel du guide de rééquilibrage
+
+Format : PNG ou JPG, 1200 px de large suffisent largement, moins de 400 Ko —
+cet écran s'ouvre sur une tablette, en rendez-vous, parfois en 4G.
+
+Tant qu'un fichier manque, la bulle s'ouvre quand même : elle affiche son
+texte, sans l'image. Rien ne casse.
