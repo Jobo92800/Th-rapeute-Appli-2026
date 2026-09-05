@@ -99,16 +99,39 @@ export function etatEcheance(e: Echeance, aujourdhui = new Date()): Etat {
   };
 }
 
-/** Le clic sur la pastille fait tourner les statuts saisissables. */
-export const STATUT_SUIVANT: Record<StatutEcheance, StatutEcheance> = {
-  a_venir: 'paye',
-  paye: 'donne',
-  donne: 'impaye',
-  impaye: 'a_venir',
-  // Une échéance annulée ne se rattrape pas d'un clic : elle l'a été parce
-  // que la cure s'est arrêtée, ou parce qu'un avoir l'a couverte. On rouvre
-  // la cure, ou on reprend l'avoir — deux gestes qui se disent.
-  annule: 'annule',
+/*
+  Les statuts qu'une thérapeute pose elle-même, dans l'ordre du menu.
+
+  « Annulée » n'y est pas : une échéance ne s'annule pas à la main. Elle
+  l'a été parce que la cure s'est arrêtée, ou parce qu'un avoir l'a
+  couverte. On rouvre la cure, ou on reprend l'avoir — deux gestes qui se
+  disent et se datent.
+
+  « En retard » et « À encaisser aujourd'hui » n'y sont pas non plus, et pour
+  une raison plus profonde : ce ne sont pas des statuts. Ils se déduisent de
+  la date, ils changent tout seuls d'un jour à l'autre, et personne ne doit
+  pouvoir les poser ou les retirer.
+*/
+export const STATUTS_SAISISSABLES: { valeur: StatutEcheance; libelle: string }[] = [
+  { valeur: 'a_venir', libelle: 'À venir' },
+  { valeur: 'paye', libelle: 'Payé' },
+  { valeur: 'donne', libelle: 'Donné' },
+  { valeur: 'impaye', libelle: 'Impayé' },
+];
+
+/**
+ * La teinte du menu de statut.
+ *
+ * Elle suit ce qui est **enregistré**, jamais ce que la date implique : un
+ * menu rouge affichant « À venir » se lirait comme une contradiction. Le
+ * retard, lui, se voit sur la ligne entière et sur l'étiquette qui l'annonce.
+ */
+export const TEINTE_STATUT: Record<StatutEcheance, string> = {
+  a_venir: 'border-ardoise-300 bg-white text-ardoise-800',
+  paye: 'border-emerald-400 bg-emerald-50 font-semibold text-emerald-900',
+  donne: 'border-ardoise-400 bg-ardoise-100 text-ardoise-700',
+  impaye: 'border-rose-400 bg-rose-50 font-semibold text-rose-900',
+  annule: 'border-ardoise-200 bg-ardoise-50 text-ardoise-400 line-through',
 };
 
 /**

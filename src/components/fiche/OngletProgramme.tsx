@@ -8,13 +8,13 @@ import toast from 'react-hot-toast';
 import { majEcheance, programmesDeLaCliente } from '../../services/metier';
 import type { ProgrammeComplet } from '../../services/metier';
 import { LIBELLES_TECHNOLOGIE, formaterEuros } from '../../domain/tarification';
-import { STATUT_SUIVANT, etatEcheance } from '../../domain/reglement';
+import { STATUTS_SAISISSABLES, TEINTE_STATUT, etatEcheance } from '../../domain/reglement';
 import ModaleNouvelleCure from '../cure/ModaleNouvelleCure';
 import ModaleArretCure from '../cure/ModaleArretCure';
 import CarteAvoir, { BoutonAvoir } from '../cure/CarteAvoir';
 import { resteAEncaisser } from '../../domain/avoir';
 import { rouvrirCure } from '../../services/avoirs';
-import type { Cliente, Echeance } from '../../types/db';
+import type { Cliente, Echeance, StatutEcheance } from '../../types/db';
 
 const LIBELLE_MODE: Record<string, string> = {
   comptant: 'Comptant',
@@ -40,12 +40,17 @@ export default function OngletProgramme({
     queryFn: () => programmesDeLaCliente(clienteId),
   });
 
-  async function basculerStatut(e: Echeance) {
-    const suivant = STATUT_SUIVANT[e.statut];
+  async function changerStatut(e: Echeance, statut: StatutEcheance) {
     try {
       await majEcheance(e.id, {
-        statut: suivant,
-        date_reglement: suivant === 'paye' ? new Date().toISOString().slice(0, 10) : null,
+        statut,
+        /*
+          La date de règlement suit le statut : elle se pose le jour où l'on
+          dit « payé », et disparaît si l'on revient en arrière. Sans ça, une
+          échéance repassée en « à venir » resterait comptée dans l'encaissé
+          du mois.
+        */
+        date_reglement: statut === 'paye' ? new Date().toISOString().slice(0, 10) : null,
       });
       qc.invalidateQueries({ queryKey: ['programmes', clienteId] });
       qc.invalidateQueries({ queryKey: ['situations', centreId] });
@@ -284,7 +289,8 @@ export default function OngletProgramme({
               </h3>
               <p className="mt-1 text-xs text-ardoise-500">
                 La première échéance tombe le jour de la cure, puis une par mois. Les dates
-                restent modifiables. Cliquez sur la pastille pour changer le statut.
+                restent modifiables, et le statut se choisit dans son menu, comme le moyen de
+                règlement.
               </p>
 
               <div className="mt-3 space-y-1.5">
@@ -327,21 +333,45 @@ export default function OngletProgramme({
                         <option value="alma">Alma</option>
                       </select>
 
-                      <button
-                        type="button"
-                        onClick={() => basculerStatut(e)}
+                      {/*
+                        Ce que la date impose, à côté de ce qu'on a saisi : le
+                        retard et l'échéance du jour ne se choisissent pas, ils
+                        se constatent.
+                      */}
+                      {(st.etat === 'retard' || st.etat === 'aujourdhui') && (
+                        <span
+                          className={`ml-auto rounded-full px-3 py-1 text-2xs font-semibold uppercase tracking-wide ${st.pastille}`}
+                        >
+                          {/*
+                            « À encaisser aujourd'hui » est juste, mais deux fois
+                            trop long pour cette ligne : il y poussait le menu de
+                            statut à la ligne suivante. La colonne dit assez.
+                          */}
+                          {st.etat === 'aujourdhui' ? 'Aujourd’hui' : st.libelle}
+                        </span>
+                      )}
+
+                      <select
+                        value={e.statut}
+                        onChange={(ev) => changerStatut(e, ev.target.value as StatutEcheance)}
                         disabled={e.statut === 'annule'}
                         title={
                           e.statut === 'annule'
                             ? 'Annulée : rouvrez la cure, ou reprenez l’avoir qui l’a couverte.'
                             : undefined
                         }
-                        className={`ml-auto rounded-full px-3 py-1 text-2xs font-semibold uppercase tracking-wide transition-opacity ${
-                          e.statut === 'annule' ? 'cursor-default' : 'hover:opacity-80'
-                        } ${st.pastille}`}
+                        aria-label={`Statut de l’échéance ${e.rang}`}
+                        className={`w-32 shrink-0 rounded-lg border px-2 py-1 text-xs focus:border-marine-500 focus:outline-none focus:ring-1 focus:ring-marine-500 disabled:cursor-default ${
+                          st.etat === 'retard' || st.etat === 'aujourdhui' ? '' : 'ml-auto'
+                        } ${TEINTE_STATUT[e.statut]}`}
                       >
-                        {st.libelle}
-                      </button>
+                        {e.statut === 'annule' && <option value="annule">Annulée</option>}
+                        {STATUTS_SAISISSABLES.map((s) => (
+                          <option key={s.valeur} value={s.valeur}>
+                            {s.libelle}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   );
                 })}
