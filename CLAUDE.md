@@ -412,7 +412,16 @@ npx --yes supabase functions deploy acces-parcours-audio  --project-ref kefvxglm
 
 # diagnostiquer la synchro Airtable : elle renvoie ses erreurs
 curl -s -X POST "$URL/functions/v1/synchro-airtable" -H "Authorization: Bearer $ANON"
+
+# refaire le PDF du guide des thérapeutes (npm run dev doit tourner)
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless --disable-gpu --no-pdf-header-footer --virtual-time-budget=8000 \
+  --print-to-pdf="Guide_MAbeautyplus.pdf" http://localhost:5173/guide.html
 ```
+
+Le PDF du guide **n'est pas versionné** : il se refait en une commande à
+partir de `public/guide.html`, qui fait seule référence. Le garder en double
+dans le dépôt, c'est se garantir qu'un jour les deux diffèrent.
 
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
