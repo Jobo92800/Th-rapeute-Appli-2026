@@ -209,6 +209,6 @@ export function construireContrat(args: {
 export const ENGAGEMENTS = [
   'Je reconnais avoir pris connaissance du contrat et des modalités financières du forfait souscrit.',
   "J'ai reçu toutes les informations nécessaires avant la signature et j'ai pu poser l'ensemble de mes questions.",
-  "J'ai été informée de mon droit légal de rétractation de 14 jours (articles L221-18 et suivants du Code de la consommation).",
+  "J'ai été informé(e) de mon droit légal de rétractation de 14 jours (articles L221-18 et suivants du Code de la consommation).",
   "J'ai pris connaissance et j'accepte les Conditions Générales de Vente remises préalablement à la signature.",
 ];

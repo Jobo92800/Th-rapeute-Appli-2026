@@ -19,6 +19,7 @@ import {
   calculerSolde,
   libelleSolde,
 } from '../../domain/parrainage';
+import { accorde, estFeminin, pronom } from '../../domain/civilite';
 import type { Cliente } from '../../types/db';
 
 /**
@@ -76,7 +77,7 @@ export default function CarteParrainage({ cliente }: { cliente: Cliente }) {
       <div className="space-y-5 p-5">
         {/* Sa marraine ------------------------------------------------- */}
         <div>
-          <h3 className="etiquette">Qui l’a parrainée</h3>
+          <h3 className="etiquette">Qui l’a {accorde('parrainé', cliente.civilite)}</h3>
 
           {cliente.parrain_id && marraine ? (
             <div className="flex items-center justify-between gap-3 rounded-lg border border-ardoise-200 px-3 py-2">
@@ -90,7 +91,7 @@ export default function CarteParrainage({ cliente }: { cliente: Cliente }) {
                   try {
                     await rattacherFilleule(cliente.id, null);
                     rafraichir();
-                    toast.success('Marraine retirée');
+                    toast.success('Parrainage retiré');
                   } catch (e) {
                     toast.error(e instanceof Error ? e.message : 'Le retrait a échoué.');
                   }
@@ -104,13 +105,13 @@ export default function CarteParrainage({ cliente }: { cliente: Cliente }) {
             <div className="space-y-3">
               <ChercheurCliente
                 sauf={cliente.id}
-                placeholder="Chercher sa marraine dans les 5 centres…"
+                placeholder="Chercher cette personne dans les 5 centres…"
                 onChoisir={async (c) => {
                   try {
                     await rattacherFilleule(cliente.id, c.id);
                     setMarraineOuverte(false);
                     rafraichir();
-                    toast.success(`${c.prenom} ${c.nom} est sa marraine`);
+                    toast.success(`${c.prenom} ${c.nom} l’a ${accorde('parrainé', cliente.civilite)}`);
                   } catch (e) {
                     toast.error(e instanceof Error ? e.message : 'Le rattachement a échoué.');
                   }
@@ -119,14 +120,14 @@ export default function CarteParrainage({ cliente }: { cliente: Cliente }) {
               <div className="flex items-end gap-2">
                 <div className="flex-1">
                   <label className="etiquette" htmlFor="parrain-libre">
-                    Ou son nom, si elle n’a pas de fiche
+                    Ou son nom, s’il n’y a pas de fiche
                   </label>
                   <input
                     id="parrain-libre"
                     className="champ"
                     value={nomLibre}
                     onChange={(e) => setNomLibre(e.target.value)}
-                    placeholder="Cliente de l’ancienne application"
+                    placeholder="Personne de l’ancienne application"
                   />
                 </div>
                 <button
@@ -137,7 +138,7 @@ export default function CarteParrainage({ cliente }: { cliente: Cliente }) {
                       await definirParrainLibre(cliente.id, nomLibre);
                       setMarraineOuverte(false);
                       rafraichir();
-                      toast.success('Marraine enregistrée');
+                      toast.success('Parrainage enregistré');
                     } catch {
                       toast.error("Le nom n'a pas pu être enregistré.");
                     }
@@ -154,14 +155,17 @@ export default function CarteParrainage({ cliente }: { cliente: Cliente }) {
           ) : (
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm text-ardoise-500">
-                {cliente.parrain_libre || 'Personne — elle est venue d’elle-même.'}
+                {cliente.parrain_libre ||
+                  `Personne — ${pronom(cliente.civilite)} est ${accorde('venu', cliente.civilite)} ${
+                    estFeminin(cliente.civilite) ? 'd’elle-même' : 'de lui-même'
+                  }.`}
               </p>
               <button
                 type="button"
                 onClick={() => setMarraineOuverte(true)}
                 className="text-xs font-semibold text-marine-700 hover:text-marine-800"
               >
-                {cliente.parrain_libre ? 'Changer' : 'Indiquer une marraine'}
+                {cliente.parrain_libre ? 'Changer' : 'Indiquer un parrainage'}
               </button>
             </div>
           )}
@@ -170,14 +174,14 @@ export default function CarteParrainage({ cliente }: { cliente: Cliente }) {
         {/* Ses filleules ----------------------------------------------- */}
         <div className="border-t border-ardoise-100 pt-4">
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="etiquette mb-0">Qui elle a parrainé</h3>
+            <h3 className="etiquette mb-0">Qui {pronom(cliente.civilite)} a parrainé</h3>
             <button
               type="button"
               onClick={() => setAjoutOuvert((v) => !v)}
               className="flex items-center gap-1 text-xs font-semibold text-marine-700 hover:text-marine-800"
             >
               {ajoutOuvert ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-              {ajoutOuvert ? 'Annuler' : 'Ajouter une filleule'}
+              {ajoutOuvert ? 'Annuler' : 'Ajouter'}
             </button>
           </div>
 
@@ -185,13 +189,13 @@ export default function CarteParrainage({ cliente }: { cliente: Cliente }) {
             <div className="mb-3">
               <ChercheurCliente
                 sauf={cliente.id}
-                placeholder="Chercher la filleule dans les 5 centres…"
+                placeholder="Chercher cette personne dans les 5 centres…"
                 onChoisir={async (c) => {
                   try {
                     await rattacherFilleule(c.id, cliente.id);
                     setAjoutOuvert(false);
                     rafraichir();
-                    toast.success(`${c.prenom} ${c.nom} est sa filleule`);
+                    toast.success(`Parrainage enregistré : ${c.prenom} ${c.nom}`);
                   } catch (e) {
                     toast.error(e instanceof Error ? e.message : 'Le rattachement a échoué.');
                   }
@@ -201,7 +205,7 @@ export default function CarteParrainage({ cliente }: { cliente: Cliente }) {
           )}
 
           {filleules.length === 0 ? (
-            <p className="text-sm text-ardoise-500">Aucune filleule enregistrée.</p>
+            <p className="text-sm text-ardoise-500">Personne pour l’instant.</p>
           ) : (
             <ul className="divide-y divide-ardoise-100">
               {filleules.map((f) => (

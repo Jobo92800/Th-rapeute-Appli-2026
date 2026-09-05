@@ -231,7 +231,7 @@ export default function ModaleMouvement({ ligne, auteur, onFerme, onEnregistre }
 
           {geste === 'sortie' && (
             <p className="rounded-lg bg-ardoise-50 px-3 py-2 text-xs text-ardoise-600">
-              Une boîte vendue à une cliente ne se saisit pas ici : enregistrez-la sur sa fiche,
+              Une boîte vendue ne se saisit pas ici : enregistrez-la sur la fiche,
               onglet « Compléments ». Le rayon se décompte tout seul.
             </p>
           )}

@@ -68,7 +68,7 @@ const TECHNOS_PRINCIPALES: Technologie[] = ['luxo', 'relax', 'ishape', 'presso']
 */
 const METHODES = [
   { id: 'centre' as const, libelle: 'Au centre', detail: 'Par chèques, sans frais' },
-  { id: 'alma' as const, libelle: 'Alma', detail: 'Par carte, frais à la charge de la cliente' },
+  { id: 'alma' as const, libelle: 'Alma', detail: 'Par carte, frais à sa charge' },
 ];
 
 /**
@@ -201,7 +201,7 @@ export default function CompositionCure({
           {optionsModifiables ? (
             <>
               <p className="mb-1 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
-                À facturer — décochez ce que la cliente a déjà
+                À facturer — décochez ce qui a déjà été remis
               </p>
               <Option
                 coche={guide}
@@ -399,7 +399,7 @@ export default function CompositionCure({
         {methode === 'alma' && detail.total > 0 && (
           <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
             Frais Alma de {String(tauxFraisAlma(echeancier.n, detail.total)).replace('.', ',')} % —{' '}
-            {formaterEuros(echeancier.frais, 2)} à la charge de la cliente. Total réglé :{' '}
+            {formaterEuros(echeancier.frais, 2)} à sa charge. Total réglé :{' '}
             <strong className="font-semibold">{formaterEuros(echeancier.montantARegler, 2)}</strong>.
           </p>
         )}

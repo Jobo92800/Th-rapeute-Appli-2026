@@ -252,8 +252,8 @@ export default function ContenuTableauDeBord({
           </p>
           <p className="mt-1 text-xs text-ardoise-500">
             séance{data.parrainage.a_poser > 1 ? 's' : ''} offerte
-            {data.parrainage.a_poser > 1 ? 's' : ''} à poser, chez {data.parrainage.marraines}{' '}
-            marraine{data.parrainage.marraines > 1 ? 's' : ''}.
+            {data.parrainage.a_poser > 1 ? 's' : ''} à poser, sur {data.parrainage.marraines}{' '}
+            fiche{data.parrainage.marraines > 1 ? 's' : ''}.
           </p>
         </div>
 

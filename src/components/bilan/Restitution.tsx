@@ -72,7 +72,7 @@ export default function Restitution({
         code={dp}
         pct={pourcentages[dp]}
         titre="Profil comportemental"
-        soustitre="Qui elle est aujourd'hui"
+        soustitre="Qui vous êtes aujourd'hui"
         badge="Profil dominant"
         accent="marine"
         secondaires={bioportrait.profilsTries.slice(1)}
@@ -164,7 +164,7 @@ function CarteAxe({
             dangerouslySetInnerHTML={{ __html: a.feel }}
           />
           <p className="mt-3 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
-            Ce que cela change chez elle
+            Ce que cela change chez vous
           </p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {a.imp.map((x) => (
@@ -179,7 +179,7 @@ function CarteAxe({
         </div>
 
         <p className="mt-5 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
-          Aussi présent chez elle
+          Aussi présent chez vous
         </p>
         <div className="mt-2 space-y-2">
           {secondaires.map((c) => {

@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { AlertOctagon, Loader2, Pencil, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { definirExceptionCure } from '../../services/clientes';
+import { laCliente } from '../../domain/civilite';
 import type { Cliente } from '../../types/db';
 
 /**
@@ -130,7 +131,8 @@ export default function ExceptionCure({
                 className="champ resize-y"
               />
               <p className="mt-2 text-xs text-ardoise-500">
-                Ce texte s’affiche en rouge sur sa fiche et signale la cliente dans la liste. Il
+                Ce texte s’affiche en rouge sur sa fiche et signale {laCliente(cliente.civilite)} dans la
+                liste. Il
                 remplace l’exception précédente : c’est l’état actuel qui compte, pas l’historique.
                 Videz le champ pour la retirer.
               </p>

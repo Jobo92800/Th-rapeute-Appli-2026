@@ -134,7 +134,7 @@ export default function OngletComplements({ clienteId, centreId }: Props) {
           <p className="px-5 py-8 text-center text-sm text-ardoise-400">Chargement…</p>
         ) : ventes.length === 0 ? (
           <p className="px-5 py-8 text-center text-sm text-ardoise-500">
-            Aucune vente de complément pour cette cliente.
+            Aucune vente de complément sur cette fiche.
           </p>
         ) : (
           <ul className="divide-y divide-ardoise-100">
@@ -207,7 +207,7 @@ function RecapProduit({ produit, ventes }: { produit: EtatStock; ventes: VenteCo
       <p className="chiffres mt-1 text-2xl font-bold text-marine-700">{total}</p>
       <p className="mt-1 text-xs text-ardoise-500">
         {total === 0
-          ? 'Jamais vendu à cette cliente'
+          ? 'Jamais vendu sur cette fiche'
           : echeance
             ? libelleFinDeCure(echeance)
             : 'Pas d’échéance'}

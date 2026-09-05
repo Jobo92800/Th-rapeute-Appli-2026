@@ -113,7 +113,7 @@ export default function ModaleArretCure({
             <h3 className="surtitre mb-2">Le décompte</h3>
             <div className="rounded-xl border border-ardoise-200">
               <div className="flex items-center justify-between border-b border-ardoise-100 px-4 py-2.5 text-sm">
-                <span className="text-ardoise-700">Elle a réglé</span>
+                <span className="text-ardoise-700">Déjà réglé</span>
                 <span className="chiffres font-semibold text-ardoise-900">
                   {formaterEuros(decompte.encaisse, 2)}
                 </span>
@@ -121,7 +121,7 @@ export default function ModaleArretCure({
 
               {decompte.detail.length === 0 ? (
                 <p className="px-4 py-2.5 text-sm text-ardoise-500">
-                  Elle n’a rien consommé : aucune séance faite, rien d’emporté.
+                  Rien n’a été consommé : aucune séance faite, rien d’emporté.
                 </p>
               ) : (
                 decompte.detail.map((d) => (
@@ -139,7 +139,7 @@ export default function ModaleArretCure({
 
               <div className="flex items-center justify-between border-t border-ardoise-200 px-4 py-2.5 text-sm">
                 <span className="font-semibold text-ardoise-800">
-                  {decompte.duRestant > 0 ? 'Elle doit encore' : 'Différence en sa faveur'}
+                  {decompte.duRestant > 0 ? 'Reste à régler' : 'Différence en sa faveur'}
                 </span>
                 <span
                   className={`chiffres text-lg font-bold ${
@@ -153,8 +153,8 @@ export default function ModaleArretCure({
 
             {decompte.duRestant > 0 && (
               <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                Elle a reçu plus qu’elle n’a payé. Il n’y a donc pas d’avoir à lui faire — à vous
-                de voir si vous réclamez la différence ou si vous passez l’éponge.
+                Plus de soins reçus que de règlements. Il n’y a donc pas d’avoir à lui faire — à
+                vous de voir si vous réclamez la différence ou si vous passez l’éponge.
               </p>
             )}
           </section>
@@ -194,7 +194,7 @@ export default function ModaleArretCure({
 
           <div>
             <label className="etiquette" htmlFor="motif-arret">
-              Pourquoi elle s’arrête
+              Pourquoi la cure s’arrête
             </label>
             <textarea
               id="motif-arret"

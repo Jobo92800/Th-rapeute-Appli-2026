@@ -10,6 +10,7 @@ import {
   etatParcours,
   renvoyerInvitationParcours,
 } from '../../services/metier';
+import { laCliente, majuscule } from '../../domain/civilite';
 import type { Cliente } from '../../types/db';
 
 const ADRESSE = 'https://applipodcast.netlify.app';
@@ -49,7 +50,7 @@ export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
       qc.invalidateQueries({ queryKey: ['parcours-audio', cliente.id] });
       toast.success(
         motDePasseDefini
-          ? 'Compte prêt — la cliente peut se connecter dès maintenant'
+          ? `Compte prêt — ${laCliente(cliente.civilite)} peut se connecter dès maintenant`
           : `Invitation envoyée à ${cliente.email}`,
         { duration: 6000 },
       );
@@ -82,7 +83,7 @@ export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
           </h2>
           <p className="text-xs text-ardoise-500">
             {aAcces
-              ? 'La cliente se connecte avec son email et son mot de passe.'
+              ? `${majuscule(laCliente(cliente.civilite))} se connecte avec son email et son mot de passe.`
               : "L'accès se donne normalement à la signature du contrat."}
           </p>
         </div>
@@ -97,7 +98,8 @@ export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
       <div className="p-5">
         {!cliente.email ? (
           <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            Cette cliente n'a pas d'adresse email : l'invitation ne peut pas partir. Renseignez-la
+            {majuscule(laCliente(cliente.civilite, 'cette'))} n'a pas d'adresse email : l'invitation ne peut
+                pas partir. Renseignez-la
             dans l'onglet Coordonnées.
           </p>
         ) : !aAcces ? (
@@ -126,7 +128,7 @@ export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
 
               <div className="min-w-52 flex-1">
                 <label htmlFor="mdp-carte" className="etiquette">
-                  Mot de passe, à choisir avec la cliente
+                  Mot de passe, à choisir avec {laCliente(cliente.civilite)}
                 </label>
                 <input
                   id="mdp-carte"
@@ -215,7 +217,7 @@ export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
             <p className="text-xs text-ardoise-400">
               Accès donné le{' '}
               {format(new Date(cliente.acces_audio_le!), 'd MMMM yyyy', { locale: fr })}. Le renvoi
-              d'invitation sert quand la cliente ne retrouve pas son email.
+              d'invitation sert quand {laCliente(cliente.civilite)} ne retrouve pas son email.
             </p>
           </div>
         )}

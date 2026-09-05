@@ -126,7 +126,7 @@ export type SensAvoir = 'accorde' | 'utilise' | 'rembourse';
 export const LIBELLE_SENS: Record<SensAvoir, string> = {
   accorde: 'Avoir accordé',
   utilise: 'Utilisé sur une cure',
-  rembourse: 'Remboursé à la cliente',
+  rembourse: 'Remboursé',
 };
 
 /**

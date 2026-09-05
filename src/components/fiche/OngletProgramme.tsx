@@ -94,7 +94,7 @@ export default function OngletProgramme({
   if (programmes.length === 0) {
     return (
       <div className="carte px-5 py-12 text-center">
-        <p className="text-sm text-ardoise-600">Aucune cure enregistrée pour cette cliente.</p>
+        <p className="text-sm text-ardoise-600">Aucune cure enregistrée sur cette fiche.</p>
         <p className="mt-1 text-xs text-ardoise-400">
           Une cure se crée à la fin d'un Bilan BioPortrait.
         </p>
@@ -361,8 +361,8 @@ export default function OngletProgramme({
                     Arrêter cette cure
                   </button>
                   <p className="mt-1.5 text-xs text-ardoise-400">
-                    Elle s’arrête en cours de route : on annule ce qui reste à payer, et on lui
-                    fait un avoir si elle a payé plus qu’elle n’a reçu.
+                    La cure s’arrête en cours de route : on annule ce qui reste à payer, et on
+                    lui fait un avoir si les règlements dépassent ce qui a été reçu.
                   </p>
                 </div>
               )}

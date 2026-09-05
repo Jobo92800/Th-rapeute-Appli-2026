@@ -147,7 +147,7 @@ const Signature = forwardRef<SignatureHandle, Props>(function Signature({ onChan
         />
         {vide && (
           <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-ardoise-400">
-            Signature de la cliente
+            Signature
           </p>
         )}
         <div className="absolute right-2 top-2 flex gap-1">

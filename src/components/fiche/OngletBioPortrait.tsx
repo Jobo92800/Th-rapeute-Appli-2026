@@ -4,13 +4,20 @@ import { Link } from 'react-router-dom';
 import { Loader2, Mail, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { renvoyerRecap } from '../../services/recap';
-import type { Bilan } from '../../types/db';
+import { laCliente, pronom } from '../../domain/civilite';
+import type { Bilan, Civilite } from '../../types/db';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { bilansDeLaCliente, lireBaremeActif } from '../../services/metier';
 import { SEUIL_PRESENCE, type Axe, AXES_PROFIL, AXES_TERRAIN } from '../../domain/bioportrait';
 
-export default function OngletBioPortrait({ clienteId }: { clienteId: string }) {
+export default function OngletBioPortrait({
+  clienteId,
+  civilite,
+}: {
+  clienteId: string;
+  civilite: Civilite;
+}) {
   const qc = useQueryClient();
   const [confirme, setConfirme] = useState(false);
 
@@ -34,7 +41,7 @@ export default function OngletBioPortrait({ clienteId }: { clienteId: string }) 
   if (!bilan || !baremeData) {
     return (
       <div className="carte px-5 py-12 text-center">
-        <p className="text-sm text-ardoise-600">Aucun bilan pour cette cliente.</p>
+        <p className="text-sm text-ardoise-600">Aucun bilan sur cette fiche.</p>
         <Link to="/bilan" className="bouton-fort mt-5">
           <Sparkles className="h-4 w-4" />
           Démarrer un Bilan BioPortrait
@@ -62,7 +69,7 @@ export default function OngletBioPortrait({ clienteId }: { clienteId: string }) 
         </p>
         <p className="mt-2 text-xs text-ardoise-500">
           {bilan.facturation === 'offert'
-            ? 'Bilan offert — la cliente a démarré son accompagnement'
+            ? `Bilan offert — ${laCliente(civilite)} a démarré son accompagnement`
             : bilan.facturation === 'facture'
               ? `Bilan facturé ${Number(bilan.montant_facture ?? 0).toLocaleString('fr-FR')} €`
               : 'Facturation à trancher'}
@@ -95,7 +102,7 @@ export default function OngletBioPortrait({ clienteId }: { clienteId: string }) 
       {bilan.texte_libre && (
         <section className="carte p-5">
           <h2 className="mb-2 text-sm font-semibold text-ardoise-900">
-            Ce qu'elle voulait transformer en priorité
+            Ce qu{'\u2019'}{pronom(civilite)} voulait transformer en priorité
           </h2>
           <p className="text-sm italic text-ardoise-700">« {bilan.texte_libre} »</p>
         </section>
@@ -196,7 +203,7 @@ function Recapitulatif({
   if (!bilan.recap_pdf) {
     return (
       <p className="mt-4 border-t border-ardoise-100 pt-3 text-xs text-ardoise-400">
-        Aucun récapitulatif n’a été envoyé à cette cliente. Il s’envoie depuis le dernier écran
+        Aucun récapitulatif n’a encore été envoyé. Il s’envoie depuis le dernier écran
         d’un bilan, avec le bouton « Envoyer le récap ».
       </p>
     );

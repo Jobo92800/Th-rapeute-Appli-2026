@@ -58,17 +58,28 @@ export function soldeDepuisCompteurs(engagees: number, utilisees: number): Solde
   };
 }
 
-/** « 3 filleules engagées, 6 séances gagnées » — la phrase de l'écran. */
+/**
+ * « 3 personnes parrainées ont signé, 6 séances gagnées » — la phrase de
+ * l'écran.
+ *
+ * Sans genre, et ce n'est pas de la coquetterie : les personnes parrainées
+ * viennent d'une commande qui ne rend pas leur civilité. Écrire « filleules
+ * engagées » reviendrait à parier sur le genre de gens qu'on n'a pas
+ * regardés.
+ */
 export function libelleSolde(s: SoldeParrainage): string {
-  if (s.total === 0) return 'Aucune filleule pour l’instant';
+  if (s.total === 0) return 'Aucun parrainage pour l’instant';
 
   if (s.engagees === 0) {
     return s.total === 1
-      ? '1 filleule déclarée, qui n’a pas encore signé sa cure'
-      : `${s.total} filleules déclarées, aucune n’a encore signé sa cure`;
+      ? '1 personne parrainée, qui n’a pas encore signé sa cure'
+      : `${s.total} personnes parrainées, aucune n’a encore signé sa cure`;
   }
 
   const gagnees = `${s.gagnees} séance${s.gagnees > 1 ? 's' : ''} gagnée${s.gagnees > 1 ? 's' : ''}`;
-  const engagees = `${s.engagees} filleule${s.engagees > 1 ? 's' : ''} engagée${s.engagees > 1 ? 's' : ''}`;
+  const engagees =
+    s.engagees === 1
+      ? '1 personne parrainée a signé'
+      : `${s.engagees} personnes parrainées ont signé`;
   return `${engagees}, ${gagnees}`;
 }

@@ -3,6 +3,7 @@ import { Check, Eye, FileSignature, Headphones, Loader2, Maximize2, Shirt, X } f
 import toast from 'react-hot-toast';
 import Signature, { type SignatureHandle } from './Signature';
 import { ENGAGEMENTS, construireContrat, type ContractData } from '../../domain/contrat';
+import { laCliente, majuscule, pronom } from '../../domain/civilite';
 import {
   MOT_DE_PASSE_MIN,
   donnerAccesParcours,
@@ -250,7 +251,7 @@ export default function ModaleContrat({
           );
           toast.success(
             motDePasseDefini
-              ? `Parcours audio ${parcoursAudio} — la cliente peut se connecter dès maintenant`
+              ? `Parcours audio ${parcoursAudio} — ${laCliente(cliente.civilite)} peut se connecter dès maintenant`
               : `Parcours audio ${parcoursAudio} — invitation envoyée à ${cliente.email}`,
             { duration: 6000 },
           );
@@ -306,7 +307,7 @@ export default function ModaleContrat({
           <section>
             <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
               <h3 className="text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
-                À lire avec la cliente
+                À lire avec {laCliente(cliente.civilite)}
               </h3>
               <span
                 className={`text-xs font-medium ${tousLus ? 'text-emerald-700' : 'text-ardoise-500'}`}
@@ -364,7 +365,7 @@ export default function ModaleContrat({
 
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                   <p className="text-xs text-ardoise-500">
-                    Parcourez chaque document avec la cliente. Tant qu'un document n'a pas été
+                    Parcourez chaque document avec {laCliente(cliente.civilite)}. Tant qu'un document n'a pas été
                     ouvert, la signature reste bloquée.
                   </p>
                   {doc && (
@@ -391,14 +392,14 @@ export default function ModaleContrat({
                 onChange={(e) => setPhotos(e.target.checked)}
                 className="h-4 w-4 rounded border-ardoise-300 text-marine-600 focus:ring-marine-500"
               />
-              La cliente autorise la diffusion de ses photos sur les réseaux du centre
+              {majuscule(laCliente(cliente.civilite))} autorise la diffusion de ses photos sur les réseaux du centre
             </label>
           )}
 
           {/* Engagements ------------------------------------------------ */}
           <section>
             <h3 className="mb-2 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
-              À cocher avec la cliente
+              À cocher avec {laCliente(cliente.civilite)}
             </h3>
             <div className="space-y-2">
               {ENGAGEMENTS.map((texte, i) => (
@@ -430,7 +431,7 @@ export default function ModaleContrat({
             <section>
               <h3 className="mb-2 flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
                 <Shirt className="h-3.5 w-3.5" />
-                Tenue I-Shape remise à la cliente
+                Tenue I-Shape remise à {laCliente(cliente.civilite)}
               </h3>
               <div className="flex flex-wrap gap-2">
                 {(['S', 'M', 'L', 'XL'] as const).map((t) => {
@@ -503,7 +504,7 @@ export default function ModaleContrat({
                 {parcoursAudio ? (
                   <div className="mt-3">
                     <label htmlFor="mdp-parcours" className="etiquette">
-                      Mot de passe, à choisir avec la cliente
+                      Mot de passe, à choisir avec {laCliente(cliente.civilite)}
                     </label>
                     <input
                       id="mdp-parcours"
@@ -516,7 +517,7 @@ export default function ModaleContrat({
                     />
                     <p className="mt-1.5 text-xs text-ardoise-500">
                       {motDePasse.length >= MOT_DE_PASSE_MIN
-                        ? `${cliente.prenom} pourra se connecter tout de suite sur applipodcast.netlify.app avec ${cliente.email}. Notez-lui ce mot de passe, elle pourra le changer ensuite.`
+                        ? `${cliente.prenom} pourra se connecter tout de suite sur applipodcast.netlify.app avec ${cliente.email}. Notez-lui ce mot de passe, ${pronom(cliente.civilite)} pourra le changer ensuite.`
                         : `Laissez vide pour lui envoyer une invitation par email à la place — plus fragile, le lien expire au bout de 24 h.`}
                     </p>
                   </div>
@@ -528,7 +529,7 @@ export default function ModaleContrat({
               </>
             ) : (
               <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                Cette cliente n'a pas d'adresse email : l'invitation ne peut pas partir.
+                {majuscule(laCliente(cliente.civilite, 'cette'))} n'a pas d'adresse email : l'invitation ne peut pas partir.
                 Renseignez-la dans l'onglet Coordonnées pour lui donner accès au parcours audio.
               </p>
             )}

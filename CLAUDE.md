@@ -64,6 +64,7 @@ mensualités sont égales. Les anciennes valeurs `4x_maison` et `10x_alma` reste
 | Reprise du CRM | Les fiches Airtable entrent dans la V2 avec, pour chaque montant renseigné, une cure « reprise » : montant seul, sans séances ni échéancier, **datée à la création de la fiche** — Airtable ne date que celle-là, y compris pour les cures 2 et suivantes. Ces cures portent `origine = 'import_v1'` et un mode de règlement `inconnu` : inventer « 4 fois sans frais » fausserait le tableau de bord. Une fiche importée ne repart pas dans Airtable à sa création : elle en vient. |
 | Cures reprises soldées | Une cure reprise du CRM porte **une échéance unique, déjà réglée**, à sa propre date. Airtable ne garde aucune trace des règlements : sans ça, 630 000 € resteraient éternellement « à encaisser ». La date de règlement vaut celle de la cure — approximation assumée, faute de mieux. |
 | Hommes et femmes | Les centres reçoivent aussi des hommes : la fiche porte une **civilité** (Mme par défaut, y compris sur les 680 fiches reprises — le CRM ne la connaissait pas). Elle est demandée dès l'étape contact du bilan et figure sur le contrat. Les consentements n'ont rien demandé : ils sont déjà écrits au neutre, sauf celui de la ménopause, ce qui va de soi. |
+| Les accords | Trois règles, posées dans `src/domain/civilite.ts` et à suivre pour tout nouvel écran. **Ce qui désigne une personne précise s'accorde à sa civilité** — son nom dans un message, ce qu'elle a réglé, son contrat, sa fiche. **Ce qui désigne la clientèle en général reste au féminin** — le menu « Clientes », la colonne « Cliente », « Aucune cliente dans ce centre » : la clientèle est massivement féminine, et cribler l'interface de « client·e » la rendrait pénible à lire toute la journée au bénéfice de personne. **Ce qui désigne une autre personne dont on ignore la civilité se dit sans genre** — une marraine, une filleule, vues depuis la fiche de quelqu'un d'autre, viennent d'une commande qui ne rend pas leur civilité : on tourne la phrase autrement (« Personne pour l'instant », « 3 personnes parrainées ont signé ») plutôt que de parier. Le doute profite au féminin : une fiche sans civilité est une fiche d'avant la civilité. |
 | Vue d'ensemble | La direction dispose d'un centre « Tous les centres » dans le sélecteur : la liste des clientes et l'accueil montrent alors les cinq d'un coup, avec une colonne Centre. Les gestes qui supposent un centre — créer une fiche, démarrer un bilan, tenir le stock — le disent et demandent d'en choisir un, plutôt que d'en choisir un à la place de la personne. |
 | Tableau de bord | **Réservé à la direction** : le lien n'apparaît pas aux thérapeutes, et la fonction SQL refuse de répondre à un autre rôle. Filtrable par centre ou sur les cinq. Deux notions d'argent à ne jamais confondre : l'**encaissé** (ce qui est rentré, à la date de règlement de chaque échéance) et le **signé** (ce que les cures validées représentent, encaissé plus tard, parfois sur dix mois). Un mois à gros signé et faible encaissé est normal. |
 | Exception cure | Une pathologie ou une consigne impérative vit **sur la fiche**, pas dans les notes : une note se lit quand on pense à ouvrir l'onglet, une exception doit être vue sans avoir été cherchée. Elle s'affiche en rouge sous l'en-tête quel que soit l'onglet, et signale la cliente dans la liste. Un seul texte, remplacé à chaque modification — une consigne périmée au milieu d'un fil est pire que pas de consigne. |
@@ -345,11 +346,12 @@ doit rester vert après toute modification.
 
 ## Banc d'essai
 
-`npm test` — **319 contrôles, à garder verts.** Ils couvrent ce qui décide
+`npm test` — **340 contrôles, à garder verts.** Ils couvrent ce qui décide
 de ce qu'une cliente paie, reçoit et se voit refuser pour raison de santé :
 tarification et échéanciers (centre et Alma), prescription et
 contre-indications, planchers des formules, BioPortrait, parrainage, stock,
-compte à rebours des compléments, contrat, décompte d'un arrêt de cure.
+compte à rebours des compléments, contrat, décompte d'un arrêt de cure,
+accords de civilité.
 
 Deux partis pris. **Aucune bibliothèque de test n'est installée** : Node
 exécute le TypeScript directement et le harnais tient en quarante lignes —

@@ -27,6 +27,7 @@ const Contexte = createContext<EtatSession | null>(null);
 
 
 
+
 /** Valeur du sélecteur quand la direction regarde les cinq centres. */
 export const TOUS_LES_CENTRES = 'tous';
 const TOUS = TOUS_LES_CENTRES;

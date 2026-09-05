@@ -20,6 +20,7 @@ import { soldeDepuisCompteurs } from '../domain/parrainage';
 import { etatCliente, type SituationReglement } from '../domain/reglement';
 import ModaleNotes from '../components/ModaleNotes';
 import ModaleSuppression from '../components/fiche/ModaleSuppression';
+import { accorde } from '../domain/civilite';
 import type { Cliente } from '../types/db';
 import { formaterEuros } from '../domain/tarification';
 
@@ -448,10 +449,11 @@ export default function Clientes() {
           onFerme={() => setASupprimer(null)}
           onSupprimee={() => {
             const nom = `${aSupprimer.prenom} ${aSupprimer.nom}`;
+            const civ = aSupprimer.civilite;
             setASupprimer(null);
             qc.invalidateQueries({ queryKey: ['clientes', perimetre] });
             qc.invalidateQueries({ queryKey: ['clientes-archivees', perimetre] });
-            toast.success(`${nom} supprimée`);
+            toast.success(`${nom} ${accorde('supprimé', civ)}`);
           }}
         />
       )}

@@ -459,7 +459,7 @@ export default function CureEtDevis({
                 ? acompte > 0
                   ? `Par chèques au centre. L’acompte se déduit du total ; le reste, guide et tenue compris (${formaterEuros(options)}), se répartit sur les échéances.`
                   : `Par chèques au centre. Le guide et la tenue (${formaterEuros(options)}) sont sur la première échéance.`
-                : `Frais Alma de ${String(tauxFraisAlma(echeancier.n, totalSeances * grille.seance + options)).replace('.', ',')} %, à la charge de la cliente, compris dans la mensualité.`}
+                : `Frais Alma de ${String(tauxFraisAlma(echeancier.n, totalSeances * grille.seance + options)).replace('.', ',')} %, à sa charge, compris dans la mensualité.`}
             </p>
 
             {/* L'acompte, rangé tant qu'on n'en a pas besoin. */}
@@ -471,7 +471,7 @@ export default function CureEtDevis({
                     onClick={() => setAcompteOuvert(true)}
                     className="text-[11px] font-semibold text-marine-200 underline underline-offset-2 hover:text-white"
                   >
-                    Elle ne peut pas tout régler aujourd’hui ?
+                    Impossible de tout régler aujourd’hui ?
                   </button>
                 ) : (
                   <div className="text-[11px] text-marine-200">
@@ -587,7 +587,7 @@ export default function CureEtDevis({
             onClick={() => onRecap(propositionCourante())}
             disabled={enregistrement || totalSeances === 0}
             className="bouton-discret"
-            title="Le bilan est facturé, la cure n'est pas ouverte, et la cliente reçoit par mail son BioPortrait avec cette proposition."
+            title="Le bilan est facturé, la cure n'est pas ouverte, et le BioPortrait part par mail avec cette proposition."
           >
             <Mail className="h-4 w-4" />
             Envoyer le récap · {formaterEuros(grille.bilan)}

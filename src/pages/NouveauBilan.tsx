@@ -14,6 +14,7 @@ import ChoisirUnCentre from '../components/ChoisirUnCentre';
 import { useCentre, useSession } from '../lib/session';
 import { lireBaremeActif, lireGrilleTarifaire } from '../services/metier';
 import { creerCliente } from '../services/clientes';
+import { laCliente } from '../domain/civilite';
 import { formaterEuros } from '../domain/tarification';
 import { envoyerRecap } from '../services/recap';
 import { enregistrerBilan, creerProgramme } from '../services/metier';
@@ -338,11 +339,6 @@ export default function NouveauBilan() {
           <h1 className="mt-5 text-2xl font-bold tracking-tight text-ardoise-900">
             Bilan BioPortrait
           </h1>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-ardoise-600">
-            Le questionnaire se remplit par la cliente, seule, sur tablette — une dizaine de
-            minutes. Vous reprenez ensuite la main pour saisir l'analyse InBody, puis vous
-            restituez son BioPortrait ensemble.
-          </p>
 
           <div className="mt-8 text-left">
             <div className="surtitre mb-3">Ses coordonnées</div>
@@ -470,7 +466,7 @@ export default function NouveauBilan() {
         ? 'Coordonnées'
         : s.type === 'transition'
           ? 'Transition'
-          : 'Le profil de la cliente';
+          : `Le profil de ${laCliente(contact.civilite)}`;
 
   const peutAvancer =
     s.type === 'multi' || s.type === 'yesno' || s.type === 'radio'
@@ -551,7 +547,7 @@ export default function NouveauBilan() {
           <>
             <h2 className="text-lg font-semibold text-ardoise-900">Pour finaliser le dossier</h2>
             <p className="mt-1 text-sm text-ardoise-500">
-              Ces coordonnées créeront la fiche de la cliente.
+              Ces coordonnées créeront sa fiche.
             </p>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div>

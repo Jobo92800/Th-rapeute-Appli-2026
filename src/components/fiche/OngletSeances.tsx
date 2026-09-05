@@ -426,7 +426,7 @@ function SeanceEnCours({
         </div>
       ) : (
         <p className="border-b border-ardoise-100 px-5 py-4 text-sm text-ardoise-500">
-          Aucun jeu disponible : tous ont déjà été réalisés avec cette cliente.
+          Aucun jeu disponible : tous ont déjà été réalisés sur cette fiche.
         </p>
       )}
 

@@ -13,6 +13,7 @@ import {
   modifierCliente,
 } from '../../services/clientes';
 import ModaleSuppression from './ModaleSuppression';
+import { pronom } from '../../domain/civilite';
 import type { Cliente, ClienteSaisie } from '../../types/db';
 
 const SOURCES = [
@@ -216,7 +217,7 @@ export default function OngletCoordonnees({ centreId, cliente }: Props) {
 
             <div>
               <label htmlFor="source" className="etiquette">
-                Comment nous a-t-elle connus ?
+                Comment nous a-t-{pronom(saisie.civilite)} connus ?
               </label>
               <select
                 id="source"

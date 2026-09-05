@@ -105,7 +105,7 @@ export default function FicheCliente() {
   // la direction peut ouvrir n'importe quelle fiche depuis la vue d'ensemble.
   if (creation && tousCentres) {
     return (
-      <ChoisirUnCentre quoi="Une fiche cliente appartient à un centre : celui où elle est suivie." />
+      <ChoisirUnCentre quoi="Une fiche cliente appartient à un centre : celui où le suivi a lieu." />
     );
   }
 
@@ -213,7 +213,9 @@ export default function FicheCliente() {
         <OngletCoordonnees centreId={centre.id} cliente={cliente ?? null} />
       )}
       {!creation && onglet === 'coordonnees' && cliente && <CarteParrainage cliente={cliente} />}
-      {!creation && onglet === 'bioportrait' && <OngletBioPortrait clienteId={id!} />}
+      {!creation && onglet === 'bioportrait' && (
+        <OngletBioPortrait clienteId={id!} civilite={cliente!.civilite} />
+      )}
       {!creation && onglet === 'programme' && (
         <OngletProgramme cliente={cliente!} centreId={centre.id} />
       )}

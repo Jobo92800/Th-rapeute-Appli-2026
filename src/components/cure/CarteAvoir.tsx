@@ -304,7 +304,7 @@ function Utiliser({
       </div>
       <p className="mt-2 text-xs text-ardoise-500">
         Le montant descend l’échéancier en partant de la dernière échéance. Le montant de la cure,
-        lui, ne bouge pas : c’est ce qu’elle a signé.
+        lui, ne bouge pas : c’est ce qui a été signé.
       </p>
     </Cadre>
   );

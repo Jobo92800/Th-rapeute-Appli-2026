@@ -69,7 +69,7 @@ export function choisirJeu(ctx: ContexteJeu): ChoixJeu {
   const restants = ctx.bibliotheque.filter((j) => !faits.has(j.code));
 
   if (restants.length === 0) {
-    return { jeu: null, phase, motif: 'Tous les jeux ont déjà été réalisés avec cette cliente.' };
+    return { jeu: null, phase, motif: 'Tous les jeux ont déjà été réalisés sur cette fiche.' };
   }
 
   // On balaie la phase attendue, puis les suivantes, puis les précédentes.
