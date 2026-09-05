@@ -56,7 +56,7 @@ et 4× la totalité des frais tombe sur le premier versement, en 10× et 12× le
 mensualités sont égales. Les anciennes valeurs `4x_maison` et `10x_alma` restent acceptées pour les cures déjà signées. |
 | Montant dans Airtable | « Montant Cure » porte ce que la cliente **règle**, frais Alma compris : c'est le montant du contrat et celui des relances. Le tableau de bord de la V2 compte, lui, le montant **hors frais** — les frais Alma ne sont pas du chiffre d'affaires du centre. Les deux diffèrent sur les cures Alma, et c'est voulu. |
 | Connexion | **Un compte par thérapeute**, pas par centre. Cloisonnement par centre en RLS. Un compte `direction` voit les 5 centres. Les adresses sont courtes — `prenom@mabeautyplus.fr`, sans accent ni majuscule : elles se tapent chaque matin sur un clavier partagé. Les trois Alexandra qui avaient imposé des adresses longues ne sont plus qu'une (migration 042). Les comptes se créent dans Supabase (Authentication → Add user, **Auto Confirm** coché), puis `supabase/rattacher_les_comptes.sql` les relie et dit qui manque. |
-| Airtable | Reste le CRM et le moteur des automatisations. La V2 y écrit via une fonction Edge, jamais depuis le navigateur. |
+| Airtable | Reste le CRM et le moteur des automatisations. La V2 y écrit via une fonction Edge, jamais depuis le navigateur. Tout part tout seul ; quand la synchro passe à côté, un bouton **« Envoyer au CRM »** dans l'onglet Contrat repose la fiche et ses contrats dans la file. Il remplace un détour que rien n'annonçait : retourner dans Coordonnées et réappuyer sur Enregistrer, ce qui remettait la fiche en file par effet de bord. |
 | Parcours audio | L'application « Mon Parcours » (`Jobo92800/Applipodcast`, `applipodcast.netlify.app`) reste **séparée** : son projet Supabase, son site Netlify, ses fonctions. La V2 se contente de créer le compte de la cliente au moment de la signature du contrat, avec le parcours A/B/C **choisi par la thérapeute**. **Il n'y a aucun lien personnel à récupérer** : l'adresse du site est la même pour toutes, ce qui est personnel c'est le compte. Le chemin normal est désormais le **mot de passe choisi avec la cliente au comptoir** : le compte est créé avec l'email déjà confirmé, elle se connecte tout de suite. L'invitation par email reste en secours (laisser le mot de passe vide), mais son lien est à usage unique et expire en 24 h — c'est ce qui posait problème. Dans Airtable, `Lien parcours audio` renvoie l'adresse du site quand `Accès audio` est rempli. |
 | Support | Ordinateur (90 % du temps). Seul le questionnaire du bilan est pensé pour la tablette. |
 | Stock | La quantité en rayon **ne se stocke pas** : elle se calcule (entrées − sorties), comme les séances restantes. La V1 recopiait un compteur, qui mentait au bout de quelques jours. Une vente de compléments **est** un mouvement de sortie, écrit par la base : les deux systèmes ne peuvent plus diverger. Le stock peut passer en négatif — c'est le signe qu'un comptage s'impose, pas une raison de refuser une vente réelle. Le guide et la tenue sortent du rayon **à la signature du contrat** : c'est le moment où la cliente repart avec. La taille de la tenue est demandée dans la fenêtre de signature, et la signature reste bloquée tant qu'elle n'est pas choisie. |
@@ -420,8 +420,9 @@ Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 Migrations passées jusqu'à **042** incluse, `synchro-airtable` redéployée,
 et les deux champs du récapitulatif créés dans Airtable. Deux attendent
 d'être collées : la **041** (le droit implicite coupé pour les commandes
-futures) et la **044** (la boucle des règles de lecture des messages, sans
-laquelle l'écran Messages reste vide pour tout le monde).
+futures), la **044** (la boucle des règles de lecture des messages, sans
+laquelle l'écran Messages reste vide pour tout le monde) et la **045** (le
+bouton « Envoyer au CRM » de l'onglet Contrat).
 
 La fermeture des commandes (040) a été **vérifiée des deux côtés** le
 3 septembre 2026 : depuis l'extérieur, les neuf commandes répondent

@@ -544,6 +544,37 @@ export async function relancerSynchro(): Promise<ResultatSynchro> {
   };
 }
 
+/**
+ * Repose dans la file du CRM la fiche d'une cliente et tous ses contrats,
+ * puis vide la file sans attendre.
+ *
+ * C'est ce que faisait « Enregistrer » dans l'onglet Coordonnées, sans le
+ * dire : réenregistrer une fiche la remet en file, et la synchro qui suit
+ * emporte aussi le contrat resté en route. Ici, c'est le geste qu'on
+ * nomme, à l'endroit où on le cherche.
+ */
+export async function renvoyerAuCrm(clienteId: string): Promise<ResultatSynchro> {
+  const { data: remises, error: erreurFile } = await supabase.rpc('renvoyer_au_crm', {
+    p_cliente: clienteId,
+  });
+  if (erreurFile) throw erreurFile;
+
+  const { data, error } = await supabase.functions.invoke('synchro-airtable', { body: {} });
+  if (error) {
+    throw new Error(
+      (data as { error?: string })?.error ?? "L'envoi au CRM n'a pas pu être lancé.",
+    );
+  }
+
+  const r = data as Omit<ResultatSynchro, 'reprises'>;
+  return {
+    reprises: Number(remises) || 0,
+    traitees: r?.traitees ?? 0,
+    echecs: r?.echecs ?? 0,
+    erreurs: r?.erreurs ?? [],
+  };
+}
+
 export interface EtatSynchro {
   enAttente: number;
   enErreur: number;

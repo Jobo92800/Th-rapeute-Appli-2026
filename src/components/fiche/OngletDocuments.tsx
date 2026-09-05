@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Download, FileSignature, FileText, ShieldCheck } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Download, FileSignature, FileText, Loader2, ShieldCheck, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import toast from 'react-hot-toast';
@@ -10,6 +10,7 @@ import {
   contratsDeLaCliente,
   lirePdfContrat,
   programmesDeLaCliente,
+  renvoyerAuCrm,
 } from '../../services/metier';
 import ModaleContrat from '../contrat/ModaleContrat';
 import CarteParcoursAudio from './CarteParcoursAudio';
@@ -206,6 +207,8 @@ export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
 
       <CarteParcoursAudio cliente={cliente} />
 
+      <EnvoyerAuCrm cliente={cliente} />
+
       {signature && actif && (
         <ModaleContrat
           cliente={cliente}
@@ -221,5 +224,53 @@ export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
         />
       )}
     </div>
+  );
+}
+
+/**
+ * Reposer la fiche dans la file du CRM.
+ *
+ * Tout part dans Airtable tout seul. Quand la synchro passe à côté — CRM
+ * indisponible, coupure au mauvais moment —, il fallait jusqu'ici retourner
+ * dans « Coordonnées » et réappuyer sur « Enregistrer » : ça remet la fiche
+ * en file, mais rien ne l'annonce et c'est à trois onglets d'ici. Le même
+ * geste, nommé, à l'endroit où on le cherche.
+ */
+function EnvoyerAuCrm({ cliente }: { cliente: Cliente }) {
+  const envoi = useMutation({
+    mutationFn: () => renvoyerAuCrm(cliente.id),
+    onSuccess: (r) => {
+      if (r.echecs > 0) {
+        toast.error(r.erreurs[0]?.message ?? "Le CRM n'a pas accepté l'envoi.");
+        return;
+      }
+      toast.success(
+        r.traitees === 0
+          ? 'Le CRM était déjà à jour.'
+          : `${r.traitees} envoi${r.traitees > 1 ? 's' : ''} au CRM`,
+      );
+    },
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "L'envoi au CRM n'a pas abouti."),
+  });
+
+  return (
+    <section className="carte flex flex-wrap items-center justify-between gap-4 px-5 py-4">
+      <div className="min-w-0 flex-1 basis-72">
+        <h2 className="text-sm font-semibold text-ardoise-900">Envoyer au CRM</h2>
+        <p className="mt-0.5 text-xs text-ardoise-500">
+          Le contrat, les consentements et l’accès au parcours audio partent dans Airtable tout
+          seuls. Ce bouton les repose dans la file quand ils n’y sont pas arrivés.
+        </p>
+      </div>
+      <button onClick={() => envoi.mutate()} disabled={envoi.isPending} className="bouton-principal">
+        {envoi.isPending ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Upload className="h-4 w-4" />
+        )}
+        {envoi.isPending ? 'Envoi…' : 'Envoyer au CRM'}
+      </button>
+    </section>
   );
 }
