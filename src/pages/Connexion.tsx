@@ -33,10 +33,18 @@ export default function Connexion() {
     <div className="flex min-h-screen items-center justify-center bg-ardoise-100 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-7 text-center">
-          <div className="text-2xl font-bold tracking-tight text-marine-800">
-            MAbeauty<span className="text-rose-600">plus</span>
-          </div>
-          <p className="mt-1 text-sm text-ardoise-500">Suivi client</p>
+          {/*
+            Plus large qu'ailleurs : c'est le premier écran de la journée, et
+            le seul où l'enseigne a la place de respirer.
+          */}
+          <img
+            src="/logo.svg"
+            alt="MAbeautyplus"
+            width={260}
+            height={103}
+            className="mx-auto block w-[260px] max-w-full"
+          />
+          <p className="mt-2 text-sm text-ardoise-500">Suivi client</p>
         </div>
 
         <form onSubmit={connecter} className="carte space-y-4 p-6">

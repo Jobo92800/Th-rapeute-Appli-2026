@@ -86,7 +86,10 @@ le fichier d'origine était fait aux deux tiers de vide, si bien que le nom
 restait minuscule quelle que soit la taille donnée à l'image. Recadré, c'est
 une enseigne large — 2,5 fois plus large que haute — qui remplit la barre
 latérale et se lit du premier coup. Si un jour vous repartez du fichier
-d'origine, pensez à refaire ce recadrage : `viewBox="5.6 41.2 107.3 42.6"`.
+d'origine, pensez à refaire ce recadrage — `viewBox="5.6 41.2 107.3 42.6"` —
+et à **retirer le rectangle de fond** qui couvre toute la planche : opaque,
+il est invisible sur du blanc et bien voyant dès que le logo se pose sur
+autre chose. La page de connexion l'a montré tout de suite.
 
 Les noms de teintes n'ont pas changé — `marine` désigne désormais le teal,
 `ardoise` un gris qui tire vers le vert-de-gris. Changer la charte se fait
