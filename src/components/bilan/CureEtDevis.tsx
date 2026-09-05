@@ -457,8 +457,8 @@ export default function CureEtDevis({
             <p className="mx-auto mt-3 max-w-sm text-[11px] text-marine-300">
               {methode === 'centre'
                 ? acompte > 0
-                  ? `Par chèques au centre. L’acompte se déduit du total ; le reste, guide et tenue compris (${formaterEuros(options)}), se répartit sur les échéances.`
-                  : `Par chèques au centre. Le guide et la tenue (${formaterEuros(options)}) sont sur la première échéance.`
+                  ? 'Par chèques au centre. L’acompte se déduit du total ; le reste, guide et tenue compris, se répartit sur les échéances.'
+                  : 'Par chèques au centre. Le guide et la tenue sont sur la première échéance.'
                 : `Frais Alma de ${String(tauxFraisAlma(echeancier.n, totalSeances * grille.seance + options)).replace('.', ',')} %, à sa charge, compris dans la mensualité.`}
             </p>
 
@@ -529,30 +529,28 @@ export default function CureEtDevis({
             )}
           </div>
 
+          {/*
+            Ce que la cure contient, sans le prix de chaque ligne. La cliente
+            achète un accompagnement, pas un panier : détailler « 15 séances à
+            59 € » l'invite à retirer des séances pour faire baisser la note,
+            et c'est exactement la conversation qu'on ne veut pas avoir. Le
+            montant à régler reste en grand juste au-dessus.
+          */}
           <div className="bg-white px-6 py-4 text-[13px] text-ardoise-600">
             {retenues.map((l) => (
               <div
                 key={l.presta}
-                className="flex justify-between border-b border-dashed border-ardoise-200 py-1.5 last:border-0"
+                className="border-b border-dashed border-ardoise-200 py-1.5 last:border-0"
               >
-                <span>
-                  {bareme.PRESTA?.[l.presta]?.n} — {l.seances} séances
-                </span>
-                <span className="chiffres">{formaterEuros(l.seances * grille.seance)}</span>
+                {bareme.PRESTA?.[l.presta]?.n} — {l.seances} séances
               </div>
             ))}
             {luxo && (
-              <div className="flex justify-between border-b border-dashed border-ardoise-200 py-1.5">
-                <span>Guide de rééquilibrage alimentaire</span>
-                <span className="chiffres">{formaterEuros(grille.guide)}</span>
+              <div className="border-b border-dashed border-ardoise-200 py-1.5">
+                Guide de rééquilibrage alimentaire
               </div>
             )}
-            {electro && (
-              <div className="flex justify-between py-1.5">
-                <span>Tenue I-Shape</span>
-                <span className="chiffres">{formaterEuros(grille.tenue)}</span>
-              </div>
-            )}
+            {electro && <div className="py-1.5">Tenue I-Shape</div>}
           </div>
         </div>
 

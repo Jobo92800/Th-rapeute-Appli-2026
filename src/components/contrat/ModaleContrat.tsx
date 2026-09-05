@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import Signature, { type SignatureHandle } from './Signature';
 import { ENGAGEMENTS, construireContrat, type ContractData } from '../../domain/contrat';
 import { laCliente, majuscule, pronom } from '../../domain/civilite';
+import { PARCOURS, libelleParcours, type CodeParcours } from '../../domain/parcoursAudio';
 import {
   MOT_DE_PASSE_MIN,
   donnerAccesParcours,
@@ -76,7 +77,7 @@ export default function ModaleContrat({
   const [photos, setPhotos] = useState(true);
   const [signatureVide, setSignatureVide] = useState(true);
   const [enCours, setEnCours] = useState(false);
-  const [parcoursAudio, setParcoursAudio] = useState<'A' | 'B' | 'C' | null>('A');
+  const [parcoursAudio, setParcoursAudio] = useState<CodeParcours | null>('B');
   const [tailleTenue, setTailleTenue] = useState<TailleTenue | null>(programme.taille_tenue ?? null);
   const [motDePasse, setMotDePasse] = useState('');
 
@@ -251,8 +252,8 @@ export default function ModaleContrat({
           );
           toast.success(
             motDePasseDefini
-              ? `Parcours audio ${parcoursAudio} — ${laCliente(cliente.civilite)} peut se connecter dès maintenant`
-              : `Parcours audio ${parcoursAudio} — invitation envoyée à ${cliente.email}`,
+              ? `Parcours audio ${libelleParcours(parcoursAudio)} — ${laCliente(cliente.civilite)} peut se connecter dès maintenant`
+              : `Parcours audio ${libelleParcours(parcoursAudio)} — invitation envoyée à ${cliente.email}`,
             { duration: 6000 },
           );
         } catch (e) {
@@ -470,13 +471,13 @@ export default function ModaleContrat({
             {cliente.email ? (
               <>
                 <div className="flex flex-wrap gap-2">
-                  {(['A', 'B', 'C'] as const).map((p) => {
-                    const actif = parcoursAudio === p;
+                  {PARCOURS.map((p) => {
+                    const actif = parcoursAudio === p.code;
                     return (
                       <button
-                        key={p}
+                        key={p.code}
                         type="button"
-                        onClick={() => setParcoursAudio(p)}
+                        onClick={() => setParcoursAudio(p.code)}
                         aria-pressed={actif}
                         className={`rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
                           actif
@@ -484,7 +485,7 @@ export default function ModaleContrat({
                             : 'border-ardoise-300 bg-white text-ardoise-700 hover:border-marine-400'
                         }`}
                       >
-                        Parcours {p}
+                        Parcours {p.libelle}
                       </button>
                     );
                   })}

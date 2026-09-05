@@ -11,6 +11,7 @@ import {
   renvoyerInvitationParcours,
 } from '../../services/metier';
 import { laCliente, majuscule } from '../../domain/civilite';
+import { PARCOURS, libelleParcours, type CodeParcours } from '../../domain/parcoursAudio';
 import type { Cliente } from '../../types/db';
 
 const ADRESSE = 'https://applipodcast.netlify.app';
@@ -25,7 +26,7 @@ const ADRESSE = 'https://applipodcast.netlify.app';
 export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
   const qc = useQueryClient();
   const [action, setAction] = useState<'creer' | 'renvoyer' | null>(null);
-  const [parcoursChoisi, setParcoursChoisi] = useState<'A' | 'B' | 'C'>('A');
+  const [parcoursChoisi, setParcoursChoisi] = useState<CodeParcours>('B');
   const [motDePasse, setMotDePasse] = useState('');
 
   const aAcces = Boolean(cliente.acces_audio_le);
@@ -90,7 +91,7 @@ export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
 
         {aAcces && (
           <span className="chiffres rounded-full border border-marine-300 bg-marine-50 px-3 py-1 text-sm font-bold text-marine-800">
-            Parcours {cliente.parcours_audio}
+            Parcours {libelleParcours(cliente.parcours_audio)}
           </span>
         )}
       </div>
@@ -108,19 +109,19 @@ export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
               <div>
                 <span className="etiquette">Parcours</span>
                 <div className="flex gap-1.5">
-                  {(['A', 'B', 'C'] as const).map((p) => (
+                  {PARCOURS.map((p) => (
                     <button
-                      key={p}
+                      key={p.code}
                       type="button"
-                      onClick={() => setParcoursChoisi(p)}
-                      aria-pressed={parcoursChoisi === p}
+                      onClick={() => setParcoursChoisi(p.code)}
+                      aria-pressed={parcoursChoisi === p.code}
                       className={`rounded-lg border px-3.5 py-1.5 text-sm font-semibold transition-colors ${
-                        parcoursChoisi === p
+                        parcoursChoisi === p.code
                           ? 'border-marine-600 bg-marine-600 text-white'
                           : 'border-ardoise-300 bg-white text-ardoise-700 hover:border-marine-400'
                       }`}
                     >
-                      {p}
+                      {p.libelle}
                     </button>
                   ))}
                 </div>
