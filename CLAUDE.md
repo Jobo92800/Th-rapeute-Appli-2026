@@ -430,13 +430,15 @@ dans le dépôt, c'est se garantir qu'un jour les deux diffèrent.
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
-La **046** (le bilan santé de la fiche) attend d'être collée.
-Migrations passées jusqu'à **045** incluse, `synchro-airtable` redéployée,
+Migrations passées jusqu'à **046** incluse, `synchro-airtable` redéployée,
 et les deux champs du récapitulatif créés dans Airtable. Vérifié le
 5 septembre 2026 depuis l'extérieur : `renvoyer_au_crm`,
 `est_destinataire`, `a_ecrit_le_message`, `envoyer_annonce` et
 `deposer_signalement` répondent toutes « permission denied » à la clé
-publique — elles existent donc, et elles sont fermées.
+publique — elles existent donc, et elles sont fermées. Les colonnes
+`clientes.sante` et `sante_maj_le` (046) répondent, elles, sur un
+`select=` — le contrôle passe par un témoin, une colonne inventée qui doit
+être annoncée absente, sans quoi le test ne prouve rien.
 
 Seule la **041** reste incertaine : `ALTER DEFAULT PRIVILEGES` ne se voit
 pas de l'extérieur, et toutes les commandes livrées depuis portent leur
