@@ -229,7 +229,8 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   l'extérieur, avec la seule clé publique du site, a bien rendu un ticket de
   synchro le 3 septembre 2026. Neuf fonctions refermées, et
   `ALTER DEFAULT PRIVILEGES` (migration 041, séparée exprès) coupe le droit
-  implicite pour toutes celles à venir. **La 040 nomme les commandes en
+  implicite pour toutes celles à venir — son application n'a jamais pu être
+  confirmée, voir « Commandes ». **La 040 nomme les commandes en
   interrogeant la base, jamais à la main** : une première version les listait
   en dur, une signature a échoué, et PostgreSQL annulant tout un script d'un
   bloc, rien n'avait été appliqué — sans que ça se voie. Elle se termine
@@ -426,12 +427,17 @@ dans le dépôt, c'est se garantir qu'un jour les deux diffèrent.
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
-Migrations passées jusqu'à **042** incluse, `synchro-airtable` redéployée,
-et les deux champs du récapitulatif créés dans Airtable. Deux attendent
-d'être collées : la **041** (le droit implicite coupé pour les commandes
-futures), la **044** (la boucle des règles de lecture des messages, sans
-laquelle l'écran Messages reste vide pour tout le monde) et la **045** (le
-bouton « Envoyer au CRM » de l'onglet Contrat).
+Migrations passées jusqu'à **045** incluse, `synchro-airtable` redéployée,
+et les deux champs du récapitulatif créés dans Airtable. Vérifié le
+5 septembre 2026 depuis l'extérieur : `renvoyer_au_crm`,
+`est_destinataire`, `a_ecrit_le_message`, `envoyer_annonce` et
+`deposer_signalement` répondent toutes « permission denied » à la clé
+publique — elles existent donc, et elles sont fermées.
+
+Seule la **041** reste incertaine : `ALTER DEFAULT PRIVILEGES` ne se voit
+pas de l'extérieur, et toutes les commandes livrées depuis portent leur
+propre `GRANT`, ce qui rend les deux cas indiscernables. Dans le doute, la
+recoller ne coûte rien : elle est rejouable.
 
 La fermeture des commandes (040) a été **vérifiée des deux côtés** le
 3 septembre 2026 : depuis l'extérieur, les neuf commandes répondent
