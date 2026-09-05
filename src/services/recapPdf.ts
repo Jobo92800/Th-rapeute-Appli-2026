@@ -17,6 +17,7 @@ import { jsPDF } from 'jspdf';
 import type { DonneesRecap } from '../domain/recapitulatif';
 import { formaterEuros } from '../domain/tarification';
 import { pourPdf } from '../domain/texte';
+import { LOGO_PDF, LOGO_RATIO } from './logoPdf';
 
 const A4_W = 210;
 const A4_H = 297;
@@ -78,23 +79,36 @@ function paragraphe(doc: Doc, texte: string, x: number, y: number, largeur: numb
   return y;
 }
 
+/*
+  L'en-tête, sur chaque page.
+
+  Il était teal foncé, avec « MAbeautyplus » écrit en Helvetica — une
+  imitation du logo, pas le logo. Le vrai est bleu et rose : posé sur ce
+  fond sombre, il devient illisible, le bleu se noie dans le teal. Essayé,
+  regardé, écarté.
+
+  D'où un en-tête blanc, où le logo se lit tel qu'il est, avec un filet teal
+  pour garder la séparation qu'apportait la couleur. Le document n'y perd
+  rien : le teal foncé reste, plus loin, sur le bloc du montant — c'est là
+  qu'il sert à quelque chose.
+*/
 function bandeau(doc: Doc, titre: string, sousTitre: string) {
-  doc.setFillColor(TEAL_SOMBRE[0], TEAL_SOMBRE[1], TEAL_SOMBRE[2]);
-  doc.rect(0, 0, A4_W, 30, 'F');
+  const largeurLogo = 34;
+  const hauteurLogo = largeurLogo / LOGO_RATIO;
 
-  police(doc, 15, 'bold');
-  doc.setTextColor(255, 255, 255);
-  ecrire(doc, 'MAbeauty', MARGE, 15);
-  const l = doc.getTextWidth('MAbeauty');
-  couleur(doc, [247, 155, 198]);
-  ecrire(doc, 'plus', MARGE + l, 15);
+  doc.addImage(LOGO_PDF, 'JPEG', MARGE, 9, largeurLogo, hauteurLogo);
 
-  police(doc, 8, 'normal');
-  couleur(doc, [169, 224, 224]);
-  ecrire(doc, titre.toUpperCase(), MARGE, 22);
+  police(doc, 8, 'bold');
+  couleur(doc, TEAL_SOMBRE);
+  ecrire(doc, titre.toUpperCase(), A4_W - MARGE, 14.5, { align: 'right' });
 
   police(doc, 8, 'normal');
-  ecrire(doc, sousTitre, A4_W - MARGE, 22, { align: 'right' });
+  couleur(doc, GRIS);
+  ecrire(doc, sousTitre, A4_W - MARGE, 19.5, { align: 'right' });
+
+  doc.setDrawColor(TEAL[0], TEAL[1], TEAL[2]);
+  doc.setLineWidth(0.8);
+  doc.line(MARGE, 27, A4_W - MARGE, 27);
 }
 
 function pied(doc: Doc, d: DonneesRecap, page: number) {

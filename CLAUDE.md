@@ -298,6 +298,21 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   création de comptes, le déblocage d'étapes et le dépôt de fichiers. À
   remplacer par une phrase longue, côté Netlify (podcast) **et** côté secret
   `PODCAST_ADMIN_CODE` (V2), les deux doivent rester identiques.
+- **Le logo dans un PDF.** jsPDF ne dessine pas de SVG : il lui faut une
+  image matricielle, portée en base64 par `src/services/logoPdf.ts`. Deux
+  choses s'y sont apprises. Le logo est **bleu et rose** : sur un fond teal
+  foncé, le bleu se noie et le nom devient illisible — essayé, regardé,
+  écarté. **L'en-tête du récapitulatif est donc blanc**, avec un filet teal
+  pour garder la séparation qu'apportait la couleur ; le teal foncé reste
+  plus bas, sur le bloc du montant, où il sert à quelque chose. Et le logo
+  est en **JPEG sur fond blanc, pas en PNG transparent** : jsPDF stocke un
+  PNG à canal alpha quasiment tel quel, ce qui faisait passer le document de
+  25 Ko à 301 Ko, pour un fichier que chaque cliente reçoit et qu'Airtable
+  conserve. En JPEG, 46 Ko, et rien ne se voit puisque l'en-tête est blanc.
+  Le fichier porte la commande pour le refaire si le logo change. **Le
+  contrat et les consentements écrivent encore le nom en toutes lettres** —
+  à reprendre de la même façon, mais ce sont des documents qui engagent,
+  ça se décide.
 - **Les espaces du français dans un PDF.** `toLocaleString('fr-FR')` sépare
   les milliers par une espace **fine insécable** (U+202F). Elle est correcte,
   et un navigateur la dessine parfaitement — mais les polices de base d'un
