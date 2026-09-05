@@ -8,8 +8,11 @@ import {
   Sparkles,
   BarChart3,
   BookOpen,
+  MessageSquare,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { messagesEnAttente } from '../services/messages';
 import { TOUS_LES_CENTRES, useSession } from '../lib/session';
 
 const LIENS = [
@@ -17,6 +20,7 @@ const LIENS = [
   { to: '/clientes', libelle: 'Clientes', icone: Users, exact: false, direction: false },
   { to: '/bilan', libelle: 'Nouveau bilan', icone: Sparkles, exact: false, direction: false },
   { to: '/stock', libelle: 'Stock', icone: Package, exact: false, direction: false },
+  { to: '/messages', libelle: 'Messages', icone: MessageSquare, exact: false, direction: false },
   // Les chiffres ne concernent pas les thérapeutes : le lien ne leur est
   // même pas montré, et la base refuserait de répondre.
   { to: '/tableau-de-bord', libelle: 'Tableau de bord', icone: BarChart3, exact: false, direction: true },
@@ -28,6 +32,21 @@ export default function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [menuOuvert, setMenuOuvert] = useState(false);
   const plusieursCentres = centresAccessibles.length > 1 || role === 'direction';
+
+  /*
+    La pastille du menu. Elle compte ce qui attend *ce* compte : les
+    annonces non lues pour une thérapeute, les signalements ouverts pour la
+    direction. Rafraîchie à chaque minute — un carnet de liaison n'a pas
+    besoin d'être instantané, et interroger la base en continu pour ça
+    serait du gâchis.
+  */
+  const { data: enAttente } = useQuery({
+    queryKey: ['messages-en-attente'],
+    queryFn: messagesEnAttente,
+    refetchInterval: 60_000,
+  });
+  const aLire =
+    (enAttente?.annonces_non_lues ?? 0) + (enAttente?.signalements_a_traiter ?? 0);
   const liens = LIENS.filter((l) => !l.direction || role === 'direction');
 
   return (
@@ -65,6 +84,11 @@ export default function Layout({ children }: { children: ReactNode }) {
             >
               <Icone className="h-4 w-4" />
               {libelle}
+              {to === '/messages' && aLire > 0 && (
+                <span className="ml-auto rounded-full bg-rose-600 px-1.5 py-0.5 text-2xs font-bold text-white">
+                  {aLire}
+                </span>
+              )}
             </NavLink>
           ))}
 
@@ -193,6 +217,11 @@ export default function Layout({ children }: { children: ReactNode }) {
               }
             >
               {libelle}
+              {to === '/messages' && aLire > 0 && (
+                <span className="ml-1 rounded-full bg-rose-600 px-1.5 text-2xs font-bold text-white">
+                  {aLire}
+                </span>
+              )}
             </NavLink>
           ))}
           <a

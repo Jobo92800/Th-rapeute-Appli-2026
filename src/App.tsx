@@ -7,6 +7,7 @@ import Filet from './components/Filet';
 import Connexion from './pages/Connexion';
 import Accueil from './pages/Accueil';
 import Stock from './pages/Stock';
+import Messages from './pages/Messages';
 import TableauDeBord from './pages/TableauDeBord';
 import ImportAirtable from './pages/ImportAirtable';
 import Clientes from './pages/Clientes';
@@ -63,6 +64,7 @@ where lower(u.email) = lower(t.email)
         <Route path="/bilan" element={<NouveauBilan />} />
         <Route path="/clientes/:id" element={<FicheCliente />} />
         <Route path="/stock" element={<Stock />} />
+        <Route path="/messages" element={<Messages />} />
         <Route path="/tableau-de-bord" element={<TableauDeBord />} />
         <Route path="/reprise-crm" element={<ImportAirtable />} />
         <Route path="*" element={<Navigate to="/" replace />} />
