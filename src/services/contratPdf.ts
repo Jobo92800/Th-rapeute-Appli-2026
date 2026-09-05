@@ -1,24 +1,51 @@
 /*
   Générateur du contrat de prestation signé.
 
-  Repris tel quel de l'ancienne application : le contenu est juridique
-  (13 articles + les CGV), il ne doit pas être réécrit. Seule la source des
-  données change — elle vient désormais du programme et de ses échéances.
+  LE TEXTE NE SE RÉÉCRIT PAS. Le contenu est juridique — treize articles et
+  les CGV, repris mot pour mot de l'ancienne application. La mise en page,
+  elle, a été refaite : elle sortait en Helvetica noir sur blanc, sans logo
+  ni hiérarchie, et ressemblait à la photocopie d'un formulaire. Tout ce qui
+  a changé passe par `chartePdf` ; pas une phrase n'a bougé.
 */
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import type { ContractData } from '../domain/contrat';
+import {
+  BAS,
+  ENCRE,
+  ENCRE_DOUX,
+  GRIS,
+  HAUT,
+  MARGE,
+  TEAL_SOMBRE,
+  TRAIT,
+  caseACocher,
+  couleur,
+  encadre,
+  enTete,
+  etiquette,
+  piedsDePage,
+  police,
+  titreDocument,
+  titreSection,
+} from './chartePdf';
 
 // A4 dimensions in mm
 const A4_W = 210;
-const A4_H = 297;
-const MARGIN = 18;
+const MARGIN = MARGE;
 const CONTENT_W = A4_W - MARGIN * 2;
 const LINE_H = 5.5;
 const SMALL_LINE_H = 4.8;
 // Bottom safety margin — content must not exceed this Y position
-const PAGE_BOTTOM = A4_H - 18;
+const PAGE_BOTTOM = BAS;
 
 type PdfDoc = jsPDF;
+
+/*
+  L'en-tête est redessiné sur chaque page nouvelle : un contrat de sept
+  pages dont seule la première porte le logo se lit comme un assemblage de
+  feuilles dépareillées.
+*/
+let enTeteCourant = { titre: '', date: '' };
 
 function setFont(doc: PdfDoc, size: number, style: 'normal' | 'bold' | 'italic' = 'normal') {
   doc.setFontSize(size);
@@ -31,7 +58,8 @@ function text(doc: PdfDoc, txt: string, x: number, y: number, opts?: { maxWidth?
 
 function addPage(doc: PdfDoc): number {
   doc.addPage();
-  return MARGIN;
+  enTete(doc, enTeteCourant.titre, enTeteCourant.date);
+  return HAUT;
 }
 
 function ensureSpace(doc: PdfDoc, y: number, needed: number): number {
@@ -43,17 +71,9 @@ function ensureSpace(doc: PdfDoc, y: number, needed: number): number {
 
 function checkboxRow(doc: PdfDoc, label: string, x: number, y: number, checked: boolean, sessions?: number): number {
   y = ensureSpace(doc, y, LINE_H + 2);
-  doc.setDrawColor(80, 80, 80);
-  doc.setFillColor(checked ? 30 : 255, checked ? 30 : 255, checked ? 30 : 255);
-  doc.rect(x, y - 3, 3.5, 3.5, checked ? 'FD' : 'D');
-  if (checked) {
-    doc.setTextColor(255, 255, 255);
-    setFont(doc, 7, 'bold');
-    doc.text('✓', x + 0.3, y - 0.2);
-    doc.setTextColor(26, 26, 26);
-  }
+  caseACocher(doc, x, y, checked);
   setFont(doc, 9);
-  doc.setTextColor(26, 26, 26);
+  couleur(doc, checked ? ENCRE : GRIS);
   const sessionStr = checked && sessions ? `${sessions}` : '...........';
   text(doc, `Nombre de séances ${sessionStr} : ${label}`, x + 5, y);
   return y + LINE_H;
@@ -63,31 +83,21 @@ function engagementCheckbox(doc: PdfDoc, label: string, x: number, y: number, ch
   const lines = doc.splitTextToSize(label, CONTENT_W - 8);
   const blockH = lines.length * SMALL_LINE_H + 4;
   y = ensureSpace(doc, y, blockH);
-  doc.setDrawColor(80, 80, 80);
-  doc.setFillColor(checked ? 30 : 255, checked ? 30 : 255, checked ? 30 : 255);
-  doc.rect(x, y - 3, 3.5, 3.5, checked ? 'FD' : 'D');
-  if (checked) {
-    doc.setTextColor(255, 255, 255);
-    setFont(doc, 7, 'bold');
-    doc.text('✓', x + 0.3, y - 0.2);
-  }
-  doc.setTextColor(26, 26, 26);
+  caseACocher(doc, x, y, checked);
+  couleur(doc, ENCRE_DOUX);
   setFont(doc, 9);
   doc.text(lines, x + 5, y);
   return y + lines.length * SMALL_LINE_H + 2;
 }
 
 function sectionTitle(doc: PdfDoc, title: string, y: number): number {
-  y = ensureSpace(doc, y, LINE_H + 8);
-  setFont(doc, 9.5, 'bold');
-  doc.setTextColor(26, 26, 26);
-  text(doc, title, MARGIN, y);
-  return y + LINE_H;
+  y = ensureSpace(doc, y, LINE_H + 12);
+  return titreSection(doc, title, y + 2);
 }
 
 function paragraph(doc: PdfDoc, txt: string, y: number, lineH = LINE_H): number {
   setFont(doc, 9);
-  doc.setTextColor(26, 26, 26);
+  couleur(doc, ENCRE_DOUX);
   const lines = doc.splitTextToSize(txt, CONTENT_W);
   const blockH = lines.length * lineH;
   y = ensureSpace(doc, y, blockH);
@@ -97,7 +107,7 @@ function paragraph(doc: PdfDoc, txt: string, y: number, lineH = LINE_H): number 
 
 function bulletList(doc: PdfDoc, items: string[], y: number): number {
   setFont(doc, 9);
-  doc.setTextColor(26, 26, 26);
+  couleur(doc, ENCRE_DOUX);
   for (const item of items) {
     const lines = doc.splitTextToSize(`• ${item}`, CONTENT_W - 4);
     const blockH = lines.length * LINE_H;
@@ -115,55 +125,67 @@ export async function generateSignedContractPdf(
 ): Promise<string> {
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
 
-  let y = MARGIN;
+  enTeteCourant = { titre: 'Contrat de prestation', date: data.signatureDate };
+  enTete(doc, enTeteCourant.titre, enTeteCourant.date);
 
-  // Title
-  doc.setTextColor(180, 180, 180);
-  setFont(doc, 20);
-  doc.text('Contrat de Prestation de Services', MARGIN, y + 8);
-  y += 16;
+  let y = HAUT + 4;
+  y = titreDocument(doc, 'Contrat de ', 'prestation de services', y);
 
-  doc.setTextColor(26, 26, 26);
-  setFont(doc, 9);
-
-  // Parties
-  y = paragraph(doc, 'Entre les soussignés :', y);
-  y = paragraph(doc, `MAbeautyplus Centre de Perte de poids, Minceur et Anti-âge, ${data.centerAddress}, ${data.centerPostalCode} ${data.centerCity.toUpperCase()}`, y, SMALL_LINE_H);
-  y = paragraph(doc, `Société exploitante : SAS ${data.centerSocietyName}`, y, SMALL_LINE_H);
-  y = paragraph(doc, `Siège social : ${data.siegeSocialAddress}, ${data.siegeSocialPostalCode} LE GRAU-DU-ROI`, y, SMALL_LINE_H);
-  y = paragraph(doc, 'Ci-après dénommé "Le Prestataire",', y, SMALL_LINE_H);
+  /*
+    Les deux parties, chacune dans son encadré. Le texte est celui du
+    contrat, au mot près ; seule la disposition change — quatre lignes
+    perdues au fil du texte ne se distinguaient pas d'un paragraphe.
+  */
   y += 2;
-  y = paragraph(doc, 'Et :', y, SMALL_LINE_H);
-  y += 1;
+  setFont(doc, 9);
+  couleur(doc, ENCRE_DOUX);
+  doc.text('Entre les soussignés :', MARGIN, y);
+  y += 4;
 
-  // Client info table
-  y = ensureSpace(doc, y, LINE_H * 2 + 4);
-  setFont(doc, 9, 'bold');
-  doc.text('Nom/Prénom :', MARGIN, y);
+  encadre(doc, y, 22);
+  etiquette(doc, 'Le Prestataire', MARGIN + 5, y + 6);
+  setFont(doc, 8.5, 'normal');
+  couleur(doc, ENCRE);
+  doc.text(
+    `MAbeautyplus Centre de Perte de poids, Minceur et Anti-âge, ${data.centerAddress}, ${data.centerPostalCode} ${data.centerCity.toUpperCase()}`,
+    MARGIN + 5,
+    y + 11,
+    { maxWidth: CONTENT_W - 10 },
+  );
+  couleur(doc, GRIS);
+  doc.text(
+    `Société exploitante : SAS ${data.centerSocietyName}   ·   Siège social : ${data.siegeSocialAddress}, ${data.siegeSocialPostalCode} LE GRAU-DU-ROI`,
+    MARGIN + 5,
+    y + 18,
+    { maxWidth: CONTENT_W - 10 },
+  );
+  y += 26;
+
+  setFont(doc, 9);
+  couleur(doc, ENCRE_DOUX);
+  doc.text('Et :', MARGIN, y);
+  y += 4;
+
+  encadre(doc, y, 24);
+  etiquette(doc, 'Le Client', MARGIN + 5, y + 6);
+  setFont(doc, 10, 'bold');
+  couleur(doc, ENCRE);
   doc.text(
     `${data.clientCivility ? data.clientCivility + ' ' : ''}${data.clientLastName} ${data.clientFirstName}`,
-    MARGIN + 22,
-    y,
+    MARGIN + 5,
+    y + 12,
   );
-  doc.text('Téléphone :', MARGIN + 80, y);
-  doc.text(data.clientPhone, MARGIN + 98, y);
-  doc.text('Mail :', MARGIN + 130, y);
-  doc.text(data.clientEmail, MARGIN + 140, y);
-  setFont(doc, 9);
-  y += LINE_H;
-
-  setFont(doc, 9, 'bold');
-  doc.text('Adresse :', MARGIN, y);
-  doc.text(data.clientAddress, MARGIN + 18, y);
-  doc.text('Code postal :', MARGIN + 90, y);
-  doc.text(data.clientPostalCode, MARGIN + 112, y);
-  doc.text('Ville :', MARGIN + 130, y);
-  doc.text(data.clientCity, MARGIN + 142, y);
-  setFont(doc, 9);
-  y += LINE_H + 2;
-
-  y = paragraph(doc, 'Ci-après dénommé "Le Client",', y, SMALL_LINE_H);
-  y += 3;
+  setFont(doc, 8.5, 'normal');
+  couleur(doc, ENCRE_DOUX);
+  doc.text(
+    `${data.clientAddress}, ${data.clientPostalCode} ${data.clientCity}`,
+    MARGIN + 5,
+    y + 18.5,
+  );
+  doc.text(`${data.clientPhone}   ·   ${data.clientEmail}`, A4_W - MARGIN - 5, y + 18.5, {
+    align: 'right',
+  });
+  y += 30;
 
   // Article 1
   y = sectionTitle(doc, 'Article 1 - Objet du contrat', y);
@@ -223,46 +245,55 @@ export async function generateSignedContractPdf(
   y = ensureSpace(doc, y, boxEstH);
 
   doc.setDrawColor(200, 200, 200);
-  doc.setFillColor(250, 250, 250);
+  /*
+    Le montant et son échéancier : le seul bloc du contrat qu'on relit
+    six mois plus tard pour savoir ce qu'on doit. Il mérite d'être trouvé
+    d'un coup d'œil, d'où le fond teal pâle et le montant en gros.
+  */
+  const lignesReglement = data.installments.length + (data.deposit ? 1 : 0);
+  const hauteurBloc = 18 + lignesReglement * LINE_H + 4;
+  y = ensureSpace(doc, y, hauteurBloc + 4);
   const boxStartY = y;
+  encadre(doc, y, hauteurBloc);
 
-  setFont(doc, 9, 'bold');
-  doc.setTextColor(26, 26, 26);
-  doc.text(`Montant total TTC : ${data.totalAmount}`, MARGIN + 3, y + 5);
-  y += 9;
-  doc.text(`Règlement établi en ${data.installmentCount} échéance${data.installmentCount > 1 ? 's' : ''} :`, MARGIN + 3, y);
-  y += LINE_H + 1;
+  etiquette(doc, 'Montant total TTC', MARGIN + 5, y + 6.5);
+  police(doc, 15, 'bold');
+  couleur(doc, TEAL_SOMBRE);
+  doc.text(data.totalAmount, MARGIN + 5, y + 14);
 
-  setFont(doc, 9);
+  police(doc, 8, 'normal');
+  couleur(doc, GRIS);
+  doc.text(
+    `Règlement établi en ${data.installmentCount} échéance${data.installmentCount > 1 ? 's' : ''}`,
+    A4_W - MARGIN - 5,
+    y + 8,
+    { align: 'right' },
+  );
+
+  y = boxStartY + 20;
+  const ligneReglement = (libelle: string, montant: string, date: string, moyen: string) => {
+    setFont(doc, 8.5);
+    couleur(doc, ENCRE_DOUX);
+    doc.text(libelle, MARGIN + 6, y);
+    setFont(doc, 9, 'bold');
+    couleur(doc, ENCRE);
+    doc.text(montant, MARGIN + 46, y, { align: 'right' });
+    setFont(doc, 8.5);
+    couleur(doc, ENCRE_DOUX);
+    doc.text(`le ${date}`, MARGIN + 54, y);
+    couleur(doc, GRIS);
+    doc.text(moyen, A4_W - MARGIN - 6, y, { align: 'right' });
+    y += LINE_H;
+  };
+
   if (data.deposit) {
-    doc.text('Acompte :', MARGIN + 6, y);
-    setFont(doc, 9, 'bold');
-    doc.setTextColor(26, 107, 154);
-    doc.text(data.deposit.amount, MARGIN + 30, y);
-    doc.setTextColor(26, 26, 26);
-    setFont(doc, 9);
-    doc.text(`le ${data.deposit.date}`, MARGIN + 60, y);
-    doc.text(`Par : ${data.deposit.method}`, MARGIN + 100, y);
-    y += LINE_H;
+    ligneReglement('Acompte', data.deposit.amount, data.deposit.date, data.deposit.method);
   }
+  data.installments.forEach((inst, i) => {
+    ligneReglement(`Échéance ${i + 1}`, inst.amount, inst.date, inst.method);
+  });
 
-  for (let i = 0; i < data.installments.length; i++) {
-    const inst = data.installments[i];
-    setFont(doc, 9);
-    doc.text(`Échéance ${i + 1} :`, MARGIN + 6, y);
-    setFont(doc, 9, 'bold');
-    doc.setTextColor(26, 107, 154);
-    doc.text(inst.amount, MARGIN + 30, y);
-    doc.setTextColor(26, 26, 26);
-    setFont(doc, 9);
-    doc.text(`le ${inst.date}`, MARGIN + 60, y);
-    doc.text(`Par : ${inst.method}`, MARGIN + 100, y);
-    y += LINE_H;
-  }
-
-  const boxEndY = y + 3;
-  doc.rect(MARGIN, boxStartY, CONTENT_W, boxEndY - boxStartY, 'D');
-  y = boxEndY + 4;
+  y = boxStartY + hauteurBloc + 6;
 
   // Article 6
   y = sectionTitle(doc, 'Article 6 – Paiement fractionné via un organisme partenaire', y);
@@ -381,28 +412,22 @@ export async function generateSignedContractPdf(
     // signature image failed
   }
 
-  doc.setDrawColor(200, 200, 200);
-  doc.rect(col3X, sigImgY, CONTENT_W - 130, sigImgH, 'D');
+  doc.setDrawColor(TRAIT[0], TRAIT[1], TRAIT[2]);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(col3X, sigImgY, CONTENT_W - 130, sigImgH, 2, 2, 'D');
 
   // ── PAGE CGV ─────────────────────────────────────────────────────────────────
   y = addPage(doc);
 
   // CGV Title
-  doc.setTextColor(180, 180, 180);
-  setFont(doc, 20);
-  doc.text('Conditions Générales de Vente', MARGIN, y + 8);
-  y += 14;
-
-  doc.setTextColor(26, 26, 26);
-  setFont(doc, 8.5, 'bold');
-  doc.text('MAbeautyplus', MARGIN, y);
-  y += 5;
+  y = titreDocument(doc, 'Conditions ', 'générales de vente', y + 4);
   setFont(doc, 8.5, 'italic');
-  doc.text('Dernière mise à jour : Mai 2026', MARGIN, y);
+  couleur(doc, GRIS);
+  doc.text('MAbeautyplus — dernière mise à jour : Mai 2026', MARGIN, y);
   y += 8;
 
   setFont(doc, 9);
-  doc.setTextColor(26, 26, 26);
+  couleur(doc, ENCRE_DOUX);
 
   // ARTICLE 1
   y = sectionTitle(doc, 'ARTICLE 1 – IDENTIFICATION DU PRESTATAIRE', y);
@@ -523,17 +548,14 @@ export async function generateSignedContractPdf(
   y = paragraph(doc, 'En cas de litige, le Client peut recourir à un médiateur de la consommation conformément aux articles L.612-1 et suivants du Code de la consommation.', y, SMALL_LINE_H);
   y = paragraph(doc, 'À défaut de résolution amiable, tout litige sera soumis aux tribunaux compétents du ressort du siège social du Prestataire.', y, SMALL_LINE_H);
 
-  // Go back and add page footers to all pages
-  // jsPDF doesn't support retroactive footer injection easily, so we use the
-  // internal page list to navigate back
-  const totalPageCount = doc.getNumberOfPages();
-  for (let p = 1; p <= totalPageCount; p++) {
-    doc.setPage(p);
-    doc.setTextColor(170, 170, 170);
-    setFont(doc, 7);
-    doc.text(`${p}/${totalPageCount}`, A4_W / 2, A4_H - 4, { align: 'center' });
-    doc.setTextColor(26, 26, 26);
-  }
+  /*
+    Le pied de page numérote déjà : l'ancienne pagination centrée en bas
+    faisait doublon, on la retire.
+  */
+  piedsDePage(
+    doc,
+    `MAbeautyplus ${data.centerName} · ${data.centerAddress}, ${data.centerPostalCode} ${data.centerCity} · ${data.centerPhone}`,
+  );
 
   return doc.output('datauristring').split(',')[1];
 }

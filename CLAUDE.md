@@ -127,7 +127,7 @@ donc dans `tailwind.config.js` et `src/index.css`, sans toucher aux écrans.
 
 ```
 src/domain/        règles métier pures (tarification, bioportrait, jeuDuJour, reglement, contrat, stock, parrainage)
-src/services/      accès aux données (clientes, metier, stock, parrainage, tableauDeBord, contratPdf, consentementsPdf)
+src/services/      accès aux données (clientes, metier, stock, parrainage, tableauDeBord) et documents PDF (chartePdf, logoPdf, contratPdf, consentementsPdf, recapPdf)
 src/lib/           supabase, session
 public/guide.html  le guide des thérapeutes, servi tel quel — lien « Tuto » dans le menu
 public/logo.svg    le logo vectorisé, recadré sur son contenu
@@ -298,6 +298,19 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   création de comptes, le déblocage d'étapes et le dépôt de fichiers. À
   remplacer par une phrase longue, côté Netlify (podcast) **et** côté secret
   `PODCAST_ADMIN_CODE` (V2), les deux doivent rester identiques.
+- **La charte des PDF.** Contrat, consentements et récapitulatif passent
+  tous par `src/services/chartePdf.ts` : en-tête avec logo, filet teal,
+  titres d'article, cases à cocher, encadrés, pied de page numéroté. Le
+  contrat et les consentements sortaient en Helvetica noir sur blanc, sans
+  logo ni hiérarchie — ils ressemblaient à la photocopie d'un formulaire.
+  **Leur texte n'a pas bougé d'une virgule** : ce sont des engagements
+  juridiques, seule la mise en page a été refaite, et le banc d'essai
+  verrouille désormais les quatre engagements du contrat au mot près. Deux
+  détails appris en route : jsPDF **justifie mal** — sa dernière ligne
+  s'étire jusqu'à la marge et creuse des trous entre les mots, on ne
+  justifie donc pas ; et l'**en-tête doit être redessiné sur chaque page**,
+  sans quoi un contrat de huit pages se lit comme un assemblage de feuilles
+  dépareillées.
 - **Le logo dans un PDF.** jsPDF ne dessine pas de SVG : il lui faut une
   image matricielle, portée en base64 par `src/services/logoPdf.ts`. Deux
   choses s'y sont apprises. Le logo est **bleu et rose** : sur un fond teal

@@ -18,8 +18,48 @@ import {
 import { calculerBioPortrait } from '../src/domain/bioportrait.ts';
 import { pourPdf } from '../src/domain/texte.ts';
 import { formaterEuros } from '../src/domain/tarification.ts';
+import { ENGAGEMENTS } from '../src/domain/contrat.ts';
+
+/*
+  Les quatre engagements du contrat, mot pour mot.
+
+  Ils ont été refaits de mise en page le 5 septembre 2026 — logo, couleurs,
+  encadrés. Rien de tout cela ne doit avoir déplacé une virgule : ce sont des
+  engagements que la cliente coche et signe. Ce contrôle échoue si quelqu'un
+  les réécrit en croyant améliorer une tournure.
+
+  Le troisième porte « informé(e) » et non « informée » : les centres
+  reçoivent aussi des hommes, et personne ne signe au genre d'un autre.
+*/
+function controlerEngagements() {
+  section('Les engagements du contrat, au mot près');
+
+  egal('ils sont quatre', ENGAGEMENTS.length, 4);
+  egal(
+    'le premier',
+    ENGAGEMENTS[0],
+    'Je reconnais avoir pris connaissance du contrat et des modalités financières du forfait souscrit.',
+  );
+  egal(
+    'le deuxième',
+    ENGAGEMENTS[1],
+    "J'ai reçu toutes les informations nécessaires avant la signature et j'ai pu poser l'ensemble de mes questions.",
+  );
+  egal(
+    'le troisième, au neutre',
+    ENGAGEMENTS[2],
+    "J'ai été informé(e) de mon droit légal de rétractation de 14 jours (articles L221-18 et suivants du Code de la consommation).",
+  );
+  egal(
+    'le quatrième',
+    ENGAGEMENTS[3],
+    "J'ai pris connaissance et j'accepte les Conditions Générales de Vente remises préalablement à la signature.",
+  );
+}
 
 export function controlerRecapitulatif() {
+  controlerEngagements();
+
   const bareme = baremeLivre();
 
   section('Les textes du barème, mis au propre');

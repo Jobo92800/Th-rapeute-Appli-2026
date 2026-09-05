@@ -6,7 +6,22 @@
   (Luxothérapie PDP, I-Shape, Pressodynamie) ; les autres restent
   disponibles si un soin revenait à l'offre.
 */
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
+import {
+  ENCRE,
+  ENCRE_DOUX,
+  GRIS,
+  HAUT,
+  TRAIT,
+  caseACocher,
+  couleur,
+  encadre,
+  enTete,
+  etiquette,
+  piedsDePage,
+  titreDocument,
+  titreSection,
+} from './chartePdf';
 
 const A4_W = 210;
 const MARGIN = 18;
@@ -29,7 +44,9 @@ function para(doc: Doc, s: string, y: number, lineH = LINE_H): number {
   setFont(doc, 9);
   doc.setTextColor(26, 26, 26);
   const lines = doc.splitTextToSize(s, CONTENT_W);
-  doc.text(lines, MARGIN, y, { align: 'justify', maxWidth: CONTENT_W });
+  // Pas de justification : jsPDF étire la dernière ligne d'un paragraphe
+  // jusqu'à la marge, ce qui creuse des trous entre les mots.
+  doc.text(lines, MARGIN, y);
   return y + lines.length * lineH + 2;
 }
 
@@ -44,51 +61,55 @@ function bullets(doc: Doc, items: string[], y: number): number {
   return y + 1;
 }
 
+/*
+  Le titre du document. Le premier mot en maigre, le reste en gras, comme
+  partout ailleurs — « Consentement éclairé » se coupe après le premier mot.
+*/
 function title(doc: Doc, s: string, y: number): number {
-  setFont(doc, 20, 'normal');
-  doc.setTextColor(180, 180, 180);
-  txt(doc, s, MARGIN, y);
-  return y + 12;
+  const espace = s.indexOf(' ');
+  const maigre = espace > 0 ? s.slice(0, espace + 1) : s;
+  const gras = espace > 0 ? s.slice(espace + 1) : '';
+  return titreDocument(doc, maigre, gras, y) + 3;
 }
 
 function sectionTitle(doc: Doc, s: string, y: number): number {
-  setFont(doc, 9.5, 'bold');
-  doc.setTextColor(26, 26, 26);
-  doc.text(s, MARGIN, y);
-  return y + LINE_H;
+  return titreSection(doc, s, y + 1);
 }
 
-function footer(_doc: Doc) {
-  // footer vide — plus de logo ni de numérotation
+/*
+  Le pied de page. Il était vide ; il porte désormais le nom du centre et la
+  pagination, comme le contrat et le récapitulatif — un document signé qui
+  ne dit pas d'où il vient se retrouve mal six mois plus tard.
+*/
+function footer(doc: Doc) {
+  piedsDePage(doc, 'MAbeautyplus — consentement éclairé');
 }
 
 function header(doc: Doc, titleText: string, clientName: string, date: string): number {
-  let y = MARGIN;
-  y = title(doc, titleText, y + 6);
+  enTete(doc, 'Consentement éclairé', date);
+  let y = title(doc, titleText, HAUT + 4);
 
-  setFont(doc, 9, 'normal');
-  doc.setTextColor(26, 26, 26);
-  txt(doc, 'Consentement entre l\'institut : ', MARGIN, y);
+  /*
+    Qui signe, avec qui, et quand — dans un encadré plutôt qu'en quatre
+    lignes courantes. Le texte est celui de l'ancien document, au mot près.
+  */
+  encadre(doc, y, 20);
+  etiquette(doc, 'Consentement entre l\'institut', MARGIN + 5, y + 6);
   setFont(doc, 9, 'bold');
-  txt(doc, 'MAbeautyplus', MARGIN + 55, y);
-  y += LINE_H;
+  couleur(doc, ENCRE);
+  txt(doc, 'MAbeautyplus', MARGIN + 5, y + 12);
 
+  etiquette(doc, 'Et le/la client(e), je soussigné(e)', MARGIN + 70, y + 6);
   setFont(doc, 9, 'bold');
-  txt(doc, 'Date : ', MARGIN, y);
+  couleur(doc, ENCRE);
+  txt(doc, clientName, MARGIN + 70, y + 12);
+
+  etiquette(doc, 'Date', A4_W - MARGIN - 5, y + 6, 'right');
   setFont(doc, 9, 'normal');
-  txt(doc, date, MARGIN + 14, y);
-  y += LINE_H;
+  couleur(doc, ENCRE_DOUX);
+  txt(doc, date, A4_W - MARGIN - 5, y + 12, { align: 'right' });
 
-  setFont(doc, 9, 'normal');
-  txt(doc, 'Et le/la client(e) :', MARGIN, y);
-  y += LINE_H;
-
-  txt(doc, 'Je soussigné(e) : ', MARGIN, y);
-  setFont(doc, 9, 'bold');
-  txt(doc, clientName, MARGIN + 35, y);
-  y += LINE_H + 3;
-
-  return y;
+  return y + 26;
 }
 
 function imageRightSection(doc: Doc, label: string, photoText: string[], photoChecked: boolean[], signatureDataUrl: string, y: number): number {
@@ -101,16 +122,9 @@ function imageRightSection(doc: Doc, label: string, photoText: string[], photoCh
   setFont(doc, 9, 'normal');
   for (let i = 0; i < photoText.length; i++) {
     const checked = photoChecked[i] ?? false;
-    doc.setDrawColor(80, 80, 80);
-    doc.setFillColor(checked ? 30 : 255, checked ? 30 : 255, checked ? 30 : 255);
-    doc.rect(MARGIN, dy - 3, 3.5, 3.5, checked ? 'FD' : 'D');
-    if (checked) {
-      doc.setTextColor(255, 255, 255);
-      setFont(doc, 7, 'bold');
-      doc.text('✓', MARGIN + 0.3, dy - 0.2);
-      doc.setTextColor(26, 26, 26);
-      setFont(doc, 9, 'normal');
-    }
+    caseACocher(doc, MARGIN, dy, checked);
+    couleur(doc, checked ? ENCRE : GRIS);
+    setFont(doc, 9, 'normal');
     const wrapped = doc.splitTextToSize(photoText[i], CONTENT_W - 8);
     doc.text(wrapped, MARGIN + 5, dy);
     dy += wrapped.length * SMALL_LINE_H + 1.5;
@@ -120,11 +134,12 @@ function imageRightSection(doc: Doc, label: string, photoText: string[], photoCh
   // Signature client uniquement (pleine largeur)
   const boxH = 36;
 
-  doc.setDrawColor(180, 180, 180);
+  doc.setDrawColor(TRAIT[0], TRAIT[1], TRAIT[2]);
+  doc.setLineWidth(0.3);
   doc.setFillColor(255, 255, 255);
-  doc.rect(MARGIN, dy, CONTENT_W, boxH, 'D');
+  doc.roundedRect(MARGIN, dy, CONTENT_W, boxH, 2.5, 2.5, 'FD');
   setFont(doc, 8, 'italic');
-  doc.setTextColor(120, 120, 120);
+  couleur(doc, GRIS);
   txt(doc, label, MARGIN + 2, dy + 5);
   setFont(doc, 7, 'italic');
   txt(doc, 'avec la mention "lu et approuvé"', MARGIN + 2, dy + 9);
