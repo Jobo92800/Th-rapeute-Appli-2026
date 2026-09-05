@@ -57,8 +57,18 @@ export interface DonneesRecap {
   /** Les axes secondaires réellement présents, sans les bruits de fond. */
   aussiPresents: Array<{ nom: string; pourcentage: number }>;
   inbody: MesureInbody[];
-  soins: Array<{ libelle: string; seances: number; montant: number }>;
-  options: Array<{ libelle: string; montant: number }>;
+  /*
+    Ce que la cure contient — sans le prix de chaque ligne. La cliente
+    achète un accompagnement, pas un panier : détailler « 16 séances à
+    59 € » l'invite à retirer des séances pour faire baisser la note, et
+    c'est la conversation qu'on ne veut pas avoir. Le récapitulatif dit ce
+    qu'elle règle, en grand, et ce qu'elle reçoit — pas la décomposition.
+
+    Le montant n'est donc pas seulement caché à l'impression : il n'est plus
+    calculé. Une valeur qui traîne sans servir finit par être réaffichée.
+  */
+  soins: Array<{ libelle: string; seances: number }>;
+  options: Array<{ libelle: string }>;
   totalSeances: number;
   montantTotal: number;
   /** Ce que la cliente règle, frais de financement compris. */
@@ -128,15 +138,14 @@ export function construireRecap(args: {
     .map((l) => ({
       libelle: LIBELLES_TECHNOLOGIE[l.technologie] ?? l.technologie,
       seances: l.seances,
-      montant: l.seances * Number(l.prixUnitaire),
     }));
 
-  const options: Array<{ libelle: string; montant: number }> = [];
+  const options: Array<{ libelle: string }> = [];
   if (p.guide && Number(p.prixGuide) > 0) {
-    options.push({ libelle: 'Guide de rééquilibrage alimentaire', montant: Number(p.prixGuide) });
+    options.push({ libelle: 'Guide de rééquilibrage alimentaire' });
   }
   if (p.tenue && Number(p.prixTenue) > 0) {
-    options.push({ libelle: 'Tenue I-Shape', montant: Number(p.prixTenue) });
+    options.push({ libelle: 'Tenue I-Shape' });
   }
 
   /*

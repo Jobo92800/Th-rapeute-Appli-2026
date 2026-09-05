@@ -293,13 +293,18 @@ export function genererRecapPdf(d: DonneesRecap): jsPDF {
 
   y += 6;
   y = sousTitre(doc, 'Vos soins', y);
+  /*
+    Le contenu de la cure, sans le prix de chaque ligne : le document dit ce
+    qu'elle règle, en grand, juste en dessous. Le détail n'ajoute rien qu'une
+    invitation à retrancher des séances.
+  */
   for (const s of d.soins) {
-    y = ligneTableau(doc, s.libelle, `${s.seances} séances`, euros(s.montant), y);
+    y = ligneTableau(doc, s.libelle, '', `${s.seances} séances`, y);
   }
   for (const o of d.options) {
-    y = ligneTableau(doc, o.libelle, '', euros(o.montant), y);
+    y = ligneTableau(doc, o.libelle, '', 'Compris', y);
   }
-  y = ligneTableau(doc, `Total · ${d.totalSeances} séances`, '', euros(d.montantTotal), y, true);
+  y = ligneTableau(doc, 'Total', '', `${d.totalSeances} séances`, y, true);
 
   y += 6;
 

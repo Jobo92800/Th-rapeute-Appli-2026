@@ -82,7 +82,22 @@ export function controlerRecapitulatif() {
 
   egal('les deux soins sont repris', r.soins.length, 2);
   egal('avec leur nom en clair', r.soins[0].libelle, 'Luxothérapie Perte de poids');
-  egalEuros('douze séances de luxo font 708 €', r.soins[0].montant, 708);
+  egal('et leur nombre de séances', r.soins[0].seances, 12);
+
+  /*
+    Le récapitulatif ne détaille aucun prix ligne par ligne. Ce n'est pas
+    une omission d'affichage : la valeur n'est pas calculée, pour que
+    personne ne la réaffiche un jour sans y penser. La cliente achète un
+    accompagnement, pas un panier.
+  */
+  verifie(
+    'aucun soin ne porte de prix',
+    r.soins.every((s) => !('montant' in s)),
+  );
+  verifie(
+    'aucune option non plus',
+    r.options.every((o) => !('montant' in o)),
+  );
   egal('seize séances au total', r.totalSeances, 16);
   egalEuros('le montant est celui annoncé, pas un recalcul', r.montantTotal, 973);
   egal('le guide est compté en option', r.options.length, 1);
