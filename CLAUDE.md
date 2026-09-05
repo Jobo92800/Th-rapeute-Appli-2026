@@ -347,8 +347,25 @@ Node exige et que Vite devine. Il ne concerne que les tests.
 
 Dépôt : `Jobo92800/Th-rapeute-Appli-2026` (public pour l'instant — contient
 le questionnaire BioPortrait, les 60 jeux, les textes de contrat et la grille
-tarifaire ; à repasser en privé). Netlify déploie automatiquement sur chaque
-poussée.
+tarifaire ; à repasser en privé). Site : **`appli-therapeute-2926.netlify.app`**.
+Netlify déploie automatiquement sur chaque poussée.
+
+**Quand une poussée ne change rien en ligne, ce n'est pas la poussée.** Le
+5 septembre 2026, quatre commits sont bien arrivés sur GitHub sans que le
+site bouge : les minutes de construction du mois étaient épuisées. Netlify
+ne casse rien dans ce cas — il continue de servir la dernière version, ce
+qui ressemble exactement à un poussé raté. Vérifier dans cet ordre : le
+dernier commit sur GitHub (`git ls-remote origin main`), puis le paquet
+**réellement servi** en ligne, jamais la page d'accueil seule :
+
+```bash
+curl -s https://appli-therapeute-2926.netlify.app/ | grep -o 'assets/index-[A-Za-z0-9_-]*\.js'
+```
+
+Si le nom diffère de celui du `dist/` local, le site est en retard. Attention
+au piège du `netlify.toml` : la redirection `/*` renvoie `index.html` avec un
+**code 200 pour n'importe quelle adresse**. Un `guide.html` « qui répond »
+ne prouve donc rien — il faut regarder son contenu.
 
 **Ne jamais pousser sans que Jonathan le demande.** Chaque poussée
 reconstruit le site et lui coûte des crédits Netlify — autant pour une
