@@ -34,6 +34,12 @@ export interface Message {
 export interface Destinataire {
   message_id: string;
   therapeute_id: string;
+  /*
+    Le prénom, joint à la lecture. La direction ne veut pas savoir « 9 sur
+    13 » : elle veut savoir laquelle des quatre n'a pas encore ouvert, pour
+    lui en parler de vive voix.
+  */
+  prenom?: string;
   lu_le: string | null;
 }
 
@@ -131,4 +137,22 @@ export function resume(message: Message, destinataires: Destinataire[]): string 
 export function resumeRecu(message: Message, maLigne: Destinataire | undefined): string {
   if (message.type === 'annonce') return maLigne?.lu_le ? 'Lue' : 'Nouvelle';
   return ETATS[message.statut].libelle;
+}
+
+/**
+ * Les destinataires d'une annonce, rangés pour être lus d'un coup d'œil.
+ *
+ * Celles qui n'ont pas encore ouvert viennent en premier : ce sont les
+ * seules sur lesquelles il reste quelque chose à faire.
+ */
+export function parLecture(destinataires: Destinataire[]): {
+  enAttente: Destinataire[];
+  ontLu: Destinataire[];
+} {
+  const parPrenom = (a: Destinataire, b: Destinataire) =>
+    (a.prenom ?? '').localeCompare(b.prenom ?? '', 'fr');
+  return {
+    enAttente: destinataires.filter((d) => d.lu_le === null).sort(parPrenom),
+    ontLu: destinataires.filter((d) => d.lu_le !== null).sort(parPrenom),
+  };
 }

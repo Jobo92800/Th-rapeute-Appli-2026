@@ -69,7 +69,7 @@ mensualités sont égales. Les anciennes valeurs `4x_maison` et `10x_alma` reste
 | Exception cure | Une pathologie ou une consigne impérative vit **sur la fiche**, pas dans les notes : une note se lit quand on pense à ouvrir l'onglet, une exception doit être vue sans avoir été cherchée. Elle s'affiche en rouge sous l'en-tête quel que soit l'onglet, et signale la cliente dans la liste. Un seul texte, remplacé à chaque modification — une consigne périmée au milieu d'un fil est pire que pas de consigne. |
 | Arrêt de cure | Une cliente qui s'arrête en route ne laisse plus une cure « en cours » éternelle. **Arrêter la cure** annule ses échéances non réglées — on ne réclame pas de l'argent pour des séances qui n'auront pas lieu — et la sort de tous les comptes. Le geste se date, s'explique, et **se défait** tant que l'avoir qu'il a créé n'a pas été dépensé. Séances, bilan et documents restent sur la fiche. |
 | Avoir | Ce que le centre doit à une cliente. Il naît d'un arrêt de cure — elle a payé plus qu'elle n'a reçu — ou d'un geste commercial. **Il ne se stocke pas, il se calcule** : on écrit des mouvements (accordé, utilisé, remboursé) et le solde est leur somme, comme le stock. Il se dépense sur une cure — il descend l'échéancier en partant de la dernière échéance, **sans toucher au montant signé** — ou se rembourse en argent. Un avoir traverse les 5 centres, comme le parrainage. Le montant proposé à l'arrêt (encaissé moins consommé) n'est jamais imposé : la thérapeute le corrige. |
-| Messages internes | Un **carnet de liaison**, pas une messagerie : pas de fil de discussion, pas de pièce jointe, rien entre thérapeutes. Deux objets qui se ressemblent et qu'il ne faut pas confondre, parce que leur état utile n'est pas le même. Une **annonce** part de la direction vers des thérapeutes : ce qu'on veut savoir, c'est **qui l'a lue**. Un **signalement** part d'une thérapeute vers la direction : ce qu'on veut savoir, c'est **où en est le traitement** (nouveau, en cours, traité, sans suite). Un statut unique pour les deux aurait obligé à répondre « traité » à une annonce. Une thérapeute ne voit pas les signalements de ses collègues — l'un d'eux peut dire « le stock que Marie a compté est faux », et ça se règle avec la direction — ni le compte de diffusion d'une annonce, qui ne regarde qu'elle. |
+| Messages internes | Un **carnet de liaison**, pas une messagerie : pas de fil de discussion, pas de pièce jointe, rien entre thérapeutes. Deux objets qui se ressemblent et qu'il ne faut pas confondre, parce que leur état utile n'est pas le même. Une **annonce** part de la direction vers des thérapeutes : ce qu'on veut savoir, c'est **qui l'a lue**. Un **signalement** part d'une thérapeute vers la direction : ce qu'on veut savoir, c'est **où en est le traitement** (nouveau, en cours, traité, sans suite). Un statut unique pour les deux aurait obligé à répondre « traité » à une annonce. Une thérapeute ne voit pas les signalements de ses collègues — l'un d'eux peut dire « le stock que Marie a compté est faux », et ça se règle avec la direction — ni le compte de diffusion d'une annonce, qui ne regarde qu'elle. La direction, elle, voit **les prénoms** de celles qui ont lu et de celles qui n'ont pas encore ouvert : « 9 sur 13 » ne dit pas à qui en toucher un mot. |
 | Suppression | **Archiver** est le geste courant : réversible, rien n'est perdu. **Supprimer** est définitif, emporte tout le dossier, exige de retaper le nom, et reste réservé à la direction. |
 
 ---
@@ -304,6 +304,25 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   un PDF passe désormais par `pourPdf()` (`src/domain/texte.ts`) ; le banc
   d'essai le vérifie sur le contrat et sur le récapitulatif. Ne jamais
   écrire un montant directement dans un PDF.
+- **Deux règles de sécurité qui se renvoient l'une à l'autre.** La 043
+  posait, sur `messages`, une règle qui interrogeait `messages_destinataires`,
+  et sur `messages_destinataires` une règle qui interrogeait `messages`.
+  Chacune est juste prise seule ; ensemble PostgreSQL refuse toute la
+  requête — « infinite recursion detected in policy ». Personne ne lisait
+  plus rien, direction comprise, alors que les annonces étaient bien
+  écrites. Le symptôme trompeur : **la pastille du menu continuait de
+  compter**, parce qu'elle passe par une fonction `SECURITY DEFINER` qui ne
+  s'arrête pas aux règles. Un compteur juste au-dessus de deux listes vides
+  doit faire penser à ça tout de suite. Réglé par la 044 : les deux
+  questions sont posées à des fonctions `SECURITY DEFINER`
+  (`est_destinataire`, `a_ecrit_le_message`), qui coupent la boucle sans
+  rien changer à qui voit quoi. **Une règle de sécurité ne doit jamais
+  interroger une table dont la règle interroge la première.**
+- **Une panne qui ressemble à une liste vide.** Ce qui a fait durer le bug
+  ci-dessus : l'écran ne regardait que `isLoading`, et une requête en erreur
+  s'affichait comme « aucun message ». Tout écran qui liste doit distinguer
+  les trois états — chargement, erreur, vraiment vide — et l'erreur doit
+  montrer le message brut : c'est lui qui nomme la cause.
 - **Doublons Airtable.** Le parcours du bilan enchaîne trois écritures ;
   sans verrou, trois synchros parallèles créaient trois fiches. Réglé par
   `reclamer_taches_airtable` (SKIP LOCKED), un verrou par cliente et un
@@ -325,7 +344,7 @@ doit rester vert après toute modification.
 
 ## Banc d'essai
 
-`npm test` — **315 contrôles, à garder verts.** Ils couvrent ce qui décide
+`npm test` — **319 contrôles, à garder verts.** Ils couvrent ce qui décide
 de ce qu'une cliente paie, reçoit et se voit refuser pour raison de santé :
 tarification et échéanciers (centre et Alma), prescription et
 contre-indications, planchers des formules, BioPortrait, parrainage, stock,
@@ -401,8 +420,8 @@ Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 Migrations passées jusqu'à **042** incluse, `synchro-airtable` redéployée,
 et les deux champs du récapitulatif créés dans Airtable. Deux attendent
 d'être collées : la **041** (le droit implicite coupé pour les commandes
-futures) et la **043** (les messages internes). Tant que la 043 n'est pas
-passée, l'écran Messages s'ouvre mais ne trouve pas ses tables.
+futures) et la **044** (la boucle des règles de lecture des messages, sans
+laquelle l'écran Messages reste vide pour tout le monde).
 
 La fermeture des commandes (040) a été **vérifiée des deux côtés** le
 3 septembre 2026 : depuis l'extérieur, les neuf commandes répondent

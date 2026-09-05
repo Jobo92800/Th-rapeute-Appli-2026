@@ -27,15 +27,30 @@ export async function lireMessages(): Promise<MessageComplet[]> {
   const liste = (messages ?? []) as Message[];
   if (liste.length === 0) return [];
 
-  const { data: dest } = await supabase
+  /*
+    Le prénom vient avec, en une seule requête : sans lui, la direction lit
+    « 9 sur 13 » sans savoir de qui il s'agit.
+
+    L'erreur de cette requête-là se remonte comme l'autre. La laisser tomber
+    était le vrai défaut : quand les règles de lecture se sont mises à
+    tourner en rond, l'écran s'est affiché vide au lieu de le dire.
+  */
+  const { data: dest, error: erreurDest } = await supabase
     .from('messages_destinataires')
-    .select('*')
+    .select('message_id, therapeute_id, lu_le, therapeutes(prenom)')
     .in(
       'message_id',
       liste.map((m) => m.id),
     );
 
-  const parMessage = (dest ?? []) as Destinataire[];
+  if (erreurDest) throw erreurDest;
+
+  const parMessage = ((dest ?? []) as Array<Record<string, unknown>>).map((d) => ({
+    message_id: d.message_id as string,
+    therapeute_id: d.therapeute_id as string,
+    lu_le: (d.lu_le as string | null) ?? null,
+    prenom: (d.therapeutes as { prenom?: string } | null)?.prenom,
+  })) as Destinataire[];
   return liste.map((message) => ({
     message,
     destinataires: parMessage.filter((d) => d.message_id === message.id),

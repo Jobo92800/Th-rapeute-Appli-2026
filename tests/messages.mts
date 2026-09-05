@@ -13,6 +13,7 @@ import {
   STATUTS_SIGNALEMENT,
   aTraiter,
   lecture,
+  parLecture,
   resume,
   resumeRecu,
   type Destinataire,
@@ -63,6 +64,29 @@ export function controlerMessages() {
   egal('lue par toutes', resume(annonce, dest(4, 4)), 'Lue par toutes les 4');
   egal('une seule destinataire, au singulier', resume(annonce, dest(1, 1)), 'Lue');
   egal('et non lue au singulier aussi', resume(annonce, dest(1, 0)), 'Pas encore lue · 1 destinataire');
+
+  section('Qui l’a lue, nommément');
+
+  /*
+    La direction ne veut pas un compte, elle veut des prénoms : c'est ce qui
+    lui dit à qui en toucher un mot. Celles qui n'ont pas ouvert passent
+    devant — ce sont les seules sur lesquelles il reste à agir.
+  */
+  const equipe = [
+    { message_id: 'm', therapeute_id: 't1', prenom: 'Nadia', lu_le: '2026-09-05' },
+    { message_id: 'm', therapeute_id: 't2', prenom: 'Alex', lu_le: null },
+    { message_id: 'm', therapeute_id: 't3', prenom: 'Caroll', lu_le: null },
+    { message_id: 'm', therapeute_id: 't4', prenom: 'Aude', lu_le: '2026-09-05' },
+  ];
+  const range = parLecture(equipe);
+  egal('celles qui n’ont pas ouvert', range.enAttente.map((d) => d.prenom), ['Alex', 'Caroll']);
+  egal('celles qui ont lu', range.ontLu.map((d) => d.prenom), ['Aude', 'Nadia']);
+  egal(
+    'personne n’est perdu en route',
+    range.enAttente.length + range.ontLu.length,
+    equipe.length,
+  );
+  egal('et le compte reste celui de la liste', lecture(equipe), { lus: 2, total: 4 });
 
   section('Ce qu’une thérapeute lit de la même annonce');
 

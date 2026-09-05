@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { AlertTriangle, Check, Loader2, Megaphone, Send, Trash2 } from 'lucide-react';
+import { AlertTriangle, Check, Clock, Loader2, Megaphone, Send, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSession } from '../lib/session';
 import {
@@ -20,8 +20,10 @@ import {
   ETATS,
   STATUTS_SIGNALEMENT,
   lecture,
+  parLecture,
   resume,
   resumeRecu,
+  type Destinataire,
   type StatutMessage,
 } from '../domain/messages';
 
@@ -39,7 +41,12 @@ export default function Messages() {
   const qc = useQueryClient();
   const [ouvert, setOuvert] = useState<string | null>(null);
 
-  const { data: messages = [], isLoading } = useQuery({
+  const {
+    data: messages = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ['messages'],
     queryFn: lireMessages,
   });
@@ -75,6 +82,29 @@ export default function Messages() {
     return <p className="carte px-5 py-10 text-center text-sm text-ardoise-400">Chargement…</p>;
   }
 
+  /*
+    Une liste vide et une liste qui n'a pas pu être lue se ressemblent
+    beaucoup à l'écran, et ne veulent pas du tout dire la même chose. On les
+    sépare : sans ça, une panne passe pour « aucun message ».
+  */
+  if (isError) {
+    return (
+      <div className="carte border-l-2 border-rose-500 px-5 py-6">
+        <h1 className="flex items-center gap-2 text-base font-semibold text-ardoise-900">
+          <AlertTriangle className="h-4 w-4 text-rose-600" />
+          Les messages n’ont pas pu être chargés
+        </h1>
+        <p className="mt-2 text-sm text-ardoise-600">
+          Ce n’est pas qu’il n’y en a aucun : le carnet de liaison n’a pas répondu. Prévenez la
+          direction, et réessayez dans un instant.
+        </p>
+        <p className="mt-3 font-mono text-xs text-ardoise-400">
+          {error instanceof Error ? error.message : String(error)}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -105,10 +135,10 @@ export default function Messages() {
         onChange={rafraichir}
       />
 
-      {envoyes.length > 0 && (
+      {(direction || envoyes.length > 0) && (
         <Liste
           titre="Ce que vous avez envoyé"
-          vide=""
+          vide="Vous n’avez encore rien annoncé."
           messages={envoyes}
           direction={direction}
           moi={therapeute?.id ?? null}
@@ -492,12 +522,7 @@ function Ligne({
           )}
 
           {direction && m.type === 'annonce' && destinataires.length > 0 && (
-            <p className="mt-3 text-xs text-ardoise-500">
-              {(() => {
-                const { lus, total } = lecture(destinataires);
-                return `${lus} lue${lus > 1 ? 's' : ''} sur ${total} destinataire${total > 1 ? 's' : ''}.`;
-              })()}
-            </p>
+            <QuiALu destinataires={destinataires} />
           )}
 
           {m.reponse && (
@@ -563,6 +588,54 @@ function Ligne({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Qui a lu l'annonce, et qui ne l'a pas encore ouverte.
+ *
+ * Un compte — « 9 sur 13 » — ne dit pas quoi faire. Des prénoms, si : on
+ * sait à qui en toucher un mot avant l'ouverture demain.
+ */
+function QuiALu({ destinataires }: { destinataires: Destinataire[] }) {
+  const { enAttente, ontLu } = parLecture(destinataires);
+  const { lus, total } = lecture(destinataires);
+
+  return (
+    <div className="mt-4 border-t border-ardoise-100 pt-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <span className="etiquette mb-0">Qui l’a lue</span>
+        <span className="text-xs text-ardoise-500">
+          {lus} sur {total}
+        </span>
+      </div>
+
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {enAttente.map((d) => (
+          <span
+            key={d.therapeute_id}
+            className="inline-flex items-center gap-1 rounded-full bg-ardoise-100 px-2.5 py-1 text-xs font-semibold text-ardoise-500"
+          >
+            <Clock className="h-3 w-3" />
+            {d.prenom ?? '—'}
+          </span>
+        ))}
+        {ontLu.map((d) => (
+          <span
+            key={d.therapeute_id}
+            title={
+              d.lu_le
+                ? `Lue le ${format(new Date(d.lu_le), 'd MMMM à HH:mm', { locale: fr })}`
+                : undefined
+            }
+            className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800"
+          >
+            <Check className="h-3 w-3" />
+            {d.prenom ?? '—'}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
