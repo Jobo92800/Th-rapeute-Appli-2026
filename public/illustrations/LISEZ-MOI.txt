@@ -1,11 +1,19 @@
-Les deux images des bulles « ce qui est compris », sur l'écran de proposition
-de cure. Déposez-les ici, avec exactement ces noms :
+Les images des bulles « ce qui est compris », sur l'écran de proposition de
+cure.
 
-    parcours-audio.png       la capture de l'application Mon Parcours
     guide-alimentaire.png    le visuel du guide de rééquilibrage
 
-Format : PNG ou JPG, 1200 px de large suffisent largement, moins de 400 Ko —
-cet écran s'ouvre sur une tablette, en rendez-vous, parfois en 4G.
+C'est le seul fichier utilisé aujourd'hui. L'application audio, elle, n'est
+plus montrée par une capture : elle est redessinée dans l'application
+(src/components/bilan/MaquetteParcours.tsx). Une capture réduite à la
+largeur d'une vignette ne se lit pas — on y devine du gris sur du blanc — et
+c'est justement ce qu'on voulait éviter en rendez-vous.
 
-Tant qu'un fichier manque, la bulle s'ouvre quand même : elle affiche son
-texte, sans l'image. Rien ne casse.
+Le fichier parcours-audio.png reste dans le dossier mais n'est plus affiché
+nulle part : il peut être supprimé.
+
+Si vous ajoutez d'autres visuels : PNG ou JPG, 1000 px de côté suffisent,
+et le plus léger possible — cet écran s'ouvre sur une tablette, parfois en
+4G. L'image n'est chargée qu'à l'ouverture de la bulle, jamais avant.
+
+Une image absente ne casse rien : la bulle s'ouvre sans elle.
