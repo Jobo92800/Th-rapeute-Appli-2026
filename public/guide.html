@@ -229,6 +229,75 @@
   .repere h3 { color: var(--teal-fonce); font-size: .95rem; }
   .repere p { font-size: .92rem; color: var(--encre-doux); }
 
+  /* ---------- Les fiches de BioPortrait ---------- */
+
+  .rubrique {
+    font-family: var(--titre);
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--teal-fonce);
+    margin: 2rem 0 .9rem;
+  }
+  .rubrique.terrain { color: var(--magenta); }
+
+  .portraits { display: grid; gap: 1rem; }
+  @media (min-width: 46rem) { .portraits { grid-template-columns: 1fr 1fr; } }
+
+  .portrait {
+    background: var(--carte);
+    border: 1px solid var(--trait);
+    border-left: 3px solid var(--teal);
+    border-radius: 12px;
+    padding: 1.05rem 1.2rem 1.1rem;
+    display: grid;
+    gap: .7rem;
+    align-content: start;
+  }
+  .portrait.terrain { border-left-color: var(--magenta); }
+
+  .portrait h3 { font-size: .98rem; color: var(--encre); margin: 0; }
+  .portrait .surnom {
+    display: block;
+    font-family: var(--corps);
+    font-size: .82rem;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--gris);
+    margin-top: .1rem;
+  }
+
+  .portrait dl { margin: 0; display: grid; gap: .5rem; }
+  .portrait dt {
+    font-family: var(--titre);
+    font-size: .64rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--gris-clair);
+  }
+  .portrait dd { margin: .1rem 0 0; font-size: .89rem; color: var(--encre-doux); }
+
+  .faire {
+    background: var(--teal-pale);
+    border-radius: 8px;
+    padding: .65rem .8rem;
+  }
+  .portrait.terrain .faire { background: var(--magenta-pale); }
+  .faire b {
+    display: block;
+    font-family: var(--titre);
+    font-size: .64rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--teal-fonce);
+    margin-bottom: .2rem;
+  }
+  .portrait.terrain .faire b { color: var(--magenta); }
+  .faire p { margin: 0; font-size: .89rem; color: var(--encre-doux); }
+
   /* ---------- Lexique ---------- */
 
   .lexique { display: grid; gap: 0; border-top: 1px solid var(--trait); }
@@ -347,6 +416,8 @@
   .attention b { color: var(--magenta); }
   .astuce b    { color: var(--ambre); }
   .note p, .attention p, .astuce p { margin: 0; color: var(--encre-doux); }
+  /* Un encadré qui porte deux paragraphes : sans ça, ils se collent. */
+  .note p + p, .attention p + p, .astuce p + p { margin-top: .55rem; }
 
   /* ---------- Reproductions d'écran ---------- */
 
@@ -565,6 +636,8 @@
     .imprimer { display: none; }
     .geste, .memo, .sommaire { break-inside: avoid; box-shadow: none; }
     section { break-inside: avoid-page; }
+    #bioportraits { break-inside: auto; }
+    .portrait { break-inside: avoid; }
     .page { max-width: none; padding: 0; }
     a { color: #000; text-decoration: none; }
   }
@@ -596,7 +669,7 @@
 
   <nav class="sommaire" aria-label="Sommaire">
     <span class="oeil">Ce que vous trouverez ici</span>
-    <h2>Le guide en quatorze gestes</h2>
+    <h2>Le guide en quinze gestes</h2>
     <ol>
       <li><a href="#rassurance">Trois choses à savoir avant de commencer</a></li>
       <li><a href="#mots">Les six mots de l'application</a></li>
@@ -604,6 +677,7 @@
       <li><a href="#accueil">Lire son écran d'accueil</a></li>
       <li><a href="#trouver">Retrouver une cliente</a></li>
       <li><a href="#bilan">Faire un Bilan BioPortrait</a></li>
+      <li><a href="#bioportraits">Lire un BioPortrait</a></li>
       <li><a href="#contrat">Signer le contrat</a></li>
       <li><a href="#seance">Faire une séance</a></li>
       <li><a href="#encaisser">Encaisser une échéance</a></li>
@@ -1041,6 +1115,213 @@
         </div>
       </div>
     </article>
+  </section>
+
+  <!-- ======================= BIOPORTRAITS ======================= -->
+  <section id="bioportraits">
+    <span class="oeil">Comprendre</span>
+    <h2>Lire un BioPortrait</h2>
+    <p class="intro intro-large">
+      Vous connaissez la méthode : voici de quoi retrouver l'essentiel d'un
+      coup d'œil, entre deux clientes. Ce sont les points clés, pas le manuel
+      — un guide complet par profil viendra plus tard.
+    </p>
+
+    <div class="note">
+      <b>Qu'est-ce qu'un BioPortrait ?</b>
+      <p>
+        C'est le diagnostic propriétaire MAbeautyplus. Il croise deux
+        dimensions : le <strong>profil comportemental</strong> — qui elle est,
+        son rapport au corps et à l'alimentation — et le <strong>terrain
+        physiologique</strong> — ce que son corps fait en profondeur. Chaque
+        cliente ressort avec une combinaison qui lui est propre, par exemple
+        « Réconfort × Inflammatoire ».
+      </p>
+      <p>
+        Retenez la règle : <strong>le profil oriente l'accompagnement humain,
+        le terrain oriente le protocole physique.</strong> Deux clientes au
+        même terrain ne se parlent pas de la même façon ; deux clientes au même
+        profil ne reçoivent pas les mêmes soins.
+      </p>
+    </div>
+
+    <h3 class="rubrique">Les cinq profils comportementaux — comment lui parler</h3>
+    <div class="portraits">
+        <article class="portrait">
+          <h3>Réconfort<span class="surnom">« l’aliment refuge »</span></h3>
+          <dl>
+            <div>
+              <dt>Ce que ça dit</dt>
+              <dd>Une alimentation émotionnelle : l’aliment sert d’apaisement. Le sucre libère de la dopamine — d’où le grignotage.</dd>
+            </div>
+            <div>
+              <dt>Vous la reconnaissez</dt>
+              <dd>Elle mange ses émotions, grignote le soir, craque sur le sucre, et culpabilise après.</dd>
+            </div>
+          </dl>
+          <div class="faire">
+            <b>Ce que vous faites</b>
+            <p>Sans aucun jugement. Repérez avec elle les déclencheurs émotionnels et installez des alternatives non alimentaires. Journal des pulsions, gestion des émotions, rythme des repas pour couper les fringales.</p>
+          </div>
+        </article>
+        <article class="portrait">
+          <h3>Sous Pression<span class="surnom">« le corps en alerte »</span></h3>
+          <dl>
+            <div>
+              <dt>Ce que ça dit</dt>
+              <dd>Un stress chronique et une charge mentale élevés : le cortisol reste haut, le sommeil se dégrade.</dd>
+            </div>
+            <div>
+              <dt>Vous la reconnaissez</dt>
+              <dd>Débordée, « à cent à l’heure », elle dort mal, a des fringales en fin de journée, et stocke sous stress.</dd>
+            </div>
+          </dl>
+          <div class="faire">
+            <b>Ce que vous faites</b>
+            <p>Travaillez le stress et le sommeil autant que l’alimentation. Relaxation, respiration, hygiène de sommeil, repas anti-fringale. Expliquez-lui le lien entre stress, cortisol et stockage : c’est ce qui la déculpabilise.</p>
+          </div>
+        </article>
+        <article class="portrait">
+          <h3>Rupture<span class="surnom">« le lien distendu »</span></h3>
+          <dl>
+            <div>
+              <dt>Ce que ça dit</dt>
+              <dd>Un rapport à l’image de soi distendu : elle ne se reconnaît plus et s’évite.</dd>
+            </div>
+            <div>
+              <dt>Vous la reconnaissez</dt>
+              <dd>Elle dit s’être « laissée aller », fuit les miroirs et les photos, et sa confiance est en baisse.</dd>
+            </div>
+          </dl>
+          <div class="faire">
+            <b>Ce que vous faites</b>
+            <p>Reconstruisez l’estime de soi et valorisez chaque progrès. Bienveillance absolue, petites victoires célébrées, suivi photo d’évolution avec son accord, reconnexion au corps. Bannissez tout jugement.</p>
+          </div>
+        </article>
+        <article class="portrait">
+          <h3>En Veille<span class="surnom">« le corps endormi »</span></h3>
+          <dl>
+            <div>
+              <dt>Ce que ça dit</dt>
+              <dd>Sédentarité, énergie basse, lien au corps coupé : le métabolisme s’endort.</dd>
+            </div>
+            <div>
+              <dt>Vous la reconnaissez</dt>
+              <dd>Elle ne bouge plus, se sent fatiguée, et bouger lui coûte.</dd>
+            </div>
+          </dl>
+          <div class="faire">
+            <b>Ce que vous faites</b>
+            <p>Réactivez en douceur et remotivez. Micro-objectifs de mouvement, réveil des sensations corporelles, et à chaque étape, nommez l’énergie retrouvée.</p>
+          </div>
+        </article>
+        <article class="portrait">
+          <h3>Résistance<span class="surnom">« le corps verrouillé »</span></h3>
+          <dl>
+            <div>
+              <dt>Ce que ça dit</dt>
+              <dd>Un historique de yo-yo et de régimes : le métabolisme est devenu adaptatif, et les croyances limitantes se sont installées.</dd>
+            </div>
+            <div>
+              <dt>Vous la reconnaissez</dt>
+              <dd>Elle a tout essayé, elle est découragée, et convaincue que « son corps résiste ».</dd>
+            </div>
+          </dl>
+          <div class="faire">
+            <b>Ce que vous faites</b>
+            <p>Rassurez, déconstruisez les croyances, installez la patience. Sortez de la logique de restriction, mesurez les progrès autrement que par la balance, célébrez chaque palier. Expliquez-lui le métabolisme adaptatif.</p>
+          </div>
+        </article>
+    </div>
+
+    <h3 class="rubrique terrain">Les cinq terrains physiologiques — quoi travailler</h3>
+    <div class="portraits">
+        <article class="portrait terrain">
+          <h3>Hormonal<span class="surnom">« le stockage hormonal »</span></h3>
+          <dl>
+            <div>
+              <dt>Ce que ça dit</dt>
+              <dd>Les hormones — cortisol, œstrogènes, thyroïde, cycle, ménopause — pilotent le stockage. Un déséquilibre discret suffit à bloquer la perte.</dd>
+            </div>
+            <div>
+              <dt>Vous la reconnaissez</dt>
+              <dd>Périménopause ou ménopause, stockage ventre et hanches, variations d’humeur, fatigue cyclique, perte qui résiste malgré les efforts.</dd>
+            </div>
+          </dl>
+          <div class="faire">
+            <b>Ce que vous faites</b>
+            <p>Équilibrez le terrain hormonal et ciblez le ventre. Luxothérapie ciblée. Côté nutrition, régulez la glycémie et limitez les pics de sucre. Sommeil et gestion du stress : c’est le cortisol qu’on vise.</p>
+          </div>
+        </article>
+        <article class="portrait terrain">
+          <h3>Inflammatoire<span class="surnom">« le corps qui se défend »</span></h3>
+          <dl>
+            <div>
+              <dt>Ce que ça dit</dt>
+              <dd>Une inflammation silencieuse de fond : le corps stocke et retient l’eau par réflexe de protection.</dd>
+            </div>
+            <div>
+              <dt>Vous la reconnaissez</dt>
+              <dd>Rétention d’eau, ventre gonflé le matin, visage bouffi, articulations sensibles, peau réactive.</dd>
+            </div>
+          </dl>
+          <div class="faire">
+            <b>Ce que vous faites</b>
+            <p>Calmez l’inflammation et relancez l’élimination. Nutrition anti-inflammatoire : moins de sucres raffinés et d’ultra-transformés, plus d’oméga-3, de légumes et d’épices anti-inflammatoires. Drainage et bonne hydratation.</p>
+          </div>
+        </article>
+        <article class="portrait terrain">
+          <h3>Circulatoire<span class="surnom">« les fluides qui stagnent »</span></h3>
+          <dl>
+            <div>
+              <dt>Ce que ça dit</dt>
+              <dd>Une circulation paresseuse : les fluides stagnent dans le bas du corps.</dd>
+            </div>
+            <div>
+              <dt>Vous la reconnaissez</dt>
+              <dd>Jambes lourdes, gonflement du bas du corps, cellulite aqueuse, signe du godet à la cheville.</dd>
+            </div>
+          </dl>
+          <div class="faire">
+            <b>Ce que vous faites</b>
+            <p>Le drainage en priorité : pressodynamie. Nutrition : moins de sel, des aliments veinotoniques (fruits rouges), une bonne hydratation, et de la marche régulière.</p>
+          </div>
+        </article>
+        <article class="portrait terrain">
+          <h3>Métabolique Lent<span class="surnom">« le moteur au ralenti »</span></h3>
+          <dl>
+            <div>
+              <dt>Ce que ça dit</dt>
+              <dd>Un métabolisme bas qui brûle lentement, souvent avec une signature thyroïdienne discrète.</dd>
+            </div>
+            <div>
+              <dt>Vous la reconnaissez</dt>
+              <dd>Perte lente, frilosité, mains et pieds froids, coup de barre après les repas, masse musculaire à réveiller.</dd>
+            </div>
+          </dl>
+          <div class="faire">
+            <b>Ce que vous faites</b>
+            <p>Relancez le métabolisme. Électrostimulation pour réveiller la masse musculaire, rythme de séances soutenu. Nutrition : un apport suffisant en protéines, et surtout <strong>ne pas trop restreindre</strong> — le métabolisme se met alors en protection.</p>
+          </div>
+        </article>
+        <article class="portrait terrain">
+          <h3>Digestif<span class="surnom">« l’assimilation ralentie »</span></h3>
+          <dl>
+            <div>
+              <dt>Ce que ça dit</dt>
+              <dd>Digestion et élimination ralenties : le ventre gonfle.</dd>
+            </div>
+            <div>
+              <dt>Vous la reconnaissez</dt>
+              <dd>Ballonnements, transit irrégulier, lourdeur après les repas, inconfort abdominal.</dd>
+            </div>
+          </dl>
+          <div class="faire">
+            <b>Ce que vous faites</b>
+            <p>Soulagez la digestion et désengorgez. Nutrition : bien mastiquer, des repas légers et faciles à digérer, des fibres douces, une flore soutenue. Éviter les repas trop lourds le soir.</p>
+          </div>
+        </article>
+    </div>
   </section>
 
   <!-- ======================= CONTRAT ======================= -->
