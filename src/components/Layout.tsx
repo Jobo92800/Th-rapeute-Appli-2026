@@ -34,10 +34,17 @@ export default function Layout({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen">
       <aside className="hidden w-60 shrink-0 flex-col border-r border-ardoise-200 bg-white lg:flex">
         <div className="border-b border-ardoise-200 px-5 py-5">
-          <div className="text-lg font-bold tracking-tight text-marine-800">
-            MAbeauty<span className="text-rose-600">plus</span>
-          </div>
-          <div className="mt-0.5 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
+          {/*
+            Le logo vectorisé, recadré sur son contenu.
+
+            Le fichier d'origine était fait aux deux tiers de vide : le
+            dessin n'occupait qu'un tiers de la hauteur, si bien que le nom
+            restait minuscule quelle que soit la taille donnée à l'image.
+            Recadré, c'est une enseigne large — deux fois et demie plus
+            large que haute — qui remplit la barre et se lit du premier coup.
+          */}
+          <img src="/logo.svg" alt="MAbeautyplus" width={215} height={85} className="block w-full" />
+          <div className="mt-2 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
             Suivi client
           </div>
         </div>
@@ -166,9 +173,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-ardoise-200 bg-white px-5 py-3 lg:hidden">
-          <span className="text-base font-bold text-marine-800">
-            MAbeauty<span className="text-rose-600">plus</span>
-          </span>
+          <img src="/logo.svg" alt="MAbeautyplus" width={86} height={34} className="h-[34px] w-auto" />
           <span className="text-sm font-medium text-ardoise-600">
             {therapeute?.prenom ? `${therapeute.prenom} · ` : ''}
             {tousCentres ? 'Tous les centres' : centre?.nom}

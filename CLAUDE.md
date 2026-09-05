@@ -81,6 +81,13 @@ engagent — signer, valider, démarrer. Typographie **Poppins**, titres en
 maigre avec le mot important en gras. Coins généreux (cartes 16 px, boutons
 en pilule), fond blanc lavé d'un halo de teal.
 
+Le logo vectorisé est dans `public/logo.svg`, **recadré sur son contenu** :
+le fichier d'origine était fait aux deux tiers de vide, si bien que le nom
+restait minuscule quelle que soit la taille donnée à l'image. Recadré, c'est
+une enseigne large — 2,5 fois plus large que haute — qui remplit la barre
+latérale et se lit du premier coup. Si un jour vous repartez du fichier
+d'origine, pensez à refaire ce recadrage : `viewBox="5.6 41.2 107.3 42.6"`.
+
 Les noms de teintes n'ont pas changé — `marine` désigne désormais le teal,
 `ardoise` un gris qui tire vers le vert-de-gris. Changer la charte se fait
 donc dans `tailwind.config.js` et `src/index.css`, sans toucher aux écrans.
@@ -117,6 +124,7 @@ src/domain/        règles métier pures (tarification, bioportrait, jeuDuJour, 
 src/services/      accès aux données (clientes, metier, stock, parrainage, tableauDeBord, contratPdf, consentementsPdf)
 src/lib/           supabase, session
 public/guide.html  le guide des thérapeutes, servi tel quel — lien « Tuto » dans le menu
+public/logo.svg    le logo vectorisé, recadré sur son contenu
 src/pages/         Accueil, Clientes, FicheCliente, NouveauBilan, Stock, TableauDeBord, Connexion
 src/components/    bilan/, contrat/, cure/, fiche/, stock/, tableau/, Layout
 supabase/migrations/   le schéma, numéroté, à exécuter dans l'ordre
