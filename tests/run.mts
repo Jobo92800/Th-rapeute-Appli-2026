@@ -19,6 +19,7 @@ import { controlerAvoir } from './avoir.mts';
 import { controlerRecapitulatif } from './recapitulatif.mts';
 import { controlerMessages } from './messages.mts';
 import { controlerCivilite } from './civilite.mts';
+import { controlerSante } from './sante.mts';
 
 console.log('\n  MAbeautyplus V2 — contrôle des règles métier');
 
@@ -29,5 +30,6 @@ controlerAvoir();
 controlerRecapitulatif();
 controlerMessages();
 controlerCivilite();
+controlerSante();
 
 process.exit(bilan());

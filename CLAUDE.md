@@ -71,6 +71,7 @@ mensualités sont égales. Les anciennes valeurs `4x_maison` et `10x_alma` reste
 | Arrêt de cure | Une cliente qui s'arrête en route ne laisse plus une cure « en cours » éternelle. **Arrêter la cure** annule ses échéances non réglées — on ne réclame pas de l'argent pour des séances qui n'auront pas lieu — et la sort de tous les comptes. Le geste se date, s'explique, et **se défait** tant que l'avoir qu'il a créé n'a pas été dépensé. Séances, bilan et documents restent sur la fiche. |
 | Avoir | Ce que le centre doit à une cliente. Il naît d'un arrêt de cure — elle a payé plus qu'elle n'a reçu — ou d'un geste commercial. **Il ne se stocke pas, il se calcule** : on écrit des mouvements (accordé, utilisé, remboursé) et le solde est leur somme, comme le stock. Il se dépense sur une cure — il descend l'échéancier en partant de la dernière échéance, **sans toucher au montant signé** — ou se rembourse en argent. Un avoir traverse les 5 centres, comme le parrainage. Le montant proposé à l'arrêt (encaissé moins consommé) n'est jamais imposé : la thérapeute le corrige. |
 | Messages internes | Un **carnet de liaison**, pas une messagerie : pas de fil de discussion, pas de pièce jointe, rien entre thérapeutes. Deux objets qui se ressemblent et qu'il ne faut pas confondre, parce que leur état utile n'est pas le même. Une **annonce** part de la direction vers des thérapeutes : ce qu'on veut savoir, c'est **qui l'a lue**. Un **signalement** part d'une thérapeute vers la direction : ce qu'on veut savoir, c'est **où en est le traitement** (nouveau, en cours, traité, sans suite). Un statut unique pour les deux aurait obligé à répondre « traité » à une annonce. Une thérapeute ne voit pas les signalements de ses collègues — l'un d'eux peut dire « le stock que Marie a compté est faux », et ça se règle avec la direction — ni le compte de diffusion d'une annonce, qui ne regarde qu'elle. La direction, elle, voit **les prénoms** de celles qui ont lu et de celles qui n'ont pas encore ouvert : « 9 sur 13 » ne dit pas à qui en toucher un mot. |
+| Bilan santé | Quatorze questions — sept oui/non, sept champs libres — sous le BioPortrait de la fiche. Elles vivent **sur la cliente, pas sur le bilan** : un bilan est daté et fige un instant, la santé bouge, et ce qu'il faut avoir sous les yeux avant une séance c'est l'état d'aujourd'hui. **N'entre dans aucun calcul** : ni BioPortrait, ni prescription, ni prix. À ne pas confondre avec l'exception cure — ce qui doit *empêcher* un soin va en exception cure, où c'est rouge ; ici on note un contexte. « Enceinte » ne se demande pas à un monsieur. Une question sans réponse n'a pas de clé du tout : « non » et « on n'a pas demandé » ne se confondent jamais. Ce champ **ne part pas dans Airtable** — données de santé, à rouvrir seulement si la direction le demande. |
 | Suppression | **Archiver** est le geste courant : réversible, rien n'est perdu. **Supprimer** est définitif, emporte tout le dossier, exige de retaper le nom, et reste réservé à la direction. |
 
 ---
@@ -346,12 +347,12 @@ doit rester vert après toute modification.
 
 ## Banc d'essai
 
-`npm test` — **340 contrôles, à garder verts.** Ils couvrent ce qui décide
+`npm test` — **361 contrôles, à garder verts.** Ils couvrent ce qui décide
 de ce qu'une cliente paie, reçoit et se voit refuser pour raison de santé :
 tarification et échéanciers (centre et Alma), prescription et
 contre-indications, planchers des formules, BioPortrait, parrainage, stock,
 compte à rebours des compléments, contrat, décompte d'un arrêt de cure,
-accords de civilité.
+accords de civilité, bilan santé.
 
 Deux partis pris. **Aucune bibliothèque de test n'est installée** : Node
 exécute le TypeScript directement et le harnais tient en quarante lignes —
@@ -429,6 +430,7 @@ dans le dépôt, c'est se garantir qu'un jour les deux diffèrent.
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
+La **046** (le bilan santé de la fiche) attend d'être collée.
 Migrations passées jusqu'à **045** incluse, `synchro-airtable` redéployée,
 et les deux champs du récapitulatif créés dans Airtable. Vérifié le
 5 septembre 2026 depuis l'extérieur : `renvoyer_au_crm`,

@@ -65,6 +65,12 @@ export interface Cliente {
    * elle est remplie, elle s'affiche en rouge partout où la fiche paraît.
    */
   exception_cure: string;
+  /**
+   * Bilan santé complémentaire, saisi sur l'onglet BioPortrait. N'entre
+   * dans aucun calcul : ni le BioPortrait, ni la prescription, ni le prix.
+   */
+  sante: Record<string, boolean | string>;
+  sante_maj_le: string | null;
   /** La marraine, même si elle est suivie dans un autre centre. */
   parrain_id: string | null;
   /** Son nom, quand elle n'a pas de fiche (cliente de la V1). */

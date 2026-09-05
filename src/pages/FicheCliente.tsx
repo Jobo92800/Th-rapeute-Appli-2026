@@ -25,6 +25,7 @@ import { lireCliente } from '../services/clientes';
 import { bilansDeLaCliente, notesDeLaCliente } from '../services/metier';
 import OngletCoordonnees from '../components/fiche/OngletCoordonnees';
 import OngletBioPortrait from '../components/fiche/OngletBioPortrait';
+import BilanSante from '../components/fiche/BilanSante';
 import OngletProgramme from '../components/fiche/OngletProgramme';
 import OngletSeances from '../components/fiche/OngletSeances';
 import OngletMensurations from '../components/fiche/OngletMensurations';
@@ -214,7 +215,10 @@ export default function FicheCliente() {
       )}
       {!creation && onglet === 'coordonnees' && cliente && <CarteParrainage cliente={cliente} />}
       {!creation && onglet === 'bioportrait' && (
-        <OngletBioPortrait clienteId={id!} civilite={cliente!.civilite} />
+        <>
+          <OngletBioPortrait clienteId={id!} civilite={cliente!.civilite} />
+          <BilanSante cliente={cliente!} />
+        </>
       )}
       {!creation && onglet === 'programme' && (
         <OngletProgramme cliente={cliente!} centreId={centre.id} />

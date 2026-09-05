@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { declencherSynchro } from './metier';
+import { nettoyer as nettoyerSante, type Sante } from '../domain/sante';
 import type { Cliente, ClienteSaisie, Therapeute } from '../types/db';
 
 /**
@@ -165,6 +166,21 @@ function nettoyer<T extends Record<string, unknown>>(saisie: T): T {
  * qui change la façon de travailler avec cette personne. Un seul texte, qui
  * remplace le précédent — c'est l'état actuel qui compte, pas l'historique.
  */
+/**
+ * Enregistre le bilan santé de la fiche.
+ *
+ * La date d'écriture compte autant que le contenu : une santé notée il y a
+ * deux ans ne se lit pas comme une santé notée la semaine dernière.
+ */
+export async function enregistrerSante(clienteId: string, sante: Sante): Promise<void> {
+  const { error } = await supabase
+    .from('clientes')
+    .update({ sante: nettoyerSante(sante), sante_maj_le: new Date().toISOString() })
+    .eq('id', clienteId);
+
+  if (error) throw error;
+}
+
 export async function definirExceptionCure(clienteId: string, texte: string): Promise<void> {
   const { error } = await supabase
     .from('clientes')
