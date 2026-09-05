@@ -18,6 +18,7 @@ import {
   seancesDuProgramme,
   supprimerSeance,
 } from '../../services/metier';
+import { couleurSoin } from '../../domain/soins';
 import { LIBELLES_TECHNOLOGIE } from '../../domain/tarification';
 import CourbePoids, { libelleDelta } from './CourbePoids';
 import ModaleSeance from './ModaleSeance';
@@ -185,14 +186,22 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
             </p>
           ) : (
             <div className="flex flex-wrap gap-2 p-5">
+              {/*
+                La même couleur qu'en bas de page : la thérapeute voit la
+                teinte au moment de démarrer la séance, et la retrouve dans la
+                liste des séances faites. Sans ce rappel, la couleur ne serait
+                qu'une décoration à apprendre.
+              */}
               {restantes.map((s) => (
                 <button
                   key={s.technologie}
                   onClick={() => demarrer(s.technologie)}
                   className="bouton-discret"
                 >
-                  <Plus className="h-4 w-4" />
-                  {LIBELLES_TECHNOLOGIE[s.technologie]}
+                  <Plus className={`h-4 w-4 ${couleurSoin(s.technologie).texte}`} />
+                  <span className={`font-semibold ${couleurSoin(s.technologie).texte}`}>
+                    {LIBELLES_TECHNOLOGIE[s.technologie]}
+                  </span>
                   <span className="chiffres ml-1 rounded bg-ardoise-100 px-1.5 py-0.5 text-2xs font-semibold text-ardoise-600">
                     {s.seances_restantes} restantes
                   </span>
@@ -237,19 +246,20 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
               .map((s) => {
                 const jeu = bibliotheque.find((j) => j.code === s.jeu_code);
                 const delta = ecartPoids.get(s.id) ?? null;
+                const teinte = couleurSoin(s.technologie);
 
                 return (
                   <li key={s.id}>
                     <button
                       type="button"
                       onClick={() => setACorriger(s)}
-                      className="flex w-full items-start justify-between gap-4 px-5 py-3 text-left hover:bg-ardoise-50"
+                      className={`flex w-full items-start justify-between gap-4 border-l-[3px] py-3 pl-4 pr-5 text-left hover:bg-ardoise-50 ${teinte.bord}`}
                       title="Corriger cette séance"
                     >
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-ardoise-900">
                           {format(new Date(s.date_seance), 'd MMMM yyyy', { locale: fr })}
-                          <span className="ml-2 font-normal text-ardoise-500">
+                          <span className={`ml-2 font-medium ${teinte.texte}`}>
                             {LIBELLES_TECHNOLOGIE[s.technologie]}
                           </span>
                         </p>
