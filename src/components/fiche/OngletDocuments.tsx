@@ -85,7 +85,7 @@ export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
             <p className="text-xs text-ardoise-500">
               {eligibles.length > 1
                 ? 'Choisissez la cure à contractualiser, puis établissez le contrat.'
-                : 'Le contrat et les consentements sont signés au doigt, puis conservés ici.'}
+                : 'Le contrat et les consentements sont signés à l’écran, puis conservés ici.'}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">

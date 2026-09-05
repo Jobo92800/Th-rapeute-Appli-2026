@@ -29,9 +29,9 @@ const ICONES = {
 /**
  * La bulle qui montre le guide ou l'application audio.
  *
- * Elle s'ouvre pendant le rendez-vous, sur une tablette posée entre la
- * thérapeute et la cliente : d'où un panneau centré plutôt qu'une infobulle
- * accrochée à un bouton de six millimètres.
+ * Elle s'ouvre pendant le rendez-vous, sur l'écran tourné vers la cliente :
+ * d'où un panneau centré, assez grand pour se regarder à deux, plutôt qu'une
+ * infobulle accrochée à un bouton de six millimètres.
  *
  * Le visuel d'abord, les atouts en pastilles ensuite, le texte en dernier.
  * C'est l'ordre dans lequel on regarde : personne ne lit deux paragraphes

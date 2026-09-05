@@ -1,7 +1,7 @@
 import type { EtapeBareme } from '../../domain/bioportrait';
 
 /**
- * Une question du diagnostic, telle que la cliente la voit sur la tablette.
+ * Une question du diagnostic, telle que la cliente la voit à l'écran.
  *
  * Trois formes : un choix unique, une case à cocher multiple, un oui/non.
  * La différence se voit à la pastille — ronde pour un choix, carrée pour

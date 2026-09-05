@@ -12,8 +12,9 @@ interface Props {
 }
 
 /**
- * Zone de signature au doigt. Le mode plein écran existe parce que signer
- * dans un petit cadre sur tablette donne un gribouillis.
+ * Zone de signature, à la souris ou au pavé tactile. Le mode plein écran
+ * existe parce que signer dans un petit cadre donne un gribouillis — c'est
+ * vrai à la souris plus encore qu'au doigt.
  */
 const Signature = forwardRef<SignatureHandle, Props>(function Signature({ onChange }, ref) {
   const cadre = useRef<HTMLCanvasElement>(null);
