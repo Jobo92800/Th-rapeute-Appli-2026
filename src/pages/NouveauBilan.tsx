@@ -32,7 +32,7 @@ import QuestionBioPortrait from '../components/bilan/QuestionBioPortrait';
 import Progression from '../components/bilan/Progression';
 import CureEtDevis, { type PrescriptionValidee } from '../components/bilan/CureEtDevis';
 
-type Vue = 'accueil' | 'questions' | 'restitution' | 'devis' | 'fini';
+type Vue = 'accueil' | 'intro' | 'questions' | 'restitution' | 'devis' | 'fini';
 
 /** L'âge se calcule : on ne le demande pas deux fois. */
 function ageDepuis(naissance: string): string {
@@ -146,7 +146,8 @@ export default function NouveauBilan() {
 
   function precedent() {
     if (etape === 0) {
-      setVue('accueil');
+      /* La page d'intention se relit : on y revient, pas au formulaire. */
+      setVue('intro');
     } else {
       setEtape((e) => e - 1);
     }
@@ -385,7 +386,7 @@ export default function NouveauBilan() {
                 toast.error('Le nom et le prénom sont nécessaires pour commencer.');
                 return;
               }
-              setVue('questions');
+              setVue('intro');
               setEtape(0);
             }}
             className="bouton-fort mt-7"
@@ -393,6 +394,83 @@ export default function NouveauBilan() {
             Commencer le bilan
             <ArrowRight className="h-4 w-4" />
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // L'intention — la page que la cliente lit avant de répondre
+  //
+  // Elle ne fait pas partie du questionnaire : elle ne compte pas dans les
+  // étapes, on ne peut pas y répondre, et elle ne coûte pas une barre de
+  // progression qui n'avancerait pas. C'est le moment où on lui explique
+  // pourquoi sa franchise décide de ce qu'on lui proposera.
+  // -------------------------------------------------------------------------
+  if (vue === 'intro') {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <div className="carte px-7 py-9 sm:px-10">
+          <p className="text-2xs font-semibold uppercase tracking-[0.18em] text-marine-700">
+            Bilan BioPortrait
+          </p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-ardoise-900 sm:text-3xl">
+            Avant de commencer
+          </h1>
+
+          <p className="mt-5 text-[15px] leading-relaxed text-ardoise-700">
+            Vous venez de faire le premier pas, et c’est souvent le plus difficile. La suite,
+            nous la faisons avec vous.
+          </p>
+
+          <p className="mt-3 text-[15px] leading-relaxed text-ardoise-700">
+            Ce questionnaire est le cœur de la Méthode Empreinte. Vos réponses dessinent votre{' '}
+            <strong className="font-semibold text-ardoise-900">BioPortrait</strong> : votre profil
+            comportemental et votre terrain physiologique — ce qui explique pourquoi votre corps
+            réagit comme il réagit. C’est lui qui orientera tout votre accompagnement.
+          </p>
+
+          <div className="mt-7 space-y-3">
+            {[
+              {
+                titre: 'Il n’y a ni bonne ni mauvaise réponse',
+                texte:
+                  'Ce questionnaire ne vous juge pas, il vous décrit. Personne ne compare vos réponses à celles de quelqu’un d’autre.',
+              },
+              {
+                titre: 'Répondez en toute franchise',
+                texte:
+                  'C’est la première étape de votre transformation, et c’est ce qui nous permet de vous proposer ce qui vous convient vraiment — pas ce qui convient à tout le monde.',
+              },
+              {
+                titre: 'Plusieurs réponses vous ressemblent ? Choisissez la plus forte',
+                texte:
+                  'Celle qui pèse le plus dans votre quotidien. C’est votre priorité qui oriente la cure. Quand une question invite à cocher plusieurs cases, elle le dit.',
+              },
+            ].map((c, i) => (
+              <div key={c.titre} className="flex gap-4 rounded-2xl bg-marine-50/60 px-5 py-4">
+                <span className="chiffres mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-marine-600 text-xs font-bold text-white">
+                  {i + 1}
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-ardoise-900">{c.titre}</p>
+                  <p className="mt-0.5 text-[13.5px] leading-relaxed text-ardoise-600">
+                    {c.texte}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+            <button onClick={() => setVue('accueil')} className="bouton-discret">
+              Revenir
+            </button>
+            <button onClick={() => setVue('questions')} className="bouton-fort">
+              Je commence
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
     );
