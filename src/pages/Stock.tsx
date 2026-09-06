@@ -30,7 +30,7 @@ function messageErreur(e: unknown): string {
 
 export default function Stock() {
   const centre = useCentre();
-  const { therapeute, tousCentres } = useSession();
+  const { therapeute, tousCentres, role } = useSession();
   const qc = useQueryClient();
   const [ouvert, setOuvert] = useState<EtatStock | null>(null);
 
@@ -58,6 +58,25 @@ export default function Stock() {
   if (tousCentres) {
     return (
       <ChoisirUnCentre quoi="Le stock se compte rayon par rayon : chaque centre a le sien, avec ses propres entrées et sorties." />
+    );
+  }
+
+
+  /*
+    Le rayon se tient, se recommande et se compte : c'est le travail de la
+    direction, pas celui d'une thérapeute. Le lien a disparu de son menu ;
+    cette garde répond à qui taperait l'adresse à la main.
+  */
+  if (role !== 'direction') {
+    return (
+      <div className="carte px-5 py-12 text-center">
+        <h1 className="text-lg font-semibold text-ardoise-900">Stock</h1>
+        <p className="mx-auto mt-2 max-w-md text-sm text-ardoise-500">
+          Le rayon est tenu par la direction. Votre compte donne accès aux fiches, aux cures et
+          aux séances de votre centre — et la vente d'un complément décompte le rayon toute
+          seule, depuis la fiche de la cliente.
+        </p>
+      </div>
     );
   }
 

@@ -97,7 +97,7 @@ export default function TableauDeBord() {
         <h1 className="text-lg font-semibold text-ardoise-900">Tableau de bord</h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-ardoise-500">
           Les chiffres sont réservés à la direction. Votre compte donne accès aux fiches, aux
-          cures et au stock de votre centre.
+          cures et aux séances de votre centre.
         </p>
       </div>
     );

@@ -32,7 +32,7 @@ import EtatSynchro from '../components/EtatSynchro';
  * de bord — c'est une autre question, posée par quelqu'un d'autre.
  */
 export default function Accueil() {
-  const { centre, tousCentres } = useSession();
+  const { centre, tousCentres, role } = useSession();
   const perimetre = usePerimetre();
   const [relance, setRelance] = useState(false);
   const [oubli, setOubli] = useState(false);
@@ -60,7 +60,7 @@ export default function Accueil() {
   const { data: rayon = [] } = useQuery({
     queryKey: ['stock', centre?.id],
     queryFn: () => etatDuCentre(centre!.id),
-    enabled: Boolean(centre) && !tousCentres,
+    enabled: Boolean(centre) && !tousCentres && role === 'direction',
   });
 
   const { data: sync, refetch: relireSync } = useQuery({
@@ -252,8 +252,13 @@ export default function Accueil() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {/* Le stock ----------------------------------------------------- */}
-        {!tousCentres && (
+        {/*
+          Le stock ne regarde que la direction : le rayon se tient, se
+          recommande et se compte, et ce n'est pas le travail d'une
+          thérapeute. Sans ce filtre, l'accueil garderait un lien vers un
+          écran qui la refuse — le pire des deux mondes.
+        */}
+        {!tousCentres && role === 'direction' && (
           <section className="carte p-5">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-ardoise-900">
               <Package className="h-4 w-4 text-ardoise-400" />

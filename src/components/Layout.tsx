@@ -19,7 +19,7 @@ const LIENS = [
   { to: '/', libelle: 'Accueil', icone: LayoutDashboard, exact: true, direction: false },
   { to: '/clientes', libelle: 'Clientes', icone: Users, exact: false, direction: false },
   { to: '/bilan', libelle: 'Nouveau bilan', icone: Sparkles, exact: false, direction: false },
-  { to: '/stock', libelle: 'Stock', icone: Package, exact: false, direction: false },
+  { to: '/stock', libelle: 'Stock', icone: Package, exact: false, direction: true },
   { to: '/messages', libelle: 'Messages', icone: MessageSquare, exact: false, direction: false },
   // Les chiffres ne concernent pas les thérapeutes : le lien ne leur est
   // même pas montré, et la base refuserait de répondre.
