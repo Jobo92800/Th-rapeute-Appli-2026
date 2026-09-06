@@ -14,6 +14,7 @@ import ModaleArretCure from '../cure/ModaleArretCure';
 import CarteAvoir, { BoutonAvoir } from '../cure/CarteAvoir';
 import { resteAEncaisser } from '../../domain/avoir';
 import { rouvrirCure } from '../../services/avoirs';
+import { useSession } from '../../lib/session';
 import type { Cliente, Echeance, StatutEcheance } from '../../types/db';
 
 const LIBELLE_MODE: Record<string, string> = {
@@ -31,6 +32,7 @@ export default function OngletProgramme({
   centreId: string;
 }) {
   const clienteId = cliente.id;
+  const { role } = useSession();
   const qc = useQueryClient();
   const [nouvelleCure, setNouvelleCure] = useState(false);
   const [arret, setArret] = useState<ProgrammeComplet | null>(null);
@@ -204,13 +206,15 @@ export default function OngletProgramme({
                     bord.
                   </span>
                 </p>
-                <button
-                  onClick={() => rouvrir(p.id)}
-                  className="bouton-discret shrink-0 text-xs"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  Rouvrir
-                </button>
+                {role === 'direction' && (
+                  <button
+                    onClick={() => rouvrir(p.id)}
+                    className="bouton-discret shrink-0 text-xs"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Rouvrir
+                  </button>
+                )}
               </div>
             )}
 
@@ -377,7 +381,14 @@ export default function OngletProgramme({
                 })}
               </div>
 
-              {!arretee && p.origine !== 'import_v1' && (
+              {/*
+                Arrêter une cure décide d'un montant qu'on ne réclamera plus
+                et, souvent, d'un avoir. C'est une décision d'argent : elle
+                revient à la direction. La cure arrêtée reste lisible par
+                tout le monde — c'est le geste qui est réservé, pas
+                l'information.
+              */}
+              {!arretee && p.origine !== 'import_v1' && role === 'direction' && (
                 <div className="mt-4 border-t border-ardoise-100 pt-3">
                   <button
                     onClick={() =>

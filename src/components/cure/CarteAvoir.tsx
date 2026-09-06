@@ -12,6 +12,7 @@ import {
   utiliserAvoir,
 } from '../../services/avoirs';
 import { LIBELLE_SENS, avoirPosable, resteAEncaisser } from '../../domain/avoir';
+import { useSession } from '../../lib/session';
 import { formaterEuros } from '../../domain/tarification';
 import type { Echeance, Programme } from '../../types/db';
 
@@ -34,6 +35,17 @@ type Geste = null | 'utiliser' | 'rembourser' | 'accorder';
  * Un avoir vaut dans les cinq centres : c'est une dette de l'entreprise
  * envers la cliente, pas d'un centre en particulier.
  */
+/*
+  Qui fait quoi avec un avoir.
+
+  ACCORDER, DÉPENSER, REMBOURSER sont des décisions d'argent : elles
+  appartiennent à la direction, comme l'arrêt de cure qui les provoque.
+
+  LE SOLDE, LUI, SE LIT PAR TOUT LE MONDE. Ce n'est pas une décision, c'est
+  un fait : cette cliente a de l'argent chez nous. Une thérapeute qui
+  l'ignore lui réclame une échéance déjà couverte — le cacher ne protège
+  personne, ça fabrique des malentendus au comptoir.
+*/
 export default function CarteAvoir({
   clienteId,
   centreId,
@@ -45,6 +57,7 @@ export default function CarteAvoir({
   cures: { programme: Programme; echeances: Echeance[] }[];
 }) {
   const qc = useQueryClient();
+  const { role } = useSession();
   const [geste, setGeste] = useState<Geste>(null);
 
   const { data: solde } = useQuery({
@@ -92,7 +105,7 @@ export default function CarteAvoir({
         </span>
       </div>
 
-      {montantSolde > 0 && (
+      {montantSolde > 0 && role === 'direction' && (
         <div className="flex flex-wrap gap-2 border-b border-ardoise-100 px-5 py-3">
           <button onClick={() => setGeste('utiliser')} className="bouton-fort">
             Utiliser sur une cure
@@ -162,7 +175,11 @@ export function BoutonAvoir({
   centreId: string;
 }) {
   const qc = useQueryClient();
+  const { role } = useSession();
   const [ouvert, setOuvert] = useState(false);
+
+  /* Accorder un avoir est un geste commercial : il revient à la direction. */
+  if (role !== 'direction') return null;
 
   if (!ouvert) {
     return (
