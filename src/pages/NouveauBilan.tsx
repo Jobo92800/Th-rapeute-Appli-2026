@@ -6,8 +6,14 @@ import {
   ArrowRight,
   Activity,
   ChevronLeft,
-  Sparkles,
+  Clock,
+  HeartHandshake,
+  ListChecks,
   Loader2,
+  Lock,
+  ShieldCheck,
+  Sparkles,
+  Target,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ChoisirUnCentre from '../components/ChoisirUnCentre';
@@ -408,67 +414,122 @@ export default function NouveauBilan() {
   // pourquoi sa franchise décide de ce qu'on lui proposera.
   // -------------------------------------------------------------------------
   if (vue === 'intro') {
+    const questionsClient = steps.filter((e) => e.phase === 'client').length;
+
+    const consignes = [
+      {
+        icone: ShieldCheck,
+        titre: 'Il n’y a ni bonne ni mauvaise réponse',
+        texte:
+          'Ce questionnaire ne vous juge pas, il vous décrit. Personne ne compare vos réponses à celles de quelqu’un d’autre.',
+      },
+      {
+        icone: HeartHandshake,
+        titre: 'Répondez en toute franchise',
+        texte:
+          'C’est la première étape de votre transformation, et c’est ce qui nous permet de vous proposer ce qui vous convient vraiment — pas ce qui convient à tout le monde.',
+      },
+      {
+        icone: Target,
+        titre: 'Plusieurs réponses vous ressemblent ? Choisissez la plus forte',
+        texte:
+          'Celle qui pèse le plus dans votre quotidien. C’est votre priorité qui oriente la cure. Quand une question invite à cocher plusieurs cases, elle le dit.',
+      },
+    ];
+
+    const reperes = [
+      { icone: ListChecks, texte: `${questionsClient} questions` },
+      { icone: Clock, texte: 'À votre rythme' },
+      { icone: Lock, texte: 'Réservé à votre centre' },
+    ];
+
     return (
       <div className="mx-auto max-w-2xl">
-        <div className="carte px-7 py-9 sm:px-10">
-          <p className="text-2xs font-semibold uppercase tracking-[0.18em] text-marine-700">
-            Bilan BioPortrait
-          </p>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight text-ardoise-900 sm:text-3xl">
-            Avant de commencer
-          </h1>
+        <div className="carte overflow-hidden">
+          {/*
+            La couverture. C'est l'écran qu'on tourne vers la cliente : il
+            doit avoir l'air d'un début de programme, pas d'un formulaire
+            administratif. Le halo teal et le rose du logo, rien de plus —
+            la charte suffit, on n'invente pas une deuxième identité pour
+            une seule page.
+          */}
+          <div className="bg-gradient-to-br from-marine-50 via-white to-rose-50/50 px-7 py-10 text-center sm:px-12">
+            <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-marine-100">
+              <Sparkles className="h-6 w-6 text-marine-600" />
+            </span>
 
-          <p className="mt-5 text-[15px] leading-relaxed text-ardoise-700">
-            Vous venez de faire le premier pas, et c’est souvent le plus difficile. La suite,
-            nous la faisons avec vous.
-          </p>
+            <p className="mt-5 text-2xs font-semibold uppercase tracking-[0.22em] text-marine-700">
+              Bilan BioPortrait
+            </p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-ardoise-900">
+              Avant de <span className="text-marine-700">commencer</span>
+            </h1>
+            <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-ardoise-600">
+              Vous venez de faire le premier pas, et c’est souvent le plus difficile. La suite,
+              nous la faisons avec vous.
+            </p>
 
-          <p className="mt-3 text-[15px] leading-relaxed text-ardoise-700">
-            Ce questionnaire est le cœur de la Méthode Empreinte. Vos réponses dessinent votre{' '}
-            <strong className="font-semibold text-ardoise-900">BioPortrait</strong> : votre profil
-            comportemental et votre terrain physiologique — ce qui explique pourquoi votre corps
-            réagit comme il réagit. C’est lui qui orientera tout votre accompagnement.
-          </p>
-
-          <div className="mt-7 space-y-3">
-            {[
-              {
-                titre: 'Il n’y a ni bonne ni mauvaise réponse',
-                texte:
-                  'Ce questionnaire ne vous juge pas, il vous décrit. Personne ne compare vos réponses à celles de quelqu’un d’autre.',
-              },
-              {
-                titre: 'Répondez en toute franchise',
-                texte:
-                  'C’est la première étape de votre transformation, et c’est ce qui nous permet de vous proposer ce qui vous convient vraiment — pas ce qui convient à tout le monde.',
-              },
-              {
-                titre: 'Plusieurs réponses vous ressemblent ? Choisissez la plus forte',
-                texte:
-                  'Celle qui pèse le plus dans votre quotidien. C’est votre priorité qui oriente la cure. Quand une question invite à cocher plusieurs cases, elle le dit.',
-              },
-            ].map((c, i) => (
-              <div key={c.titre} className="flex gap-4 rounded-2xl bg-marine-50/60 px-5 py-4">
-                <span className="chiffres mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-marine-600 text-xs font-bold text-white">
-                  {i + 1}
+            {/*
+              Ce qui attend la cliente, en trois mots. Savoir combien de
+              questions et qu'on ne la chronomètre pas enlève l'essentiel de
+              l'appréhension — bien plus qu'une phrase rassurante de plus.
+            */}
+            <div className="mt-7 flex flex-wrap justify-center gap-2">
+              {reperes.map((r) => (
+                <span
+                  key={r.texte}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-marine-200 bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-marine-800"
+                >
+                  <r.icone className="h-3.5 w-3.5 text-marine-600" />
+                  {r.texte}
                 </span>
-                <div>
-                  <p className="text-sm font-semibold text-ardoise-900">{c.titre}</p>
-                  <p className="mt-0.5 text-[13.5px] leading-relaxed text-ardoise-600">
-                    {c.texte}
-                  </p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-            <button onClick={() => setVue('accueil')} className="bouton-discret">
-              Revenir
-            </button>
-            <button onClick={() => setVue('questions')} className="bouton-fort">
+          <div className="border-t border-ardoise-100 px-7 py-8 sm:px-12">
+            <p className="text-[15px] leading-relaxed text-ardoise-700">
+              Ce questionnaire est le cœur de la Méthode Empreinte. Vos réponses dessinent votre{' '}
+              <strong className="font-semibold text-marine-800">BioPortrait</strong> : votre profil
+              comportemental et votre terrain physiologique — ce qui explique pourquoi votre corps
+              réagit comme il réagit. C’est lui qui orientera tout votre accompagnement.
+            </p>
+
+            <p className="mt-8 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
+              Trois choses à savoir
+            </p>
+
+            <div className="mt-3 space-y-2.5">
+              {consignes.map((c) => (
+                <div
+                  key={c.titre}
+                  className="flex gap-4 rounded-2xl border border-ardoise-100 bg-white px-5 py-4"
+                >
+                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-marine-50 text-marine-700">
+                    <c.icone className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-ardoise-900">{c.titre}</p>
+                    <p className="mt-1 text-[13.5px] leading-relaxed text-ardoise-600">
+                      {c.texte}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setVue('questions')}
+              className="bouton-fort mt-8 w-full justify-center py-3 text-[15px]"
+            >
               Je commence
               <ArrowRight className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setVue('accueil')}
+              className="mt-3 w-full text-center text-xs text-ardoise-400 hover:text-ardoise-700"
+            >
+              Revenir aux coordonnées
             </button>
           </div>
         </div>
