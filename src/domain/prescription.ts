@@ -38,6 +38,12 @@ export interface LignePrescrite {
   seances: number;
   /** Null si rien ne s'y oppose. */
   contreIndication: ContreIndication | null;
+  /**
+   * Vrai quand la thérapeute a ajouté ce soin elle-même, alors que le bilan
+   * ne le proposait pas. L'écran le dit : « proposé » serait un mensonge, et
+   * la cliente doit savoir d'où vient chaque ligne de sa cure.
+   */
+  ajoute?: boolean;
 }
 
 export interface Depouillement {
@@ -188,4 +194,56 @@ export function appliquerFormule(lignes: LignePrescrite[], facteur: number): Lig
 /** Ce qui reste après les contre-indications : la cure réellement faisable. */
 export function lignesRetenues(lignes: LignePrescrite[]): LignePrescrite[] {
   return lignes.filter((l) => l.contreIndication !== 'rem' && l.seances > 0);
+}
+
+/*
+  AJOUTER UN SOIN QUE LE BILAN N'A PAS PROPOSÉ.
+
+  Le barème décide de ce qui est prescrit, et il a raison le plus souvent.
+  Mais il ne voit que les réponses : une cliente peut dire en s'asseyant
+  quelque chose qu'aucune question n'a posé. La thérapeute doit pouvoir
+  ajouter le soin correspondant.
+
+  UNE SEULE CHOSE RESTE INTERDITE : un soin retiré par une réponse de santé.
+  Celui-là n'est pas « non proposé », il est contre-indiqué — et aucune
+  conversation au comptoir ne doit pouvoir le remettre. C'est la seule ligne
+  que ce module ne laisse pas franchir.
+
+  Un soin sous « avis médical » reste ajoutable : il l'était déjà quand le
+  bilan le proposait, et la mise en garde s'affiche de la même façon.
+*/
+
+export const PRESTATIONS_CURE: Prestation[] = ['LUXO', 'RELAX', 'ISHAPE', 'PRESSO'];
+
+/** Ce qu'on met dans un soin ajouté à la main : le plancher de sa formule. */
+export function seancesALAjout(presta: Prestation): number {
+  return presta === 'LUXO' ? PLANCHER_LUXO : PLANCHER_AUTRES;
+}
+
+/**
+ * Les soins absents de la cure et qu'on peut y ajouter.
+ *
+ * Absents veut dire « pas dans la liste » : un soin déjà présent, même
+ * ramené à zéro séance, ne se propose pas à l'ajout — il se remonte avec
+ * son bouton plus.
+ */
+export function prestationsAjoutables(
+  d: Depouillement,
+  cure: LignePrescrite[],
+): Prestation[] {
+  const presentes = new Set(cure.map((l) => l.presta));
+  return PRESTATIONS_CURE.filter(
+    (p) => !presentes.has(p) && d.contreIndications[p] !== 'rem',
+  );
+}
+
+/** La ligne d'un soin ajouté à la main, prête à rejoindre la cure. */
+export function ligneAjoutee(d: Depouillement, presta: Prestation): LignePrescrite {
+  return {
+    presta,
+    niveau: 'prop',
+    seances: seancesALAjout(presta),
+    contreIndication: d.contreIndications[presta] ?? null,
+    ajoute: true,
+  };
 }

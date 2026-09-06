@@ -6,8 +6,10 @@ import BulleInclus from './BulleInclus';
 import {
   LIBELLES_NIVEAU,
   appliquerFormule,
+  ligneAjoutee,
   lignesRetenues,
   prescrire,
+  prestationsAjoutables,
   type Depouillement,
   type LignePrescrite,
 } from '../../domain/prescription';
@@ -93,6 +95,12 @@ export default function CureEtDevis({
   const formules = bareme.FORMULAS ?? [];
   const [formule, setFormule] = useState(1);
   const [ajusts, setAjusts] = useState<Partial<Record<Prestation, number>>>({});
+  /*
+    Les soins ajoutés à la main, que le bilan ne proposait pas. Ils vivent à
+    part de la prescription : changer de formule ne doit pas les rogner —
+    ils ne viennent pas du barème, ils viennent d'une décision.
+  */
+  const [ajoutes, setAjoutes] = useState<Prestation[]>([]);
   const [methode, setMethode] = useState<'centre' | 'alma'>('centre');
   const [nEcheances, setNEcheances] = useState(4);
   /*
@@ -115,13 +123,18 @@ export default function CureEtDevis({
   const base = useMemo(() => prescrire(bareme, depouillement), [bareme, depouillement]);
 
   /** La cure telle qu'elle est à cet instant : formule, puis ajustements. */
-  const cure: LignePrescrite[] = useMemo(
-    () =>
-      appliquerFormule(base, formule).map((l) =>
-        ajusts[l.presta] != null ? { ...l, seances: ajusts[l.presta]! } : l,
-      ),
-    [base, formule, ajusts],
-  );
+  const cure: LignePrescrite[] = useMemo(() => {
+    const prescrites = appliquerFormule(base, formule);
+    const supplementaires = ajoutes
+      .filter((p) => !prescrites.some((l) => l.presta === p))
+      .map((p) => ligneAjoutee(depouillement, p));
+
+    return [...prescrites, ...supplementaires].map((l) =>
+      ajusts[l.presta] != null ? { ...l, seances: ajusts[l.presta]! } : l,
+    );
+  }, [base, formule, ajusts, ajoutes, depouillement]);
+
+  const ajoutables = useMemo(() => prestationsAjoutables(depouillement, cure), [depouillement, cure]);
 
   const retenues = lignesRetenues(cure);
   const totalSeances = retenues.reduce((n, l) => n + l.seances, 0);
@@ -261,6 +274,15 @@ export default function CureEtDevis({
                       <Stethoscope className="h-3 w-3" />
                       Avis médical
                     </span>
+                  ) : l.ajoute ? (
+                    /*
+                      « Proposé » serait un mensonge : le bilan ne l'a pas
+                      proposé, la thérapeute l'a ajouté. La cliente doit
+                      pouvoir savoir d'où vient chaque ligne de sa cure.
+                    */
+                    <span className="rounded-full bg-marine-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-marine-800">
+                      Ajouté
+                    </span>
                   ) : (
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${COULEUR_NIVEAU[l.niveau]}`}
@@ -314,6 +336,34 @@ export default function CureEtDevis({
             </div>
           );
         })}
+
+        {/*
+          Ajouter un soin que le bilan n'a pas proposé.
+
+          Le barème ne voit que les réponses : une cliente peut dire en
+          s'asseyant quelque chose qu'aucune question n'a posé. Ces boutons
+          n'apparaissent qu'en modification — l'écran présenté à la cliente
+          ne doit pas ressembler à une carte de restaurant.
+
+          Un soin retiré par une réponse de santé n'y figure jamais : celui-là
+          n'est pas « non proposé », il est contre-indiqué.
+        */}
+        {edition && ajoutables.length > 0 && (
+          <div className="mt-1 flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-ardoise-300 px-4 py-3">
+            <span className="text-xs text-ardoise-500">Ajouter un soin non proposé :</span>
+            {ajoutables.map((presta) => (
+              <button
+                key={presta}
+                type="button"
+                onClick={() => setAjoutes((a) => [...a, presta])}
+                className="inline-flex items-center gap-1.5 rounded-full border border-marine-300 bg-white px-3 py-1 text-xs font-semibold text-marine-700 hover:bg-marine-50"
+              >
+                <Plus className="h-3 w-3" />
+                {bareme.PRESTA?.[presta]?.n ?? LIBELLES_TECHNOLOGIE[TECHNO[presta]]}
+              </button>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Les formules --------------------------------------------------- */}

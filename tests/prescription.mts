@@ -12,9 +12,12 @@ import type { Bareme, Prestation } from '../src/domain/bioportrait.ts';
 import {
   appliquerFormule,
   depouiller,
+  ligneAjoutee,
   lignesRetenues,
   palier,
   prescrire,
+  prestationsAjoutables,
+  seancesALAjout,
 } from '../src/domain/prescription.ts';
 
 /** Le barème tel qu'il est réellement livré en base, pas une copie d'essai. */
@@ -158,4 +161,58 @@ export function controlerPrescription() {
       egal(`${p} à ${seuil.min} points → ${seuil.s} séances`, trouve.s, seuil.s);
     }
   }
+
+  section('Ajouter un soin que le bilan n’a pas proposé');
+
+  /*
+    Le barème ne voit que les réponses. Une cliente peut dire en s'asseyant
+    quelque chose qu'aucune question n'a posé, et la thérapeute doit pouvoir
+    ajouter le soin. Ce qui suit vérifie surtout la seule chose qui reste
+    interdite.
+  */
+  const rien = depouiller(bareme, {});
+  const cureVide = prescrire(bareme, rien).filter((l) => l.presta === 'LUXO');
+
+  verifie(
+    'les soins absents de la cure sont proposés à l’ajout',
+    ['RELAX', 'ISHAPE', 'PRESSO'].every((p) =>
+      prestationsAjoutables(rien, cureVide).includes(p as never),
+    ),
+  );
+  verifie(
+    'un soin déjà présent ne se propose pas deux fois',
+    !prestationsAjoutables(rien, cureVide).includes('LUXO' as never),
+  );
+
+  /*
+    LA RÈGLE QUI PROTÈGE. Un soin retiré par une réponse de santé n'est pas
+    « non proposé », il est contre-indiqué : aucune conversation au comptoir
+    ne doit pouvoir le remettre. Si ce contrôle tombe, une cliente
+    épileptique peut se voir vendre de la luxothérapie.
+  */
+  const interdits = depouiller(bareme, {});
+  interdits.contreIndications.ISHAPE = 'rem';
+  verifie(
+    'un soin contre-indiqué ne s’ajoute jamais',
+    !prestationsAjoutables(interdits, cureVide).includes('ISHAPE' as never),
+  );
+
+  /* Un avis médical n'interdit pas : il accompagne. */
+  const surveille = depouiller(bareme, {});
+  surveille.contreIndications.PRESSO = 'med';
+  verifie(
+    'un soin sous avis médical reste ajoutable',
+    prestationsAjoutables(surveille, cureVide).includes('PRESSO' as never),
+  );
+  egal(
+    'et il garde sa mise en garde une fois ajouté',
+    ligneAjoutee(surveille, 'PRESSO').contreIndication,
+    'med',
+  );
+
+  section('Ce qu’on met dans un soin ajouté');
+
+  egal('la luxothérapie démarre à son plancher', seancesALAjout('LUXO'), 10);
+  egal('les autres au leur', seancesALAjout('ISHAPE'), 4);
+  verifie('la ligne se dit ajoutée', ligneAjoutee(rien, 'RELAX').ajoute === true);
 }
