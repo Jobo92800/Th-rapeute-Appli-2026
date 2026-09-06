@@ -8,6 +8,26 @@
 */
 
 -- ---------------------------------------------------------------------------
+-- 0. Couper les liens morts
+--
+--    Un compte supprimé puis recréé — ce qui arrive dès qu'on « refait » un
+--    compte pour changer un mot de passe — porte un identifiant neuf. La
+--    fiche, elle, pointe encore sur l'ancien, qui n'existe plus.
+--
+--    Sans cette étape, la fiche était bloquée : l'étape 1 ne la rattrape que
+--    si l'adresse correspond au caractère près, et l'étape 2 ne s'occupe que
+--    des fiches sans compte du tout. Une fiche au lien mort ET à l'adresse
+--    approximative n'était donc réparable par rien.
+--
+--    On remet le lien à zéro, et les deux étapes suivantes font leur travail.
+-- ---------------------------------------------------------------------------
+
+UPDATE therapeutes t
+SET user_id = NULL
+WHERE t.user_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM auth.users u WHERE u.id = t.user_id);
+
+-- ---------------------------------------------------------------------------
 -- 1. Rattachement sur l'email exact
 -- ---------------------------------------------------------------------------
 
@@ -46,7 +66,11 @@ SELECT
   t.prenom,
   t.email,
   t.role,
-  CASE WHEN t.user_id IS NULL THEN 'COMPTE À CRÉER' ELSE 'peut se connecter' END AS statut
+  CASE
+    WHEN t.user_id IS NULL THEN 'COMPTE À CRÉER'
+    WHEN NOT t.actif       THEN 'FICHE INACTIVE — elle se connecte, l''application reste vide'
+    ELSE 'peut se connecter'
+  END AS statut
 FROM therapeutes t
 LEFT JOIN centres c ON c.id = t.centre_id
 ORDER BY (t.user_id IS NOT NULL), c.nom NULLS FIRST, t.ordre;
