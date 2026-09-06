@@ -36,13 +36,26 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
   const qc = useQueryClient();
   const [aCorriger, setACorriger] = useState<Seance | null>(null);
   const [enCours, setEnCours] = useState<Seance | null>(null);
+  const [cureChoisie, setCureChoisie] = useState<string | null>(null);
 
   const { data: programmes = [], isLoading } = useQuery({
     queryKey: ['programmes', clienteId],
     queryFn: () => programmesDeLaCliente(clienteId),
   });
 
-  const actif = programmes.filter((p) => p.programme.statut !== 'abandonne').at(-1) ?? null;
+  /*
+    Une cliente qui revient a plusieurs cures, et ses séances vivent sous
+    celle à laquelle elles appartiennent. Sans sélecteur, l'ouverture d'une
+    cure 2 faisait disparaître de l'écran toutes les séances de la cure 1 :
+    elles étaient bien là, mais plus personne ne pouvait les voir.
+
+    Par défaut on montre la dernière — c'est celle qui se déroule — et la
+    thérapeute peut remonter. Le même geste que sur l'onglet Contrat, où
+    elle choisit déjà la cure à contractualiser.
+  */
+  const eligibles = programmes.filter((p) => p.programme.statut !== 'abandonne');
+  const actif =
+    eligibles.find((p) => p.programme.id === cureChoisie) ?? eligibles.at(-1) ?? null;
 
   const { data: seances = [] } = useQuery({
     queryKey: ['seances', actif?.programme.id],
@@ -173,16 +186,56 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
         />
       ) : (
         <section className="carte">
-          <div className="flex items-center justify-between border-b border-ardoise-100 px-5 py-3.5">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ardoise-100 px-5 py-3.5">
             <h2 className="text-sm font-semibold text-ardoise-900">Démarrer une séance</h2>
-            <span className="chiffres text-xs text-ardoise-500">
-              {totaux.faites} / {totaux.prevues} séances réalisées
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              {/*
+                Un bouton par cure plutôt qu'un menu déroulant : à deux ou
+                trois cures, le menu cachait le choix — il fallait l'ouvrir
+                pour savoir qu'il y avait autre chose. Les numéros se voient
+                sans rien ouvrir, et la cure regardée se lit d'un coup d'œil.
+                La date passe en infobulle : elle départage deux cures d'une
+                même année sans encombrer la ligne.
+              */}
+              {eligibles.length > 1 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
+                    Cure
+                  </span>
+                  {eligibles.map((p) => {
+                    const choisie = p.programme.id === actif.programme.id;
+                    return (
+                      <button
+                        key={p.programme.id}
+                        type="button"
+                        onClick={() => setCureChoisie(p.programme.id)}
+                        aria-pressed={choisie}
+                        title={
+                          p.programme.date_validation
+                            ? `Cure ${p.programme.numero} — validée le ${format(new Date(p.programme.date_validation), 'd MMMM yyyy', { locale: fr })}`
+                            : `Cure ${p.programme.numero}`
+                        }
+                        className={`chiffres h-7 w-7 rounded-full border text-xs font-bold transition-colors ${
+                          choisie
+                            ? 'border-marine-600 bg-marine-600 text-white'
+                            : 'border-ardoise-300 bg-white text-ardoise-600 hover:border-marine-400'
+                        }`}
+                      >
+                        {p.programme.numero}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <span className="chiffres text-xs text-ardoise-500">
+                {totaux.faites} / {totaux.prevues} séances réalisées
+              </span>
+            </div>
           </div>
 
           {restantes.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-ardoise-500">
-              Toutes les séances de cette cure ont été réalisées.
+              Toutes les séances de la cure {actif.programme.numero} ont été réalisées.
             </p>
           ) : (
             <div className="flex flex-wrap gap-2 p-5">
@@ -232,7 +285,14 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
       {/* Historique ------------------------------------------------------ */}
       <section className="carte">
         <div className="border-b border-ardoise-100 px-5 py-3.5">
-          <h2 className="text-sm font-semibold text-ardoise-900">Séances réalisées</h2>
+          <h2 className="text-sm font-semibold text-ardoise-900">
+          Séances réalisées
+          {eligibles.length > 1 && (
+            <span className="ml-2 font-normal text-ardoise-500">
+              — cure {actif.programme.numero}
+            </span>
+          )}
+        </h2>
         </div>
 
         {seances.filter((s) => s.cloturee).length === 0 ? (
