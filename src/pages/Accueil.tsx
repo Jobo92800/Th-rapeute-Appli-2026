@@ -60,7 +60,7 @@ export default function Accueil() {
   const { data: rayon = [] } = useQuery({
     queryKey: ['stock', centre?.id],
     queryFn: () => etatDuCentre(centre!.id),
-    enabled: Boolean(centre) && !tousCentres,
+    enabled: Boolean(centre) && !tousCentres && role === 'direction',
   });
 
   const { data: sync, refetch: relireSync } = useQuery({
@@ -253,13 +253,17 @@ export default function Accueil() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         {/*
-          Tenir le rayon revient à la direction, mais SAVOIR qu'une boîte
-          manque regarde tout le monde : c'est la thérapeute qui a la cliente
-          en face d'elle. Elle voit donc l'alerte, sans le lien vers un écran
-          qui la refuserait — et on lui dit quoi en faire, puisqu'elle ne
-          peut pas commander elle-même.
+          Le rayon est affaire de direction, alerte comprise. On a essayé de
+          laisser l'alerte aux thérapeutes, sans le lien : regardée à
+          l'écran, elle n'apportait rien — elles ne peuvent pas commander, et
+          une information sur laquelle on ne peut rien agir n'est pas une
+          information, c'est du bruit dans l'écran du matin.
+
+          Elle n'apparaît pas non plus sur « Tous les centres » : le rayon se
+          tient centre par centre, et additionner cinq étagères ne dit rien
+          d'utile.
         */}
-        {!tousCentres && (
+        {!tousCentres && role === 'direction' && (
           <section className="carte p-5">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-ardoise-900">
               <Package className="h-4 w-4 text-ardoise-400" />
@@ -285,22 +289,13 @@ export default function Accueil() {
               </ul>
             )}
 
-            {role === 'direction' ? (
-              <Link
-                to="/stock"
-                className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-marine-700 hover:text-marine-800"
-              >
-                Voir le stock
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            ) : (
-              alertesStock.length > 0 && (
-                <p className="mt-3 text-xs text-ardoise-500">
-                  Le réapprovisionnement est tenu par la direction — signalez-le-lui dans
-                  Messages si elle ne l’a pas vu.
-                </p>
-              )
-            )}
+            <Link
+              to="/stock"
+              className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-marine-700 hover:text-marine-800"
+            >
+              Voir le stock
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </section>
         )}
 
