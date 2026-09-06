@@ -53,6 +53,21 @@ export async function etatDuCentre(centreId: string): Promise<EtatStock[]> {
   return (data ?? []) as EtatStock[];
 }
 
+/**
+ * L'état du rayon des cinq centres, pour la vue d'ensemble de la direction.
+ *
+ * On ne fait aucune addition : cinq étagères qui totalisent douze boîtes ne
+ * disent pas où il en manque. Les lignes reviennent brutes, le centre est
+ * porté par chacune, et c'est l'écran qui les range centre par centre. La
+ * règle de sécurité fait le tri : une thérapeute ne verra jamais que le sien.
+ */
+export async function etatDeTousLesCentres(): Promise<EtatStock[]> {
+  const { data, error } = await supabase.from('etat_stock').select('*').order('ordre');
+
+  if (error) throw error;
+  return (data ?? []) as EtatStock[];
+}
+
 export async function mouvementsDuCentre(centreId: string, limite = 100): Promise<MouvementDetaille[]> {
   const { data, error } = await supabase
     .from('mouvements_stock')

@@ -18,10 +18,11 @@ import { usePerimetre, useSession } from '../lib/session';
 import { listerClientes } from '../services/clientes';
 import { etatSynchro, oublierErreursSynchro, relancerSynchro } from '../services/metier';
 import { aEncaisser, aRenouveler, seancesDuJour } from '../services/journee';
-import { etatDuCentre } from '../services/stock';
+import { etatDeTousLesCentres, etatDuCentre } from '../services/stock';
 import { libelleFinDeCure, niveauStock } from '../domain/stock';
 import { formaterEuros } from '../domain/tarification';
 import EtatSynchro from '../components/EtatSynchro';
+import type { EtatStock } from '../types/db';
 
 /**
  * L'écran du matin.
@@ -32,7 +33,7 @@ import EtatSynchro from '../components/EtatSynchro';
  * de bord — c'est une autre question, posée par quelqu'un d'autre.
  */
 export default function Accueil() {
-  const { centre, tousCentres, role } = useSession();
+  const { centre, centresAccessibles, tousCentres, role } = useSession();
   const perimetre = usePerimetre();
   const [relance, setRelance] = useState(false);
   const [oubli, setOubli] = useState(false);
@@ -63,6 +64,12 @@ export default function Accueil() {
     enabled: Boolean(centre) && !tousCentres && role === 'direction',
   });
 
+  const { data: rayonPartout = [] } = useQuery({
+    queryKey: ['stock', 'tous'],
+    queryFn: etatDeTousLesCentres,
+    enabled: tousCentres && role === 'direction',
+  });
+
   const { data: sync, refetch: relireSync } = useQuery({
     queryKey: ['sync-etat'],
     queryFn: etatSynchro,
@@ -72,9 +79,22 @@ export default function Accueil() {
   const debutMois = startOfMonth(new Date());
   const ceMois = clientes.filter((c) => new Date(c.cree_le) >= debutMois).length;
   const duJour = echeances.reduce((n, e) => n + e.montant, 0);
-  const alertesStock = rayon.filter(
-    (l) => niveauStock(l.quantite, l.seuil_bas, l.seuil_critique) !== 'ok',
-  );
+  const sousLeSeuil = (l: EtatStock) =>
+    niveauStock(l.quantite, l.seuil_bas, l.seuil_critique) !== 'ok';
+  const alertesStock = rayon.filter(sousLeSeuil);
+
+  /*
+    La vue d'ensemble range les manques par centre plutôt que de les
+    additionner : ce qu'on veut savoir, ce n'est pas « combien de boîtes
+    manquent en tout », c'est « lequel des cinq centres faut-il réapprovisionner ».
+    Les centres sont tous listés, même ceux qui n'ont rien à recommander —
+    un centre absent se lirait comme un centre oublié.
+  */
+  const manquesParCentre = centresAccessibles.map((c) => ({
+    centre: c,
+    lignes: rayonPartout.filter((l) => l.centre_id === c.id && sousLeSeuil(l)),
+  }));
+  const centresEnManque = manquesParCentre.filter((m) => m.lignes.length > 0).length;
 
   return (
     <div className="space-y-6">
@@ -259,9 +279,10 @@ export default function Accueil() {
           une information sur laquelle on ne peut rien agir n'est pas une
           information, c'est du bruit dans l'écran du matin.
 
-          Elle n'apparaît pas non plus sur « Tous les centres » : le rayon se
-          tient centre par centre, et additionner cinq étagères ne dit rien
-          d'utile.
+          Sur « Tous les centres », elle prend une autre forme : un
+          récapitulatif rangé centre par centre, jamais une addition. Cinq
+          étagères qui totalisent douze boîtes ne disent pas laquelle est
+          vide ; ce qu'on veut savoir, c'est où réapprovisionner.
         */}
         {!tousCentres && role === 'direction' && (
           <section className="carte p-5">
@@ -296,6 +317,55 @@ export default function Accueil() {
               Voir le stock
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
+          </section>
+        )}
+
+        {tousCentres && role === 'direction' && (
+          <section className="carte p-5 lg:col-span-2">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-ardoise-900">
+                <Package className="h-4 w-4 text-ardoise-400" />
+                Stock à recommander
+              </h2>
+              <p className="text-xs text-ardoise-500">
+                {centresEnManque === 0
+                  ? 'Les cinq rayons sont fournis'
+                  : `${centresEnManque} centre${centresEnManque > 1 ? 's' : ''} à réapprovisionner`}
+              </p>
+            </div>
+
+            <div className="mt-3 grid gap-x-6 gap-y-4 sm:grid-cols-2">
+              {manquesParCentre.map(({ centre: c, lignes }) => (
+                <div key={c.id}>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-ardoise-500">
+                    {c.nom}
+                  </h3>
+
+                  {lignes.length === 0 ? (
+                    <p className="mt-1 text-sm text-ardoise-400">Aucun produit sous son seuil.</p>
+                  ) : (
+                    <ul className="mt-1 space-y-1">
+                      {lignes.map((l) => (
+                        <li key={l.produit_id} className="flex justify-between text-sm">
+                          <span className="truncate text-ardoise-700">{l.nom}</span>
+                          <span
+                            className={`chiffres shrink-0 font-semibold ${
+                              l.quantite <= l.seuil_critique ? 'text-rose-700' : 'text-amber-700'
+                            }`}
+                          >
+                            {l.quantite}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-4 text-xs text-ardoise-500">
+              Pour compter un rayon ou saisir une réception, choisissez le centre en bas à gauche.
+            </p>
           </section>
         )}
 
