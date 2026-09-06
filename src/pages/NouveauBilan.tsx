@@ -489,7 +489,7 @@ export default function NouveauBilan() {
 
           <div className="border-t border-ardoise-100 px-7 py-8 sm:px-12">
             <p className="text-[15px] leading-relaxed text-ardoise-700">
-              Ce questionnaire est le cœur de la Méthode Empreinte. Vos réponses dessinent votre{' '}
+              Ce questionnaire est le cœur de la méthode MAbeautyplus. Vos réponses dessinent votre{' '}
               <strong className="font-semibold text-marine-800">BioPortrait</strong> : votre profil
               comportemental et votre terrain physiologique — ce qui explique pourquoi votre corps
               réagit comme il réagit. C’est lui qui orientera tout votre accompagnement.

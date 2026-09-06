@@ -18,7 +18,7 @@ l'accompagnement.
 
 Le diagnostic s'appelait « Empreinte » jusqu'au 2 septembre 2026. **Le mot
 visible est désormais « BioPortrait »** — écrans, contrat, guide des
-thérapeutes. La *méthode*, elle, reste la Méthode Empreinte. Les noms
+thérapeutes. La *méthode* s'appelait « Méthode Empreinte » et le reste dans le code — c'est le nom du moteur de prix, par exemple. **Devant la cliente, on dit « la méthode MAbeautyplus »** : la page d'intention du bilan est le seul endroit où elle est nommée, et c'est la marque qu'on met en avant, pas un nom interne. Les noms
 techniques n'ont pas suivi et c'est délibéré : la table s'appelle toujours
 `bareme_empreinte`, les colonnes `profil_dominant`, et les champs Airtable
 `Profil Empreinte` / `Terrain Empreinte`. Les renommer imposerait de
