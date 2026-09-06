@@ -11,10 +11,14 @@ import {
   renvoyerInvitationParcours,
 } from '../../services/metier';
 import { laCliente, majuscule } from '../../domain/civilite';
-import { PARCOURS, libelleParcours, type CodeParcours } from '../../domain/parcoursAudio';
+import {
+  ADRESSE_PARCOURS,
+  ADRESSE_PARCOURS_DITE,
+  PARCOURS,
+  libelleParcours,
+  type CodeParcours,
+} from '../../domain/parcoursAudio';
 import type { Cliente } from '../../types/db';
-
-const ADRESSE = 'https://applipodcast.netlify.app';
 
 /**
  * L'accès de la cliente à l'application Mon Parcours.
@@ -206,12 +210,12 @@ export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
                 Renvoyer l'invitation
               </button>
               <a
-                href={ADRESSE}
+                href={ADRESSE_PARCOURS}
                 target="_blank"
                 rel="noreferrer noopener"
                 className="text-xs text-marine-700 underline hover:text-marine-900"
               >
-                {ADRESSE.replace('https://', '')}
+                {ADRESSE_PARCOURS_DITE}
               </a>
             </div>
 

@@ -4,7 +4,12 @@ import toast from 'react-hot-toast';
 import Signature, { type SignatureHandle } from './Signature';
 import { ENGAGEMENTS, construireContrat, type ContractData } from '../../domain/contrat';
 import { laCliente, majuscule, pronom } from '../../domain/civilite';
-import { PARCOURS, libelleParcours, type CodeParcours } from '../../domain/parcoursAudio';
+import {
+  ADRESSE_PARCOURS_DITE,
+  PARCOURS,
+  libelleParcours,
+  type CodeParcours,
+} from '../../domain/parcoursAudio';
 import {
   MOT_DE_PASSE_MIN,
   donnerAccesParcours,
@@ -518,7 +523,7 @@ export default function ModaleContrat({
                     />
                     <p className="mt-1.5 text-xs text-ardoise-500">
                       {motDePasse.length >= MOT_DE_PASSE_MIN
-                        ? `${cliente.prenom} pourra se connecter tout de suite sur applipodcast.netlify.app avec ${cliente.email}. Notez-lui ce mot de passe, ${pronom(cliente.civilite)} pourra le changer ensuite.`
+                        ? `${cliente.prenom} pourra se connecter tout de suite sur ${ADRESSE_PARCOURS_DITE} avec ${cliente.email}. Notez-lui ce mot de passe, ${pronom(cliente.civilite)} pourra le changer ensuite.`
                         : `Laissez vide pour lui envoyer une invitation par email à la place — plus fragile, le lien expire au bout de 24 h.`}
                     </p>
                   </div>

@@ -16,6 +16,21 @@
   l'affichent tel quel, et le choix ne le propose plus.
 */
 
+/*
+  L'adresse du site, écrite ici et nulle part ailleurs.
+
+  Elle vivait en double — sur la fiche et dans la fenêtre de signature — et
+  les deux disaient encore `applipodcast.netlify.app` le jour où le vrai nom
+  est arrivé. Une adresse recopiée est une adresse qui finit par diverger.
+
+  Il n'y a pas de lien personnel : le site est le même pour toutes les
+  clientes, ce qui est personnel c'est le compte.
+*/
+export const ADRESSE_PARCOURS = 'https://parcours.mabeautyplus.fr';
+
+/** Sans le protocole : ce qu'on dicte à une cliente, pas ce qu'on clique. */
+export const ADRESSE_PARCOURS_DITE = 'parcours.mabeautyplus.fr';
+
 export type CodeParcours = 'B' | 'C';
 
 export const PARCOURS: { code: CodeParcours; libelle: string }[] = [
