@@ -83,7 +83,16 @@ export default function OngletCoordonnees({ centreId, cliente }: Props) {
       source: cliente.source ?? '',
       therapeutes: cliente.therapeutes,
     });
-  }, [cliente]);
+    /*
+      On ne se recale que sur ce qui a vraiment été enregistré, jamais sur la
+      simple arrivée d'une réponse du serveur. La fiche est rechargée par
+      quantité de gestes voisins — une note écrite, un bilan santé
+      enregistré, un accès audio donné — et chacun rend un objet neuf. Se
+      recaler dessus effacerait sous les doigts ce que la thérapeute est en
+      train de taper.
+    */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cliente?.id, cliente?.maj_le]);
 
   // L'âge se déduit de la date de naissance : jamais saisi deux fois.
   const age = useMemo(() => {

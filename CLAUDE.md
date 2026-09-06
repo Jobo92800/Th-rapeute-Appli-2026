@@ -365,6 +365,20 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   s'affichait comme « aucun message ». Tout écran qui liste doit distinguer
   les trois états — chargement, erreur, vraiment vide — et l'erreur doit
   montrer le message brut : c'est lui qui nomme la cause.
+- **Un formulaire qui se vide au changement d'onglet.** Supabase rafraîchit
+  le jeton quand on revient sur l'onglet et signale un changement de
+  session : le fournisseur reçoit un **objet neuf pour la même personne**.
+  L'effet qui charge le profil en dépendait, se relançait, repassait en
+  `chargement` — et l'application montrait son écran d'attente, ce qui
+  **démonte tout l'arbre React**. Un bilan à moitié rempli repartait de
+  zéro, sans que rien n'explique pourquoi. Il dépend désormais de
+  l'**identifiant** de la personne, qu'un jeton rafraîchi ne change pas.
+  Règle générale : ne jamais faire dépendre un effet de l'objet session, ni
+  d'un objet rendu par une requête — leur identité change sans que rien
+  n'ait changé. Même piège pour les formulaires qui se recalent sur des
+  données serveur : `[cliente]` se déclenche à chaque rechargement de la
+  fiche, `[cliente.id, cliente.maj_le]` seulement quand l'enregistrement a
+  vraiment bougé.
 - **Doublons Airtable.** Le parcours du bilan enchaîne trois écritures ;
   sans verrou, trois synchros parallèles créaient trois fiches. Réglé par
   `reclamer_taches_airtable` (SKIP LOCKED), un verrou par cliente et un

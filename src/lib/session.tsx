@@ -42,8 +42,26 @@ export function FournisseurSession({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  /*
+    LE PIÈGE DU CHANGEMENT D'ONGLET.
+
+    Supabase rafraîchit le jeton quand on revient sur l'onglet, et signale un
+    changement de session : `setSession` reçoit alors un objet NEUF, pour la
+    même personne connectée.
+
+    Cet effet dépendait de cet objet. Il se relançait donc à chaque retour
+    d'onglet, repassait en `chargement`, et l'application montrait son écran
+    d'attente — ce qui démonte tout l'arbre React. Au retour, tout était
+    reconstruit à neuf : un bilan à moitié rempli repartait de zéro.
+
+    Il dépend maintenant de l'IDENTIFIANT de la personne. Un jeton rafraîchi
+    ne change pas d'identifiant : l'effet ne bouge plus. Seuls une connexion
+    et une déconnexion le relancent, ce qui est exactement son travail.
+  */
+  const utilisateurId = session?.user.id ?? null;
+
   useEffect(() => {
-    if (!session) {
+    if (!utilisateurId) {
       setTherapeute(null);
       setCentres([]);
       setCentreId(null);
@@ -59,7 +77,7 @@ export function FournisseurSession({ children }: { children: ReactNode }) {
       const { data: personne } = await supabase
         .from('therapeutes')
         .select('*')
-        .eq('user_id', session.user.id)
+        .eq('user_id', utilisateurId)
         .maybeSingle();
 
       // Les policies filtrent déjà : une thérapeute ne verra que son centre.
@@ -91,7 +109,7 @@ export function FournisseurSession({ children }: { children: ReactNode }) {
     return () => {
       annule = true;
     };
-  }, [session]);
+  }, [utilisateurId]);
 
   const valeur = useMemo<EtatSession>(() => {
     const estDirection = therapeute?.role === 'direction';
