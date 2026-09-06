@@ -326,11 +326,16 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   25 Ko à 301 Ko, pour un fichier que chaque cliente reçoit et qu'Airtable
   conserve. En JPEG, 46 Ko, et rien ne se voit puisque l'en-tête est blanc.
   Le fichier porte la commande pour le refaire si le logo change. **Le guide
-  des thérapeutes** résout le même problème autrement, parce qu'il est en
-  HTML : son bandeau reste teal foncé et le logo y passe en **blanc**
-  (`filter: brightness(0) invert(1)`) — un mark monochrome sur fond sombre,
-  qui garde sa forme. À l'impression le bandeau devient blanc, le filtre
-  saute et les couleurs reviennent. Son `src` est **relatif** (`logo.svg`)
+  des thérapeutes** a tranché autrement : on a **retiré la couleur du fond**
+  plutôt que celle du logo. Son en-tête est un lavis de teal très pâle, avec
+  un filet teal pour la séparation, et le logo y garde ses deux couleurs. Un
+  logo monochrome restait un pis-aller — la marque y perd ce qui fait son
+  caractère. **Les couleurs de cet en-tête sont écrites en dur** : le reste
+  du guide suit le thème de l'ordinateur, cette bande est la couverture du
+  document et reste claire en toutes circonstances. Avec des variables de
+  thème, le titre passait en clair sur fond clair — invisible sur un
+  ordinateur réglé en sombre, et personne ne l'aurait vu avant une
+  thérapeute. Son `src` est **relatif** (`logo.svg`)
   et non absolu : le guide se lit servi par l'application et se transforme
   en PDF depuis le fichier lui-même, un chemin absolu ne marcherait que
   dans le premier cas. **Le

@@ -83,21 +83,36 @@
 
   /* ---------- En-tête ---------- */
 
+  /*
+    L'en-tête était un aplat de teal foncé. Le logo est bleu et rose : il n'y
+    tenait pas. On l'a d'abord passé en blanc, et un logo monochrome reste un
+    pis-aller — la marque y perd ses deux couleurs, qui sont tout son
+    caractère.
+
+    On a donc retiré la couleur du fond plutôt que celle du logo. Un lavis de
+    teal très pâle garde la séparation d'avec le corps du guide, le titre
+    passe à l'encre, et le teal revient là où il sert : le filet, les
+    étiquettes, le bouton. Le document n'y perd rien — il y gagne un logo qui
+    se voit tel qu'il est.
+
+    SES COULEURS SONT ÉCRITES EN DUR, ET C'EST VOULU. Le reste du guide suit
+    le thème de l'ordinateur, clair ou sombre. Cette bande, non : c'est la
+    couverture du document, elle reste claire pour que le logo s'y lise
+    toujours. Avec des variables de thème, le titre passait en clair sur un
+    fond clair — illisible sur un ordinateur réglé en sombre, et personne ne
+    l'aurait vu avant une thérapeute.
+  */
   .bandeau {
-    background: linear-gradient(160deg, #0F4344 0%, #166363 55%, #1F8484 100%);
-    color: #EAF7F7;
-    padding: 3.5rem 0 3rem;
+    background: linear-gradient(160deg, #FFFFFF 0%, #F4FBFB 45%, #EAF7F7 100%);
+    border-bottom: 3px solid #3BBFBF;
+    color: #41595A;
+    padding: 3.25rem 0 2.75rem;
     margin-bottom: 3rem;
   }
   .bandeau .page { padding-bottom: 0; }
   /*
-    Le logo, pas son imitation en Helvetica.
-
-    Il est bleu et rose : sur le teal foncé du bandeau, le bleu se noie et le
-    nom devient illisible. À l'écran il passe donc en blanc — un logo
-    monochrome sur fond sombre est un usage courant, et il garde sa forme,
-    lotus compris. À l'impression le bandeau devient blanc : le filtre saute
-    et les vraies couleurs reviennent.
+    Le logo, pas son imitation en Helvetica. Il se pose désormais sur un fond
+    clair : ni filtre, ni retouche, ses vraies couleurs.
 
     Le chemin est relatif exprès : le guide se lit servi par l'application
     (`/guide.html`) et se transforme en PDF depuis le fichier lui-même.
@@ -105,11 +120,9 @@
   */
   .logotype {
     display: block;
-    height: 48px;
+    height: 54px;
     width: auto;
-    margin-bottom: .35rem;
-    filter: brightness(0) invert(1);
-    opacity: .95;
+    margin-bottom: .5rem;
   }
   .bandeau h1 {
     font-family: var(--titre);
@@ -119,21 +132,21 @@
     letter-spacing: -.02em;
     margin: 1.1rem 0 0;
     text-wrap: balance;
-    color: #FFFFFF;
+    color: #152B2C;
   }
   .bandeau .chapo {
     margin: 1rem 0 0;
     font-size: 1.12rem;
     max-width: 34rem;
-    color: #CFECEC;
+    color: #41595A;
   }
   .bandeau .meta {
     margin-top: 2rem;
     padding-top: 1.25rem;
-    border-top: 1px solid rgba(169,224,224,.28);
+    border-top: 1px solid #DCE9E9;
     display: flex; flex-wrap: wrap; gap: 1.75rem;
     font-size: .82rem;
-    color: #A9E0E0;
+    color: #5E7273;
   }
   .bandeau .meta b {
     display: block;
@@ -142,7 +155,7 @@
     font-size: .68rem;
     letter-spacing: .1em;
     text-transform: uppercase;
-    color: #6FCDCD;
+    color: #1F8484;
     margin-bottom: .15rem;
   }
 
@@ -600,15 +613,15 @@
     font-family: var(--titre);
     font-size: .82rem;
     font-weight: 500;
-    background: transparent;
-    border: 1px solid rgba(169,224,224,.5);
-    color: #EAF7F7;
+    background: #1F8484;
+    border: 1px solid #1F8484;
+    color: #FFFFFF;
     border-radius: 8px;
-    padding: .45rem .95rem;
+    padding: .5rem 1.05rem;
     cursor: pointer;
     margin-top: 1.75rem;
   }
-  .imprimer:hover, .imprimer:focus-visible { background: rgba(234,247,247,.12); outline: none; }
+  .imprimer:hover, .imprimer:focus-visible { background: #17696a; outline: none; }
 
   a:focus-visible, button:focus-visible {
     outline: 2px solid var(--teal);
@@ -642,11 +655,9 @@
       --ombre:      none;
     }
     body { background: #fff; color: #000; font-size: 11pt; }
-    .bandeau { background: #fff; color: #000; padding: 0 0 1rem; border-bottom: 3px solid #1F8484; }
-    .bandeau h1, .bandeau .chapo, .bandeau .meta { color: #000; }
-    .bandeau .meta b { color: #1F8484; }
-    /* Fond blanc à l'impression : le logo reprend ses couleurs. */
-    .logotype { filter: none; opacity: 1; height: 34px; }
+    .bandeau { background: #fff; padding: 0 0 1rem; }
+    .bandeau h1, .bandeau .chapo { color: #000; }
+    .logotype { height: 34px; }
     .imprimer { display: none; }
     .geste, .memo, .sommaire { break-inside: avoid; box-shadow: none; }
     section { break-inside: avoid-page; }
