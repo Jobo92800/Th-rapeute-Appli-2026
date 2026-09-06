@@ -132,7 +132,7 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
       qc.invalidateQueries({ queryKey: ['programmes', clienteId] });
       toast.success('Séance clôturée');
     } catch {
-      toast.error('La clôture a échoué. Le jeu du jour a-t-il bien été validé ?');
+      toast.error('La clôture a échoué. La Mission Déclic a-t-elle bien été validée ?');
     }
   }
 
@@ -214,7 +214,7 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
             <div className="border-t border-ardoise-100 bg-marine-50/60 px-5 py-3">
               <p className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest text-marine-700">
                 <Dices className="h-3.5 w-3.5" />
-                Jeu imposé à la prochaine séance
+                Mission Déclic imposée à la prochaine séance
               </p>
               <p className="mt-1 text-sm font-semibold text-ardoise-900">
                 {choix.jeu.code} · {choix.jeu.titre}
@@ -351,11 +351,11 @@ function SeanceEnCours({
         </button>
       </div>
 
-      {/* Le jeu du jour, imposé */}
+      {/* La Mission Déclic du jour, imposée */}
       {jeu ? (
         <div className="border-b border-ardoise-100 bg-marine-50/60 p-5">
           <p className="text-2xs font-semibold uppercase tracking-widest text-marine-700">
-            Jeu obligatoire de la séance · {LIBELLES_PHASE[phase]}
+            Mission Déclic obligatoire de la séance · {LIBELLES_PHASE[phase]}
           </p>
           <h3 className="mt-1.5 text-lg font-bold tracking-tight text-ardoise-900">
             {jeu.code} · {jeu.titre}
@@ -411,7 +411,7 @@ function SeanceEnCours({
 
           <div className="mt-4">
             <label htmlFor="reponse-jeu" className="etiquette">
-              {jeu.a_enregistrer || 'Ce qui ressort du jeu'}
+              {jeu.a_enregistrer || 'Ce qui ressort de la Mission Déclic'}
             </label>
             <input
               id="reponse-jeu"
@@ -430,13 +430,13 @@ function SeanceEnCours({
               className="h-4 w-4 rounded border-ardoise-300 text-marine-600 focus:ring-marine-500"
             />
             <span className="text-sm font-semibold text-ardoise-900">
-              Jeu {jeu.code} réalisé — je valide le code
+              Mission Déclic {jeu.code} réalisée — je valide le code
             </span>
           </label>
         </div>
       ) : (
         <p className="border-b border-ardoise-100 px-5 py-4 text-sm text-ardoise-500">
-          Aucun jeu disponible : tous ont déjà été réalisés sur cette fiche.
+          Aucune Mission Déclic disponible : toutes ont déjà été réalisées sur cette fiche.
         </p>
       )}
 
@@ -483,7 +483,7 @@ function SeanceEnCours({
           {bloque && (
             <span className="flex items-center gap-1.5 text-xs font-medium text-ardoise-500">
               <Lock className="h-3.5 w-3.5" />
-              Validez le jeu pour clôturer
+              Validez la Mission Déclic pour clôturer
             </span>
           )}
           <button

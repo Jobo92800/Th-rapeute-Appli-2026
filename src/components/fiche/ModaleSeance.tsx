@@ -148,7 +148,7 @@ export default function ModaleSeance({
           </div>
 
           <p className="text-xs text-ardoise-500">
-            Le soin et le jeu du jour ne se modifient pas : ils appartiennent à la séance qui a eu
+            Le soin et la Mission Déclic ne se modifient pas : ils appartiennent à la séance qui a eu
             lieu.
           </p>
         </div>

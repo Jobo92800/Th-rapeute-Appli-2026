@@ -39,6 +39,7 @@ cliquer. Ne jamais supposer qu'une étape technique est évidente.
 | Base | **Supabase dédié V2**, projet `kefvxglmybbbcdcautcm`. La V1 tourne sur un Supabase géré par Bolt + Firebase, on n'y touche pas. |
 | Transition | L'ancienne application **reste en service**. La V2 sert les nouvelles clientes. Une cliente est créée dans une seule des deux. Rien n'est supprimé. |
 | Migration des données | Repoussée. Le champ `clientes.origine` (`v2` / `import_v1`) est prêt pour plus tard. |
+| Mission Déclic | Le petit exercice imposé à chaque séance s'appelait « jeu » jusqu'au 6 septembre 2026. **Le mot visible est désormais « Mission Déclic »** — écrans et guide. C'est un nom féminin : « la Mission Déclic est choisie », « toutes ont déjà été réalisées ». Les noms techniques n'ont **pas** suivi, comme pour BioPortrait : la table reste `jeux`, la colonne `jeu_code`, le module `jeuDuJour`. Les renommer imposerait une migration et une reprise des séances déjà enregistrées, pour un mot que personne ne lit. |
 | Périmètre soins | Luxothérapie Perte de poids, **Luxothérapie Relaxation**, I-Shape, Pressodynamie. Le **Dôme est retiré** des écrans — le nouveau bilan ne le prescrit plus — mais le socle le connaît encore (tarif, libellé, colonne) : le remettre tient en une ligne. Compléments alimentaires conservés. Tous les autres soins (Mésojet, Advance Lift, Cavitalyse, Adipologie, Psio) sont abandonnés. |
 | Couleur des soins | Chaque soin porte une teinte, dans `src/domain/soins.ts` : **teal** pour la Luxothérapie Perte de poids — le cœur de la méthode garde la couleur maison —, **violet** pour la Relaxation, **ambre** pour l'I-Shape, **bleu ciel** pour la Pressodynamie. Elle sert là où les soins se mélangent : la liste des séances réalisées, et les boutons qui démarrent une séance, pour que le rappel se fasse. Ces teintes **ne disent aucun état** — elles se tiennent donc à l'écart du vert d'un règlement encaissé, du rouge d'un retard et de l'ambre d'une mise en garde pleine largeur, et elles se séparent aussi pour un œil qui distingue mal le rouge du vert. |
 | Prix | `59 € × total séances + 29 € guide + 60 € tenue si électro`. **Le devis ne montre pas le prix ligne par ligne** : il annonce ce qu'elle règle et ce que la cure contient, pas « 15 séances à 59 € ». Détailler invite à retirer des séances pour faire baisser la note, et c'est la conversation qu'on ne veut pas avoir. **Le récapitulatif envoyé par mail non plus** : il annonce les soins et leurs séances, « Compris » pour le guide et la tenue, puis le montant et les échéances. Le prix ligne à ligne n'y est pas seulement caché, il n'est plus calculé — une valeur qui traîne sans servir finit par être réaffichée. Le contrat, lui, reste détaillé : c'est un document qui engage les deux parties, l'itemisation y protège tout le monde. Le catalogue de 60 lignes de la V1 et ses tables de répartition sont **obsolètes**. |
@@ -203,7 +204,7 @@ Secrets de la fonction : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`, `AIRTABLE_TABLE`.
 **Fait** — socle et connexion · fiches clientes · Bilan BioPortrait complet ·
 programme et prix · cures successives avec guide et tenue facultatifs ·
 échéancier daté avec états de retard, visibles sur la liste · séances et
-moteur du jeu du jour · mensurations avec courbe · notes entre thérapeutes ·
+moteur de la Mission Déclic · mensurations avec courbe · notes entre thérapeutes ·
 contrats et consentements signés, avec lecture obligatoire avant signature ·
 synchronisation Airtable complète, PDF en pièces jointes compris ·
 **écran d'accueil du jour** (à encaisser, compléments à renouveler, séances
@@ -251,7 +252,8 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
 - Migration éventuelle de l'historique Firestore (séances, mensurations,
   bilans de la V1).
 - Le dépôt est **public** : il contient le questionnaire BioPortrait, les 60
-  jeux, les textes de contrat et la grille tarifaire. À repasser en privé.
+  Missions Déclic, les textes de contrat et la grille tarifaire. À repasser
+  en privé.
 - `ADMIN_CODE` du podcast toujours à `0000`.
 
 **Questions ouvertes**
@@ -262,7 +264,7 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
 - Les produits Advance Beauty du Grau-du-Roi (V1) sont-ils encore tenus ?
   Les cosmétiques KOS, eux, sont au catalogue depuis la 016.
 - Les frais Alma sont-ils ajoutés au montant cliente ou absorbés par le centre ?
-- Classer les 60 jeux en `pedagogique` / `action` (colonne `jeux.nature`,
+- Classer les 60 Missions Déclic en `pedagogique` / `action` (colonne `jeux.nature`,
   tous en `action` par défaut) pour la règle d'alternance sur deux venues
   dans la même semaine.
 - Marquer les jeux `prioritaire` pour les programmes courts.
@@ -398,7 +400,8 @@ Node exige et que Vite devine. Il ne concerne que les tests.
 ## Déploiement
 
 Dépôt : `Jobo92800/Th-rapeute-Appli-2026` (public pour l'instant — contient
-le questionnaire BioPortrait, les 60 jeux, les textes de contrat et la grille
+le questionnaire BioPortrait, les 60 Missions Déclic, les textes de contrat
+et la grille
 tarifaire ; à repasser en privé). Site : **`appli-therapeute-2926.netlify.app`**.
 Netlify déploie automatiquement sur chaque poussée.
 

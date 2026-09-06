@@ -1,7 +1,15 @@
 /*
-  Moteur du jeu du jour.
+  Moteur de la Mission Déclic.
 
-  La thérapeute ne choisit ni la phase, ni la thématique, ni le jeu. À
+  LE MOT A CHANGÉ, PAS LE CODE. « Jeu » est devenu « Mission Déclic » le
+  6 septembre 2026, sur les écrans et dans le guide. Les noms techniques
+  n'ont pas suivi et c'est délibéré, comme pour BioPortrait : la table
+  s'appelle toujours `jeux`, la colonne `jeu_code`, ce fichier `jeuDuJour`.
+  Les renommer imposerait une migration et une reprise de toutes les séances
+  déjà enregistrées, pour un mot que personne ne lit. Ce qui se lit, on l'a
+  changé ; le reste attend qu'il y ait une vraie raison.
+
+  La thérapeute ne choisit ni la phase, ni la thématique, ni la mission. À
   l'ouverture d'une séance, le moteur croise trois choses :
 
     QUAND ?   la phase A / B / C, déduite de l'avancement réel du programme
@@ -69,7 +77,7 @@ export function choisirJeu(ctx: ContexteJeu): ChoixJeu {
   const restants = ctx.bibliotheque.filter((j) => !faits.has(j.code));
 
   if (restants.length === 0) {
-    return { jeu: null, phase, motif: 'Tous les jeux ont déjà été réalisés sur cette fiche.' };
+    return { jeu: null, phase, motif: 'Toutes les Missions Déclic ont déjà été réalisées sur cette fiche.' };
   }
 
   // On balaie la phase attendue, puis les suivantes, puis les précédentes.
@@ -90,7 +98,7 @@ export function choisirJeu(ctx: ContexteJeu): ChoixJeu {
     };
   }
 
-  return { jeu: null, phase, motif: 'Aucun jeu disponible.' };
+  return { jeu: null, phase, motif: 'Aucune Mission Déclic disponible.' };
 }
 
 function ordonnerPhases(depart: PhaseJeu): PhaseJeu[] {
@@ -117,8 +125,9 @@ function meilleurCandidat(candidats: Jeu[], ctx: ContexteJeu): { jeu: Jeu; motif
 
   const motifs: string[] = [];
   if (parProfil.includes(retenu)) motifs.push(`thème adapté au profil dominant`);
-  if (alternance.length > 0) motifs.push(`alterne avec le jeu de la séance précédente`);
-  if (motifs.length === 0) motifs.push('prochain jeu de la progression');
+  if (alternance.length > 0)
+    motifs.push(`alterne avec la Mission Déclic de la séance précédente`);
+  if (motifs.length === 0) motifs.push('prochaine Mission Déclic de la progression');
 
   return { jeu: retenu, motif: capitaliser(motifs.join(', ')) + '.' };
 }
