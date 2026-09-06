@@ -325,7 +325,15 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   PNG à canal alpha quasiment tel quel, ce qui faisait passer le document de
   25 Ko à 301 Ko, pour un fichier que chaque cliente reçoit et qu'Airtable
   conserve. En JPEG, 46 Ko, et rien ne se voit puisque l'en-tête est blanc.
-  Le fichier porte la commande pour le refaire si le logo change. **Le
+  Le fichier porte la commande pour le refaire si le logo change. **Le guide
+  des thérapeutes** résout le même problème autrement, parce qu'il est en
+  HTML : son bandeau reste teal foncé et le logo y passe en **blanc**
+  (`filter: brightness(0) invert(1)`) — un mark monochrome sur fond sombre,
+  qui garde sa forme. À l'impression le bandeau devient blanc, le filtre
+  saute et les couleurs reviennent. Son `src` est **relatif** (`logo.svg`)
+  et non absolu : le guide se lit servi par l'application et se transforme
+  en PDF depuis le fichier lui-même, un chemin absolu ne marcherait que
+  dans le premier cas. **Le
   contrat et les consentements écrivent encore le nom en toutes lettres** —
   à reprendre de la même façon, mais ce sont des documents qui engagent,
   ça se décide.

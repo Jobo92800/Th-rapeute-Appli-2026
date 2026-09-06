@@ -90,15 +90,27 @@
     margin-bottom: 3rem;
   }
   .bandeau .page { padding-bottom: 0; }
+  /*
+    Le logo, pas son imitation en Helvetica.
+
+    Il est bleu et rose : sur le teal foncé du bandeau, le bleu se noie et le
+    nom devient illisible. À l'écran il passe donc en blanc — un logo
+    monochrome sur fond sombre est un usage courant, et il garde sa forme,
+    lotus compris. À l'impression le bandeau devient blanc : le filtre saute
+    et les vraies couleurs reviennent.
+
+    Le chemin est relatif exprès : le guide se lit servi par l'application
+    (`/guide.html`) et se transforme en PDF depuis le fichier lui-même.
+    Un chemin absolu marcherait dans le premier cas seulement.
+  */
   .logotype {
-    font-family: var(--titre);
-    font-weight: 700;
-    font-size: .95rem;
-    letter-spacing: .04em;
-    color: #A9E0E0;
-    display: flex; align-items: center; gap: .5rem;
+    display: block;
+    height: 48px;
+    width: auto;
+    margin-bottom: .35rem;
+    filter: brightness(0) invert(1);
+    opacity: .95;
   }
-  .logotype span { color: #F79BC6; }
   .bandeau h1 {
     font-family: var(--titre);
     font-weight: 700;
@@ -632,7 +644,9 @@
     body { background: #fff; color: #000; font-size: 11pt; }
     .bandeau { background: #fff; color: #000; padding: 0 0 1rem; border-bottom: 3px solid #1F8484; }
     .bandeau h1, .bandeau .chapo, .bandeau .meta { color: #000; }
-    .bandeau .meta b, .logotype { color: #1F8484; }
+    .bandeau .meta b { color: #1F8484; }
+    /* Fond blanc à l'impression : le logo reprend ses couleurs. */
+    .logotype { filter: none; opacity: 1; height: 34px; }
     .imprimer { display: none; }
     .geste, .memo, .sommaire { break-inside: avoid; box-shadow: none; }
     section { break-inside: avoid-page; }
@@ -649,7 +663,7 @@
 
 <div class="bandeau">
   <div class="page">
-    <div class="logotype">MAbeauty<span>plus</span></div>
+    <img class="logotype" src="logo.svg" alt="MAbeautyplus" />
     <h1>MAbeautyplus au comptoir</h1>
     <p class="chapo">
       Tout ce qu'une thérapeute fait dans la journée, geste par geste :
