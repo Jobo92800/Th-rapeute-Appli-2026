@@ -318,7 +318,13 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
                     >
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-ardoise-900">
-                          {format(new Date(s.date_seance), 'd MMMM yyyy', { locale: fr })}
+                          {/*
+                            La date en chiffres. Une thérapeute qui relit une
+                            liste de séances cherche un jour précis : « 06/09 »
+                            se compare d'un coup d'œil à la ligne du dessus,
+                            « 6 septembre » se lit.
+                          */}
+                          {format(new Date(s.date_seance), 'dd/MM/yyyy')}
                           <span className={`ml-2 font-medium ${teinte.texte}`}>
                             {LIBELLES_TECHNOLOGIE[s.technologie]}
                           </span>
