@@ -40,11 +40,18 @@ import type { Cliente } from '../../types/db';
  */
 export default function CarteParcoursAudio({
   cliente,
-  contratSigne,
+  contratSigneLe,
 }: {
   cliente: Cliente;
-  /** Sert à prévenir quand la signature — donc l'accès — est encore à venir. */
-  contratSigne: boolean;
+  /**
+   * La date du dernier contrat signé, s'il y en a un.
+   *
+   * Elle sert aux deux mises en garde de ce bloc, qui ne disent pas la même
+   * chose : avant la signature, l'accès va être proposé et il ne faut pas le
+   * donner deux fois ; après, il aurait dû l'être, et s'il ne l'a pas été il
+   * faut d'abord s'assurer qu'il n'existe pas déjà ailleurs.
+   */
+  contratSigneLe: string | null;
 }) {
   const qc = useQueryClient();
   const [action, setAction] = useState<'creer' | 'renvoyer' | null>(null);
@@ -133,11 +140,31 @@ export default function CarteParcoursAudio({
               Deux comptes pour la même cliente, et personne ne s'en aperçoit
               avant qu'elle appelle.
             */}
-            {!contratSigne && (
+            {!contratSigneLe ? (
               <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                 <b>Son contrat n’est pas encore signé.</b> L’accès se donne dans la fenêtre de
                 signature, avec le parcours et le mot de passe — n’y touchez pas ici, vous
                 créeriez deux comptes.
+              </p>
+            ) : (
+              /*
+                Contrat signé, et pourtant aucun accès enregistré. Deux
+                explications, et elles n'appellent pas le même geste : le
+                parcours n'a pas été coché ce jour-là — c'est ici qu'on
+                rattrape — ou le compte a bien été créé sans que l'application
+                l'apprenne. Dans le second cas, en créer un autre donnerait à
+                la cliente deux comptes et un mot de passe qui ne marche
+                qu'une fois sur deux.
+              */
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                <b>
+                  Son contrat a été signé le{' '}
+                  {format(new Date(contratSigneLe), 'd MMMM yyyy', { locale: fr })}
+                </b>
+                , et aucun accès n’a été enregistré ce jour-là. Si le parcours n’a pas été choisi
+                à la signature, c’est bien ici qu’on le rattrape. Mais si vous pensez qu’il lui a
+                déjà été donné, <b>vérifiez d’abord dans Mon Parcours</b> : deux comptes pour la
+                même personne, et son mot de passe ne marchera qu’une fois sur deux.
               </p>
             )}
             <div className="flex flex-wrap items-end gap-3">
