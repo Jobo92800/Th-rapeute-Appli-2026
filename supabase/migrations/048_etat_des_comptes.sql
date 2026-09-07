@@ -90,6 +90,23 @@ COMMENT ON FUNCTION etat_des_comptes() IS
 REVOKE ALL ON FUNCTION etat_des_comptes() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION etat_des_comptes() TO authenticated;
 
--- Contrôle : doit renvoyer une ligne par thérapeute si vous êtes direction,
--- « Réservé à la direction. » sinon.
-SELECT prenom, email, diagnostic FROM etat_des_comptes();
+/*
+  Contrôle : doit renvoyer UNE ligne, avec `ouverte_aux_connectes` à true.
+
+  On vérifie que la fonction existe et qu'elle est ouverte aux comptes
+  connectés — pas ce qu'elle répond. L'éditeur SQL de Supabase ne travaille
+  au nom de personne : `auth.uid()` y est vide, donc `est_direction()` y est
+  faux, et appeler la fonction ici lèverait « Réservé à la direction. » —
+  ce qui est le bon comportement, mais annulerait toute la migration au
+  passage, PostgreSQL défaisant un script d'un seul bloc.
+
+  Pour la voir répondre pour de vrai, ouvrez l'écran « Comptes » dans
+  l'application, connecté avec le compte de direction.
+*/
+SELECT
+  p.proname                                            AS fonction,
+  has_function_privilege('authenticated', p.oid, 'EXECUTE') AS ouverte_aux_connectes,
+  NOT has_function_privilege('anon', p.oid, 'EXECUTE')      AS fermee_au_public
+FROM pg_proc p
+JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public' AND p.proname = 'etat_des_comptes';
