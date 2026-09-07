@@ -64,7 +64,13 @@ export default function FicheCliente() {
   const { tousCentres } = useSession();
   const [onglet, setOnglet] = useState<Onglet>('coordonnees');
 
-  const { data: cliente, isLoading } = useQuery({
+  const {
+    data: cliente,
+    isLoading,
+    error,
+    refetch: relireLaFiche,
+    isFetching,
+  } = useQuery({
     queryKey: ['cliente', id],
     queryFn: () => lireCliente(id!),
     enabled: !creation,
@@ -114,10 +120,60 @@ export default function FicheCliente() {
     return <p className="carte px-5 py-10 text-center text-sm text-ardoise-400">Chargement…</p>;
   }
 
+  /*
+    Trois états, jamais deux.
+
+    Une fiche qui ne se charge pas et une fiche qui n'existe pas se
+    ressemblent à l'écran, et ne veulent pas du tout dire la même chose. Le
+    wifi du centre qui tombe, une session expirée, la base injoignable :
+    tout ça affichait « Cette fiche est introuvable » — le message d'un
+    dossier supprimé. Une thérapeute a de bonnes raisons de croire qu'elle a
+    perdu sa cliente, et d'appeler la direction.
+
+    L'erreur se dit donc comme une erreur, avec son message brut — c'est lui
+    qui nomme la cause — et le bouton qui permet de réessayer sans rien
+    perdre.
+  */
+  if (!creation && error) {
+    return (
+      <div className="carte flex items-start gap-3 border-amber-200 bg-amber-50 p-5">
+        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+        <div>
+          <p className="text-sm font-semibold text-amber-900">
+            La fiche n’a pas pu être chargée.
+          </p>
+          <p className="mt-1 text-sm text-amber-900">
+            Elle n’est pas perdue : c’est la lecture qui a échoué. Réessayez, et si cela
+            recommence, vérifiez la connexion du centre.
+          </p>
+          <p className="mt-2 text-xs text-amber-800">
+            {error instanceof Error ? error.message : String(error)}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              onClick={() => void relireLaFiche()}
+              disabled={isFetching}
+              className="bouton-discret"
+            >
+              <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+              {isFetching ? 'Nouvelle tentative…' : 'Réessayer'}
+            </button>
+            <Link to="/clientes" className="bouton-discret">
+              Retour aux clientes
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!creation && !cliente) {
     return (
       <div className="carte px-5 py-10 text-center">
         <p className="text-sm text-ardoise-600">Cette fiche est introuvable.</p>
+        <p className="mx-auto mt-1 max-w-sm text-xs text-ardoise-500">
+          Elle a peut-être été supprimée, ou l’adresse est incomplète.
+        </p>
         <Link to="/clientes" className="bouton-discret mt-4">
           Retour aux clientes
         </Link>
