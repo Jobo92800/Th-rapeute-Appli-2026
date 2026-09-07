@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useVilleAutomatique } from '../lib/villeAutomatique';
 import ChoixDeVille from '../components/ChoixDeVille';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
@@ -21,7 +21,7 @@ import toast from 'react-hot-toast';
 import ChoisirUnCentre from '../components/ChoisirUnCentre';
 import { useCentre, useSession } from '../lib/session';
 import { lireBaremeActif, lireGrilleTarifaire } from '../services/metier';
-import { creerCliente } from '../services/clientes';
+import { creerCliente, lireCliente, modifierCliente } from '../services/clientes';
 import { laCliente } from '../domain/civilite';
 import { formaterEuros } from '../domain/tarification';
 import { envoyerRecap, rangerBioPortrait } from '../services/recap';
@@ -74,6 +74,24 @@ export default function NouveauBilan() {
   const { therapeute, tousCentres } = useSession();
   const navigate = useNavigate();
 
+  /*
+    Un bilan peut refaire le point sur une cliente déjà connue.
+
+    `?cliente=<id>` dit qu'on repasse un BioPortrait pour quelqu'un qui a
+    déjà une fiche : on la charge, on pré-remplit ses coordonnées, et à
+    l'enregistrement on met la fiche à jour au lieu d'en créer une seconde.
+    L'ancien bilan n'est pas touché — il reste sur la fiche, daté, comme les
+    cures successives.
+  */
+  const [params] = useSearchParams();
+  const clienteExistanteId = params.get('cliente');
+
+  const { data: clienteExistante } = useQuery({
+    queryKey: ['cliente', clienteExistanteId],
+    queryFn: () => lireCliente(clienteExistanteId!),
+    enabled: Boolean(clienteExistanteId),
+  });
+
   const { data: baremeData, isLoading, error } = useQuery({
     queryKey: ['bareme'],
     queryFn: lireBaremeActif,
@@ -92,6 +110,29 @@ export default function NouveauBilan() {
   const [curseur, setCurseur] = useState(50);
   const [texte, setTexte] = useState('');
   const [contact, setContact] = useState({ ...CONTACT_VIDE });
+
+  /*
+    Les coordonnées de la fiche viennent garnir le formulaire une fois
+    chargées. Le repère est l'identifiant, jamais l'objet : une requête
+    rafraîchie rend un objet neuf pour la même personne, et se recaler
+    dessus effacerait ce que la thérapeute est en train de corriger.
+  */
+  useEffect(() => {
+    if (!clienteExistante) return;
+    setContact({
+      civilite: (clienteExistante.civilite ?? 'Mme') as 'Mme' | 'M.',
+      date_naissance: clienteExistante.date_naissance ?? '',
+      prenom: clienteExistante.prenom,
+      nom: clienteExistante.nom,
+      email: clienteExistante.email ?? '',
+      telephone: clienteExistante.telephone ?? '',
+      adresse: clienteExistante.adresse ?? '',
+      code_postal: clienteExistante.code_postal ?? '',
+      ville: clienteExistante.ville ?? '',
+      age: clienteExistante.age != null ? String(clienteExistante.age) : '',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clienteExistante?.id]);
 
   // La ville se déduit du code postal quand il n'y a qu'une commune. Les deux
   // écrans de coordonnées — l'accueil du bilan et l'étape finale — remplissent
@@ -225,7 +266,7 @@ export default function NouveauBilan() {
 
     setEnregistrement(true);
     try {
-      const cliente = await creerCliente(centre.id, {
+      const coordonnees = {
         civilite: contact.civilite,
         prenom: contact.prenom.trim(),
         nom: contact.nom.trim(),
@@ -236,9 +277,21 @@ export default function NouveauBilan() {
         adresse: contact.adresse || null,
         code_postal: contact.code_postal || null,
         ville: contact.ville || null,
-        source: null,
-        therapeutes: therapeute && therapeute.role !== 'direction' ? [therapeute.prenom] : [],
-      });
+      };
+
+      /*
+        Une fiche déjà là est mise à jour, jamais dupliquée. On ne touche ni
+        au centre ni aux thérapeutes qui la suivent : ce bilan-ci n'a pas à
+        redistribuer une fiche qui appartient déjà à quelqu'un.
+      */
+      const cliente = clienteExistante
+        ? await modifierCliente(clienteExistante.id, coordonnees)
+        : await creerCliente(centre.id, {
+            ...coordonnees,
+            source: null,
+            therapeutes:
+              therapeute && therapeute.role !== 'direction' ? [therapeute.prenom] : [],
+          });
 
       const bilan = await enregistrerBilan({
         cliente_id: cliente.id,
@@ -375,11 +428,13 @@ export default function NouveauBilan() {
     return (
       <div className="mx-auto max-w-2xl">
         <button
-          onClick={() => navigate('/clientes')}
+          onClick={() =>
+            navigate(clienteExistante ? `/clientes/${clienteExistante.id}` : '/clientes')
+          }
           className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-ardoise-500 hover:text-ardoise-800"
         >
           <ArrowLeft className="h-4 w-4" />
-          Clientes
+          {clienteExistante ? `${clienteExistante.prenom} ${clienteExistante.nom}` : 'Clientes'}
         </button>
 
         <div className="carte px-8 py-10 text-center">
@@ -389,6 +444,21 @@ export default function NouveauBilan() {
           <h1 className="mt-5 text-2xl font-bold tracking-tight text-ardoise-900">
             Bilan BioPortrait
           </h1>
+
+          {/*
+            Refaire le point sur quelqu'un qu'on connaît déjà.
+
+            Le dire tout de suite, et nommer la personne : sans ça, l'écran
+            est le même que pour une nouvelle cliente, et une thérapeute qui
+            arrive dessus par erreur croirait en créer une seconde. Elle voit
+            au contraire que ses coordonnées sont déjà là.
+          */}
+          {clienteExistante && (
+            <p className="mx-auto mt-4 max-w-md rounded-lg border border-marine-200 bg-marine-50 px-3 py-2 text-sm text-marine-900">
+              Nouveau point pour <b>{clienteExistante.prenom} {clienteExistante.nom}</b>. Sa fiche
+              et ses anciens BioPortraits sont conservés — celui-ci s’ajoute.
+            </p>
+          )}
 
           <div className="mt-8 text-left">
             <div className="surtitre mb-3">Ses coordonnées</div>

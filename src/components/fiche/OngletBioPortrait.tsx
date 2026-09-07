@@ -21,6 +21,12 @@ export default function OngletBioPortrait({
 }) {
   const qc = useQueryClient();
   const [confirme, setConfirme] = useState(false);
+  /*
+    Quel bilan on regarde. Null veut dire « le plus récent », et c'est la
+    valeur de départ : on ouvre la fiche pour voir où en est la cliente
+    aujourd'hui, pas ce qu'elle était il y a un an.
+  */
+  const [bilanRegarde, setBilanRegarde] = useState<string | null>(null);
 
   const { data: bilans = [], isLoading } = useQuery({
     queryKey: ['bilans', clienteId],
@@ -37,13 +43,19 @@ export default function OngletBioPortrait({
     return <p className="carte px-5 py-10 text-center text-sm text-ardoise-400">Chargement…</p>;
   }
 
-  const bilan = bilans.find((b) => b.statut === 'termine') ?? null;
+  /*
+    Les bilans arrivent du plus récent au plus ancien. On ne garde que les
+    terminés : un bilan abandonné en cours de route n'a ni profil ni terrain,
+    l'afficher ne montrerait que des barres vides.
+  */
+  const termines = bilans.filter((b) => b.statut === 'termine');
+  const bilan = (bilanRegarde ? termines.find((b) => b.id === bilanRegarde) : null) ?? termines[0] ?? null;
 
   if (!bilan || !baremeData) {
     return (
       <div className="carte px-5 py-12 text-center">
         <p className="text-sm text-ardoise-600">Aucun bilan sur cette fiche.</p>
-        <Link to="/bilan" className="bouton-fort mt-5">
+        <Link to={`/bilan?cliente=${clienteId}`} className="bouton-fort mt-5">
           <Sparkles className="h-4 w-4" />
           Démarrer un Bilan BioPortrait
         </Link>
@@ -59,6 +71,51 @@ export default function OngletBioPortrait({
 
   return (
     <div className="space-y-5">
+      {/*
+        Plusieurs BioPortraits sur une même fiche.
+
+        Un point se refait — après une cure, après six mois, quand la
+        personne a changé. L'ancien n'est jamais remplacé : il dit ce qu'elle
+        était à cette date, et c'est justement la comparaison qui intéresse.
+        Même parti pris que les cures successives : une barre de dates, la
+        plus récente d'abord.
+
+        La barre ne s'affiche qu'à partir de deux : un seul bilan n'a pas
+        besoin d'être choisi.
+      */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {termines.length > 1 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {termines.map((b, rang) => {
+              const actif = b.id === bilan.id;
+              return (
+                <button
+                  key={b.id}
+                  type="button"
+                  onClick={() => setBilanRegarde(b.id)}
+                  aria-pressed={actif}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    actif
+                      ? 'border-marine-600 bg-marine-600 text-white'
+                      : 'border-ardoise-200 bg-white text-ardoise-600 hover:border-marine-400'
+                  }`}
+                >
+                  {format(new Date(b.date_bilan), 'd MMM yyyy', { locale: fr })}
+                  {rang === 0 && <span className="ml-1.5 opacity-70">· le dernier</span>}
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <span />
+        )}
+
+        <Link to={`/bilan?cliente=${clienteId}`} className="bouton-discret">
+          <Sparkles className="h-4 w-4" />
+          Refaire le point
+        </Link>
+      </div>
+
       <section className="carte px-6 py-7 text-center">
         <p className="text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
           Bilan du {format(new Date(bilan.date_bilan), 'd MMMM yyyy', { locale: fr })}
