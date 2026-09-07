@@ -163,31 +163,152 @@ export function prescrire(bareme: Bareme, d: Depouillement): LignePrescrite[] {
   return lignes;
 }
 
-/**
- * Les trois formules. La cure entière, ou allégée pour rester accessible —
- * sans jamais descendre sous un plancher qui la rendrait inefficace.
- */
+/*
+  ===========================================================================
+  LES TROIS FORMULES
+  ===========================================================================
+
+  Elles partent toutes de la même prescription — celle que le BioPortrait a
+  calculée — et n'en changent que la taille. Aucune ne compose une cure de
+  son côté : c'est le bilan qui décide de ce qui est utile, la formule ne
+  décide que de ce que la cliente peut se permettre.
+
+  INTÉGRALE ne transforme rien. C'est la référence.
+
+  ÉQUILIBRE vise −40 % et retombe sur un palier réel. Un nombre de séances
+  ne se divise pas : 15 × 0,6 fait 9, et 9 séances de luxothérapie n'existent
+  pas. On cherche donc le palier autorisé le plus proche de la cible, et la
+  réduction obtenue oscille entre −35 % et −45 % selon les prestations.
+  C'est assumé : on n'annonce pas un pourcentage à la cliente, on annonce un
+  prix. Toutes les prestations sont conservées.
+
+  DÉCOUVERTE ne réduit pas, elle choisit. Une seule prestation — la plus
+  prioritaire — gardée au nombre de séances de l'Intégrale, pour que la
+  cliente voie un vrai résultat sur un point plutôt qu'un demi-résultat
+  partout. Sauf quand le bilan n'a prescrit qu'une seule prestation : là,
+  choisir ne veut plus rien dire, et Découverte serait la copie conforme de
+  l'Intégrale. Elle descend alors au palier minimum de cette prestation —
+  sans quoi l'échelle des trois prix cesserait d'être décroissante.
+*/
+
+export type CodeFormule = 'integrale' | 'equilibre' | 'decouverte';
+
 export interface Formule {
-  f: number;
+  code: CodeFormule;
   n: string;
   d: string;
   rec?: boolean;
 }
 
-export const FORMULES_DEFAUT: Formule[] = [
-  { f: 1, n: 'Intégrale', d: 'Le programme complet, résultat optimal', rec: true },
-  { f: 0.8, n: 'Équilibre', d: "L'essentiel, à un rythme plus accessible" },
-  { f: 0.5, n: 'Découverte', d: 'Pour démarrer en douceur' },
+export const FORMULES: Formule[] = [
+  { code: 'integrale', n: 'Intégrale', d: 'Le programme complet, résultat optimal', rec: true },
+  { code: 'equilibre', n: 'Équilibre', d: "L'essentiel, à un rythme plus accessible" },
+  { code: 'decouverte', n: 'Découverte', d: 'Une prestation, pour un vrai résultat' },
 ];
 
-const PLANCHER_LUXO = 10;
-const PLANCHER_AUTRES = 4;
+/**
+ * Les nombres de séances qui existent, prestation par prestation.
+ *
+ * Rien ne peut sortir de ces listes : ni une formule, ni un ajustement. Ce
+ * sont des durées de protocole, pas des quantités qu'on découpe. Le premier
+ * de chaque liste est le minimum — en dessous, le soin ne produit plus rien.
+ */
+export const PALIERS_SEANCES: Record<Prestation, number[]> = {
+  LUXO: [10, 12, 15, 20],
+  RELAX: [5, 10],
+  ISHAPE: [6, 10, 12, 15, 20],
+  PRESSO: [6, 10, 12],
+};
 
-/** Applique une formule à la prescription, planchers compris. */
-export function appliquerFormule(lignes: LignePrescrite[], facteur: number): LignePrescrite[] {
+/** Ce qu'on ne descend jamais : le premier palier de la prestation. */
+export function minimumSeances(presta: Prestation): number {
+  return PALIERS_SEANCES[presta][0];
+}
+
+/**
+ * Le palier le plus proche d'une cible.
+ *
+ * À égalité de distance, on prend le plus bas : la formule Équilibre existe
+ * pour faire baisser le prix, elle ne va pas arrondir vers le haut au
+ * prétexte que c'est aussi près.
+ */
+export function palierLePlusProche(presta: Prestation, cible: number): number {
+  const paliers = PALIERS_SEANCES[presta];
+  let retenu = paliers[0];
+  let ecart = Math.abs(cible - retenu);
+
+  for (const p of paliers.slice(1)) {
+    const e = Math.abs(cible - p);
+    if (e < ecart) {
+      retenu = p;
+      ecart = e;
+    }
+  }
+  return retenu;
+}
+
+/** Ce qu'Équilibre vise avant d'être recalé sur un palier. */
+const PART_EQUILIBRE = 0.6;
+
+/**
+ * L'ordre dans lequel on départage deux prestations de même niveau.
+ *
+ * La luxothérapie perte de poids d'abord : c'est le cœur de la méthode, et
+ * une cliente qui ne prend qu'une chose doit prendre celle-là. Le reste suit
+ * l'ordre de la spécification.
+ */
+const ORDRE_PRIORITE: Prestation[] = ['LUXO', 'ISHAPE', 'PRESSO', 'RELAX'];
+
+const RANG_NIVEAU: Record<NiveauPresta, number> = { oblig: 3, fort: 2, prop: 1 };
+
+/**
+ * La prestation que Découverte retient : le niveau le plus haut, puis
+ * l'ordre de priorité. On ne choisit que parmi ce qui est réellement
+ * faisable — une prestation écartée pour raison de santé ne peut pas
+ * devenir la vitrine de la cure.
+ */
+export function prestationPrioritaire(lignes: LignePrescrite[]): LignePrescrite | null {
+  const candidates = lignesRetenues(lignes);
+  if (candidates.length === 0) return null;
+
+  return candidates.reduce((meilleure, l) => {
+    const ecartNiveau = RANG_NIVEAU[l.niveau] - RANG_NIVEAU[meilleure.niveau];
+    if (ecartNiveau !== 0) return ecartNiveau > 0 ? l : meilleure;
+    return ORDRE_PRIORITE.indexOf(l.presta) < ORDRE_PRIORITE.indexOf(meilleure.presta)
+      ? l
+      : meilleure;
+  });
+}
+
+/** Applique une formule à la prescription. */
+export function appliquerFormule(
+  lignes: LignePrescrite[],
+  formule: CodeFormule,
+): LignePrescrite[] {
+  if (formule === 'integrale') return lignes;
+
+  if (formule === 'equilibre') {
+    return lignes.map((l) =>
+      l.seances > 0
+        ? { ...l, seances: palierLePlusProche(l.presta, l.seances * PART_EQUILIBRE) }
+        : l,
+    );
+  }
+
+  const gardee = prestationPrioritaire(lignes);
+  if (!gardee) return lignes;
+
+  /*
+    Une seule prestation prescrite : Découverte n'a personne à écarter, elle
+    serait l'Intégrale sous un autre nom. Elle descend donc au minimum de la
+    prestation — c'est la seule façon qu'il lui reste d'être une porte
+    d'entrée moins chère.
+  */
+  const seule = lignesRetenues(lignes).length === 1;
+
   return lignes.map((l) => {
-    const plancher = l.presta === 'LUXO' ? PLANCHER_LUXO : PLANCHER_AUTRES;
-    return { ...l, seances: Math.max(plancher, Math.round(l.seances * facteur)) };
+    if (l.presta !== gardee.presta) return { ...l, seances: 0 };
+    return seule ? { ...l, seances: minimumSeances(l.presta) } : l;
   });
 }
 
@@ -215,9 +336,14 @@ export function lignesRetenues(lignes: LignePrescrite[]): LignePrescrite[] {
 
 export const PRESTATIONS_CURE: Prestation[] = ['LUXO', 'RELAX', 'ISHAPE', 'PRESSO'];
 
-/** Ce qu'on met dans un soin ajouté à la main : le plancher de sa formule. */
+/**
+ * Ce qu'on met dans un soin ajouté à la main : son premier palier.
+ *
+ * Le minimum, jamais un chiffre choisi ailleurs : un soin qu'on ajoute est
+ * un soin dont on n'est pas sûr, et la thérapeute peut toujours monter.
+ */
 export function seancesALAjout(presta: Prestation): number {
-  return presta === 'LUXO' ? PLANCHER_LUXO : PLANCHER_AUTRES;
+  return minimumSeances(presta);
 }
 
 /**

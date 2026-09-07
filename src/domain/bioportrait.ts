@@ -99,6 +99,16 @@ export interface Bareme {
   PRESTA?: Record<Prestation, { n: string; d: string }>;
   BAREME_PRESTA?: Record<Prestation, PalierPrestation[]>;
   METAB?: Array<{ lvl: string; col: string; bg: string; bd: string; p: string }>;
+  /**
+   * Les formules décrites dans le barème. **Plus lues par l'application.**
+   *
+   * Elles y tenaient en un facteur — 1, 0,8, 0,5 — tant qu'une formule
+   * n'était qu'une multiplication. Équilibre retombe désormais sur des
+   * paliers réels et Découverte choisit une prestation : une règle pareille
+   * ne tient pas dans une donnée. Les trois formules vivent dans
+   * `domain/prescription`, avec le reste du calcul. Le champ reste déclaré
+   * pour que les barèmes déjà en base restent lisibles.
+   */
   FORMULAS?: Array<{ f: number; n: string; d: string; rec?: boolean }>;
   INCLUS?: Array<{ i: string; t: string; d: string }>;
 }

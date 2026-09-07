@@ -4,12 +4,14 @@ import type { Bareme, Prestation } from '../../domain/bioportrait';
 import { detailInclus, type DetailInclus } from '../../domain/inclus';
 import BulleInclus from './BulleInclus';
 import {
+  FORMULES,
   LIBELLES_NIVEAU,
   appliquerFormule,
   ligneAjoutee,
   lignesRetenues,
   prescrire,
   prestationsAjoutables,
+  type CodeFormule,
   type Depouillement,
   type LignePrescrite,
 } from '../../domain/prescription';
@@ -94,8 +96,17 @@ export default function CureEtDevis({
   onBilanSeul,
   onValider,
 }: Props) {
-  const formules = bareme.FORMULAS ?? [];
-  const [formule, setFormule] = useState(1);
+  /*
+    Les formules ne viennent plus du barème.
+
+    Elles y étaient décrites par un simple facteur — 1, 0,8, 0,5 — et ça
+    suffisait tant qu'une formule n'était qu'une multiplication. Ce n'est
+    plus vrai : Équilibre retombe sur des paliers réels, et Découverte ne
+    réduit pas, elle choisit une prestation. Une règle pareille ne tient pas
+    dans une donnée, elle vit dans le domaine avec le reste du calcul.
+  */
+  const formules = FORMULES;
+  const [formule, setFormule] = useState<CodeFormule>('integrale');
   const [ajusts, setAjusts] = useState<Partial<Record<Prestation, number>>>({});
   /*
     Les soins ajoutés à la main, que le bilan ne proposait pas. Ils vivent à
@@ -267,6 +278,12 @@ export default function CureEtDevis({
         {cure.map((l) => {
           const retire = l.contreIndication === 'rem';
           const surveille = l.contreIndication === 'med';
+          /*
+            Écarté par la formule, pas par la santé : la Découverte n'en
+            garde qu'un. À distinguer d'un soin contre-indiqué — celui-là est
+            impossible, celui-ci est seulement hors budget.
+          */
+          const ecarte = !retire && l.seances === 0;
 
           return (
             <div
@@ -274,9 +291,11 @@ export default function CureEtDevis({
               className={`flex flex-wrap items-center gap-3.5 rounded-2xl border px-4 py-3.5 ${
                 retire
                   ? 'border-ardoise-200 bg-ardoise-50 opacity-60'
-                  : surveille
-                    ? 'border-amber-200 bg-amber-50/60'
-                    : 'border-ardoise-200 bg-white'
+                  : ecarte
+                    ? 'border-dashed border-ardoise-200 bg-ardoise-50/50 opacity-70'
+                    : surveille
+                      ? 'border-amber-200 bg-amber-50/60'
+                      : 'border-ardoise-200 bg-white'
               }`}
             >
               <div className="min-w-0 flex-1">
@@ -291,6 +310,17 @@ export default function CureEtDevis({
                     <span className="inline-flex items-center gap-1 rounded-full bg-ardoise-200 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ardoise-600">
                       <Ban className="h-3 w-3" />
                       Retiré
+                    </span>
+                  ) : ecarte ? (
+                    /*
+                      Découverte ne garde qu'une prestation. Les autres ne
+                      sont pas contre-indiquées — elles restent utiles, et
+                      c'est le budget qui les écarte. On les montre donc,
+                      pâlies : la cliente voit ce qu'elle laisse, et ce
+                      qu'elle retrouvera en montant d'une formule.
+                    */
+                    <span className="rounded-full bg-ardoise-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ardoise-500">
+                      Pas dans cette formule
                     </span>
                   ) : surveille ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-amber-200 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-900">
@@ -318,13 +348,15 @@ export default function CureEtDevis({
                 <p className="mt-0.5 text-xs text-ardoise-500">
                   {retire
                     ? 'Contre-indiqué par une réponse de santé — ce soin n’est pas facturé.'
-                    : surveille
-                      ? 'Possible après avis médical. Le soin reste au programme.'
-                      : (bareme.PRESTA?.[l.presta]?.d ?? '')}
+                    : ecarte
+                      ? 'Recommandé par votre bilan, mais pas compris dans cette formule.'
+                      : surveille
+                        ? 'Possible après avis médical. Le soin reste au programme.'
+                        : (bareme.PRESTA?.[l.presta]?.d ?? '')}
                 </p>
               </div>
 
-              {!retire && (
+              {!retire && !ecarte && (
                 <div className="flex shrink-0 items-center gap-2">
                   {edition && (
                     <button
@@ -396,14 +428,14 @@ export default function CureEtDevis({
           <div className="flex flex-col gap-2.5 sm:flex-row">
             {formules.map((f) => (
               <button
-                key={f.n}
+                key={f.code}
                 type="button"
                 onClick={() => {
-                  setFormule(f.f);
+                  setFormule(f.code);
                   setAjusts({});
                 }}
                 className={`flex-1 rounded-2xl border-[1.5px] px-3 py-3 text-center transition-colors ${
-                  formule === f.f
+                  formule === f.code
                     ? 'border-marine-500 bg-marine-50'
                     : 'border-ardoise-200 bg-white hover:border-marine-300'
                 }`}

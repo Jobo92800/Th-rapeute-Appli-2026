@@ -11,8 +11,12 @@ import { section, verifie, egal } from './harnais.mts';
 import type { Bareme, Prestation } from '../src/domain/bioportrait.ts';
 import { mesuresInbody } from '../src/domain/bioportrait.ts';
 import {
+  PALIERS_SEANCES,
   appliquerFormule,
   depouiller,
+  minimumSeances,
+  palierLePlusProche,
+  prestationPrioritaire,
   ligneAjoutee,
   lignesRetenues,
   palier,
@@ -136,22 +140,115 @@ export function controlerPrescription() {
 
   verifie('les quatre soins ressortent quand tout est au maximum', forte.length === 4);
 
-  const decouverte = appliquerFormule(forte, 0.5);
-  const luxoDecouverte = decouverte.find((l) => l.presta === 'LUXO')!;
-  verifie(
-    'la Luxothérapie ne descend jamais sous dix séances',
-    luxoDecouverte.seances >= 10,
-    `${luxoDecouverte.seances}`,
-  );
-  verifie(
-    'les autres soins ne descendent jamais sous quatre séances',
-    decouverte.filter((l) => l.presta !== 'LUXO').every((l) => l.seances >= 4),
-  );
-
-  const integrale = appliquerFormule(forte, 1);
+  const integrale = appliquerFormule(forte, 'integrale');
   verifie(
     'la formule intégrale ne change rien à la prescription',
     integrale.every((l, i) => l.seances === forte[i].seances),
+  );
+
+  /*
+    ÉQUILIBRE. La cible est −40 %, mais un nombre de séances ne se divise
+    pas : on retombe sur un palier réel, et jamais sous le minimum.
+  */
+  const equilibre = appliquerFormule(forte, 'equilibre');
+
+  verifie(
+    'Équilibre garde toutes les prestations de l’Intégrale',
+    lignesRetenues(equilibre).length === lignesRetenues(forte).length,
+  );
+  verifie(
+    'aucune séance hors des paliers autorisés',
+    equilibre.every((l) => l.seances === 0 || PALIERS_SEANCES[l.presta].includes(l.seances)),
+  );
+  verifie(
+    'aucune prestation sous son minimum',
+    lignesRetenues(equilibre).every((l) => l.seances >= minimumSeances(l.presta)),
+  );
+  verifie(
+    'et jamais plus de séances qu’à l’Intégrale',
+    equilibre.every((l, i) => l.seances <= forte[i].seances),
+  );
+
+  /*
+    La table de correspondance de la spécification, reprise telle quelle.
+    Elle a été écrite à la main : si le calcul s'en écarte, c'est l'un des
+    deux qui a tort, et il faut le savoir avant une cliente.
+  */
+  section('Équilibre : la table de correspondance de la spécification');
+
+  const TABLE: Array<[Prestation, number, number]> = [
+    ['LUXO', 20, 12], ['LUXO', 15, 10], ['LUXO', 12, 10], ['LUXO', 10, 10],
+    ['ISHAPE', 20, 12], ['ISHAPE', 15, 10], ['ISHAPE', 12, 6], ['ISHAPE', 10, 6], ['ISHAPE', 6, 6],
+    ['PRESSO', 12, 6], ['PRESSO', 10, 6], ['PRESSO', 6, 6],
+    ['RELAX', 10, 5], ['RELAX', 5, 5],
+  ];
+
+  for (const [presta, depart, attendu] of TABLE) {
+    egal(`${presta} ${depart} → ${attendu}`, palierLePlusProche(presta, depart * 0.6), attendu);
+  }
+
+  section('Découverte : une seule prestation, la prioritaire');
+
+  const decouverte = appliquerFormule(forte, 'decouverte');
+  const gardees = lignesRetenues(decouverte);
+
+  egal('une seule prestation reste', gardees.length, 1);
+  egal('et c’est la luxothérapie perte de poids', gardees[0].presta, 'LUXO');
+  egal(
+    'gardée à son nombre de séances Intégrale',
+    gardees[0].seances,
+    forte.find((l) => l.presta === 'LUXO')!.seances,
+  );
+
+  /* À égalité de niveau, la luxothérapie passe devant. */
+  const exAequo = [
+    { presta: 'PRESSO' as Prestation, niveau: 'fort' as const, seances: 12, contreIndication: null },
+    { presta: 'LUXO' as Prestation, niveau: 'fort' as const, seances: 15, contreIndication: null },
+    { presta: 'ISHAPE' as Prestation, niveau: 'fort' as const, seances: 12, contreIndication: null },
+  ];
+  egal('à égalité, la luxothérapie l’emporte', prestationPrioritaire(exAequo)!.presta, 'LUXO');
+
+  /* Un niveau plus haut passe avant l'ordre des prestations. */
+  const presoIndispensable = [
+    { presta: 'LUXO' as Prestation, niveau: 'fort' as const, seances: 20, contreIndication: null },
+    { presta: 'PRESSO' as Prestation, niveau: 'oblig' as const, seances: 12, contreIndication: null },
+  ];
+  egal(
+    'mais un niveau plus haut passe devant',
+    prestationPrioritaire(presoIndispensable)!.presta,
+    'PRESSO',
+  );
+
+  /* Un soin écarté pour raison de santé ne peut pas devenir la vitrine. */
+  const luxoInterdite = [
+    { presta: 'LUXO' as Prestation, niveau: 'oblig' as const, seances: 20, contreIndication: 'rem' as const },
+    { presta: 'ISHAPE' as Prestation, niveau: 'prop' as const, seances: 6, contreIndication: null },
+  ];
+  egal(
+    'un soin contre-indiqué n’est jamais la prestation retenue',
+    prestationPrioritaire(luxoInterdite)!.presta,
+    'ISHAPE',
+  );
+
+  section('Découverte quand le bilan n’a prescrit qu’une prestation');
+
+  /*
+    Choisir n'a plus de sens : Découverte serait l'Intégrale sous un autre
+    nom, et l'échelle des trois prix cesserait de descendre. Elle tombe donc
+    au minimum de la prestation.
+  */
+  const seuleLuxo = [
+    { presta: 'LUXO' as Prestation, niveau: 'oblig' as const, seances: 20, contreIndication: null },
+  ];
+  egal(
+    'elle descend au palier minimum',
+    appliquerFormule(seuleLuxo, 'decouverte')[0].seances,
+    10,
+  );
+  egal(
+    'là où Équilibre s’arrête à douze',
+    appliquerFormule(seuleLuxo, 'equilibre')[0].seances,
+    12,
   );
 
   section('Les paliers, un par un');
@@ -214,7 +311,8 @@ export function controlerPrescription() {
   section('Ce qu’on met dans un soin ajouté');
 
   egal('la luxothérapie démarre à son plancher', seancesALAjout('LUXO'), 10);
-  egal('les autres au leur', seancesALAjout('ISHAPE'), 4);
+  egal('l’I-Shape au sien', seancesALAjout('ISHAPE'), 6);
+  egal('la relaxation au sien', seancesALAjout('RELAX'), 5);
   verifie('la ligne se dit ajoutée', ligneAjoutee(rien, 'RELAX').ajoute === true);
 
   /*
