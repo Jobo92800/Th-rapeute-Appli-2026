@@ -206,7 +206,7 @@ export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
         )}
       </section>
 
-      <CarteParcoursAudio cliente={cliente} />
+      <CarteParcoursAudio cliente={cliente} contratSigne={contrats.length > 0} />
 
       <EnvoyerAuCrm cliente={cliente} />
 

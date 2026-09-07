@@ -24,11 +24,28 @@ import type { Cliente } from '../../types/db';
 /**
  * L'accès de la cliente à l'application Mon Parcours.
  *
+ * CE BLOC EST UN RATTRAPAGE, PAS LE CHEMIN NORMAL.
+ *
+ * L'accès se donne à la signature du contrat, dans la fenêtre de signature :
+ * c'est le moment où la cliente est là, où l'on choisit le mot de passe avec
+ * elle et où elle se connecte devant nous. Ici, on répare — une cliente qui
+ * a oublié son mot de passe, ou un accès qui n'a pas été donné ce jour-là.
+ *
+ * Le dire est nécessaire : rien n'empêche techniquement de donner l'accès
+ * ici puis de le redonner à la signature, et une thérapeute qui ne le sait
+ * pas crée deux comptes sans s'en rendre compte.
+ *
  * Il n'existe aucun lien personnel : la cliente a un compte, et l'adresse du
- * site est la même pour toutes. Ce bloc sert donc à donner l'accès, à voir
- * s'il a été activé, et à renvoyer l'invitation quand elle s'est perdue.
+ * site est la même pour toutes.
  */
-export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
+export default function CarteParcoursAudio({
+  cliente,
+  contratSigne,
+}: {
+  cliente: Cliente;
+  /** Sert à prévenir quand la signature — donc l'accès — est encore à venir. */
+  contratSigne: boolean;
+}) {
   const qc = useQueryClient();
   const [action, setAction] = useState<'creer' | 'renvoyer' | null>(null);
   const [parcoursChoisi, setParcoursChoisi] = useState<CodeParcours>('B');
@@ -89,8 +106,8 @@ export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
           </h2>
           <p className="text-xs text-ardoise-500">
             {aAcces
-              ? `${majuscule(laCliente(cliente.civilite))} se connecte avec son email et son mot de passe.`
-              : "L'accès se donne normalement à la signature du contrat."}
+              ? `${majuscule(laCliente(cliente.civilite))} a déjà son accès. Ici, on dépanne : mot de passe oublié, email perdu.`
+              : "L'accès se donne à la signature du contrat. Ici, seulement s'il n'a pas été donné ce jour-là."}
           </p>
         </div>
 
@@ -110,6 +127,19 @@ export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
           </p>
         ) : !aAcces ? (
           <div className="space-y-3">
+            {/*
+              Le doublon qu'on veut éviter : donner l'accès ici, puis le
+              redonner dans la fenêtre de signature qui le propose aussi.
+              Deux comptes pour la même cliente, et personne ne s'en aperçoit
+              avant qu'elle appelle.
+            */}
+            {!contratSigne && (
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                <b>Son contrat n’est pas encore signé.</b> L’accès se donne dans la fenêtre de
+                signature, avec le parcours et le mot de passe — n’y touchez pas ici, vous
+                créeriez deux comptes.
+              </p>
+            )}
             <div className="flex flex-wrap items-end gap-3">
               <div>
                 <span className="etiquette">Parcours</span>
@@ -208,7 +238,7 @@ export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
                 ) : (
                   <Send className="h-4 w-4" />
                 )}
-                Renvoyer l'invitation
+                Mot de passe oublié — lui renvoyer un lien
               </button>
               <a
                 href={ADRESSE_PARCOURS}
@@ -223,7 +253,10 @@ export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
             <p className="text-xs text-ardoise-400">
               Accès donné le{' '}
               {format(new Date(cliente.acces_audio_le!), 'd MMMM yyyy', { locale: fr })}. Le renvoi
-              d'invitation sert quand {laCliente(cliente.civilite)} ne retrouve pas son email.
+              d'invitation est ce qu'on fait quand {laCliente(cliente.civilite)} a oublié son mot de
+              passe ou ne retrouve plus son email : elle reçoit un lien pour reprendre la main sur
+              son compte. Ce lien ne vaut qu'une fois et expire au bout de 24 h — mieux vaut
+              l'envoyer pendant qu'elle est au téléphone.
             </p>
           </div>
         )}
