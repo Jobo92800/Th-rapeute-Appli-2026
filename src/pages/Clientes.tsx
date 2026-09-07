@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Search, UserPlus, X, Sparkles, AlertTriangle, AlertOctagon, MessageSquare, Pin, Archive, Undo2, Trash2 } from 'lucide-react';
+import { Search, X, Sparkles, AlertTriangle, AlertOctagon, MessageSquare, Pin, Archive, Undo2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -190,10 +190,19 @@ export default function Clientes() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link to="/clientes/nouvelle" className="bouton-discret">
-            <UserPlus className="h-4 w-4" />
-            Fiche seule
-          </Link>
+          {/*
+            « Fiche seule » a été retiré ici aussi, après l'accueil.
+
+            Une nouvelle cliente arrive par un bilan, et sa fiche naît à
+            l'écran des coordonnées : c'est le seul chemin, et c'est celui
+            que le guide enseigne. Un bouton qui en ouvrait un autre laissait
+            croire qu'il y avait un choix à faire — et fabriquait des fiches
+            sans bilan, donc sans BioPortrait, sans cure et sans contrat.
+
+            La page existe toujours (`/clientes/nouvelle`) : rien ne la
+            supprime, et l'import du CRM continue de créer des fiches sans
+            bilan. Elle n'est simplement plus proposée.
+          */}
           <Link to="/bilan" className="bouton-fort">
             <Sparkles className="h-4 w-4" />
             Nouveau bilan
