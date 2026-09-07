@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import BulleGraphe from './BulleGraphe';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { formaterEuros } from '../../domain/tarification';
@@ -33,7 +34,7 @@ export default function CourbeParCentre({
   const H = 260;
   const M = { haut: 16, bas: 28, gauche: 58, droite: 12 };
 
-  const { series, max, points } = useMemo(() => {
+  const { series, max, points, pasX } = useMemo(() => {
     const max = Math.max(
       1,
       ...donnees.lignes.flatMap((l) => donnees.mois.map((m) => Number(l.valeurs[m] ?? 0))),
@@ -63,8 +64,41 @@ export default function CourbeParCentre({
       })),
     }));
 
-    return { series, max, points: donnees.mois.map((m, i) => ({ m, x: x(i) })) };
+    return { series, max, pasX, points: donnees.mois.map((m, i) => ({ m, x: x(i) })) };
   }, [donnees]);
+
+  /*
+    On vise un mois, pas un point. Cinq courbes se croisent ici : demander de
+    survoler un disque de trois pixels serait demander de viser la bonne
+    ligne au bon endroit. La bulle donne donc les cinq centres du mois, du
+    plus fort au plus faible — c'est la question qu'on se pose devant cette
+    courbe.
+  */
+  const cadre = useRef<HTMLDivElement>(null);
+  const [survol, setSurvol] = useState<{ index: number; x: number; y: number } | null>(null);
+
+  function suivreLaSouris(e: React.MouseEvent<SVGSVGElement>) {
+    const svg = e.currentTarget.getBoundingClientRect();
+    const boite = cadre.current?.getBoundingClientRect();
+    if (!boite || svg.width === 0 || donnees.mois.length === 0) return;
+
+    const xDessin = ((e.clientX - svg.left) / svg.width) * L;
+    const index = pasX > 0 ? Math.round((xDessin - M.gauche) / pasX) : 0;
+    if (index < 0 || index >= donnees.mois.length) return setSurvol(null);
+
+    setSurvol({
+      index,
+      x: e.clientX - boite.left + (cadre.current?.scrollLeft ?? 0),
+      y: e.clientY - boite.top,
+    });
+  }
+
+  const moisVise = survol ? donnees.mois[survol.index] : null;
+  const releve = moisVise
+    ? series
+        .map((s) => ({ nom: s.nom, teinte: s.teinte, valeur: Number(s.points[survol!.index]?.valeur ?? 0) }))
+        .sort((a, b) => b.valeur - a.valeur)
+    : [];
 
   if (donnees.lignes.length === 0) return null;
 
@@ -89,13 +123,27 @@ export default function CourbeParCentre({
         </span>
       </div>
 
-      <div className="mt-3 overflow-x-auto">
+      <div className="relative mt-3 overflow-x-auto" ref={cadre}>
         <svg
           viewBox={`0 0 ${L} ${H}`}
           className="h-64 w-full min-w-[640px]"
           role="img"
           aria-label="Chiffre d'affaires signé par centre sur douze mois"
+          onMouseMove={suivreLaSouris}
+          onMouseLeave={() => setSurvol(null)}
         >
+          {survol && (
+            <line
+              x1={M.gauche + pasX * survol.index}
+              y1={M.haut - 4}
+              x2={M.gauche + pasX * survol.index}
+              y2={H - M.bas}
+              stroke="currentColor"
+              className="text-ardoise-300"
+              strokeWidth="1"
+              strokeDasharray="3 3"
+            />
+          )}
           {graduations.map((g, i) => (
             <g key={i}>
               <line
@@ -118,9 +166,15 @@ export default function CourbeParCentre({
             <g key={s.cle}>
               <path d={s.chemin} fill="none" stroke={s.teinte} strokeWidth="2" strokeLinejoin="round" />
               {s.points.map((p, i) => (
-                <circle key={i} cx={p.cx} cy={p.cy} r="3" fill={s.teinte}>
-                  <title>{`${s.nom} — ${moisCourt(p.mois)} : ${formaterEuros(p.valeur)}`}</title>
-                </circle>
+                <circle
+                  key={i}
+                  cx={p.cx}
+                  cy={p.cy}
+                  r={survol?.index === i ? 5 : 3}
+                  fill={s.teinte}
+                  stroke={survol?.index === i ? 'white' : undefined}
+                  strokeWidth={survol?.index === i ? 1.5 : undefined}
+                />
               ))}
             </g>
           ))}
@@ -137,6 +191,28 @@ export default function CourbeParCentre({
             </text>
           ))}
         </svg>
+
+        {moisVise && survol && (
+          <BulleGraphe x={survol.x} y={survol.y} largeur={cadre.current?.clientWidth ?? 0}>
+            <p className="font-semibold text-ardoise-900">{moisCourt(moisVise)}</p>
+            <ul className="mt-1.5 space-y-0.5">
+              {releve.map((r) => (
+                <li key={r.nom} className="flex items-center justify-between gap-3">
+                  <span className="flex min-w-0 items-center gap-1.5 text-ardoise-600">
+                    <span
+                      className="h-0.5 w-3 shrink-0 rounded-full"
+                      style={{ backgroundColor: r.teinte }}
+                    />
+                    <span className="truncate">{r.nom}</span>
+                  </span>
+                  <span className="chiffres shrink-0 font-semibold text-ardoise-900">
+                    {formaterEuros(r.valeur)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </BulleGraphe>
+        )}
       </div>
     </section>
   );

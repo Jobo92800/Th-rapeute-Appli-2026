@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import BulleGraphe from './BulleGraphe';
 import { formaterEuros } from '../../domain/tarification';
 
 /**
@@ -18,7 +19,7 @@ export default function CourbeMensuelle({
   const H = 200;
   const MARGE = { haut: 14, bas: 26, gauche: 8, droite: 8 };
 
-  const { barres, max } = useMemo(() => {
+  const { barres, max, largeurMois } = useMemo(() => {
     const max = Math.max(1, ...mois.flatMap((m) => [Number(m.encaisse), Number(m.signe)]));
     const largeurMois = (L - MARGE.gauche - MARGE.droite) / Math.max(1, mois.length);
     const largeurBarre = Math.min(14, largeurMois / 3);
@@ -38,10 +39,37 @@ export default function CourbeMensuelle({
       };
     });
 
-    return { barres, max };
+    return { barres, max, largeurMois };
   }, [mois]);
 
   const base = H - MARGE.bas;
+
+  /*
+    Le survol se lit sur le cadre, pas sur les barres : viser un rectangle de
+    quatorze pixels de large demande une précision qu'on n'a pas au comptoir.
+    On prend la colonne du mois, entière, du haut en bas du graphique.
+  */
+  const cadre = useRef<HTMLDivElement>(null);
+  const [survol, setSurvol] = useState<{ index: number; x: number; y: number } | null>(null);
+
+  function suivreLaSouris(e: React.MouseEvent<SVGSVGElement>) {
+    const svg = e.currentTarget.getBoundingClientRect();
+    const boite = cadre.current?.getBoundingClientRect();
+    if (!boite || svg.width === 0 || barres.length === 0) return;
+
+    // Du pixel écran vers la coordonnée du dessin, quelle que soit la taille rendue.
+    const xDessin = ((e.clientX - svg.left) / svg.width) * L;
+    const index = Math.floor((xDessin - MARGE.gauche) / largeurMois);
+    if (index < 0 || index >= barres.length) return setSurvol(null);
+
+    setSurvol({
+      index,
+      x: e.clientX - boite.left + (cadre.current?.scrollLeft ?? 0),
+      y: e.clientY - boite.top,
+    });
+  }
+
+  const vise = survol ? barres[survol.index] : null;
 
   return (
     <section className="carte p-5">
@@ -61,9 +89,20 @@ export default function CourbeMensuelle({
         </span>
       </div>
 
-      <div className="mt-3 overflow-x-auto">
+      <div className="relative mt-3 overflow-x-auto" ref={cadre}>
         <svg viewBox={`0 0 ${L} ${H}`} className="h-52 w-full min-w-[600px]" role="img"
-             aria-label="Encaissé et signé, mois par mois">
+             aria-label="Encaissé et signé, mois par mois"
+             onMouseMove={suivreLaSouris}
+             onMouseLeave={() => setSurvol(null)}>
+          {vise && (
+            <rect
+              x={vise.centre - largeurMois / 2}
+              y={MARGE.haut - 6}
+              width={largeurMois}
+              height={base - MARGE.haut + 6}
+              className="fill-ardoise-900/5"
+            />
+          )}
           <line x1={MARGE.gauche} y1={base} x2={L - MARGE.droite} y2={base}
                 stroke="currentColor" className="text-ardoise-200" strokeWidth="1" />
 
@@ -76,9 +115,7 @@ export default function CourbeMensuelle({
                 height={Math.max(0, b.hEncaisse)}
                 rx="2"
                 className="fill-marine-600"
-              >
-                <title>{`${b.libelle} — encaissé ${formaterEuros(b.encaisse)}`}</title>
-              </rect>
+              />
               <rect
                 x={b.centre + 1}
                 y={base - b.hSigne}
@@ -86,9 +123,7 @@ export default function CourbeMensuelle({
                 height={Math.max(0, b.hSigne)}
                 rx="2"
                 className="fill-rose-400"
-              >
-                <title>{`${b.libelle} — signé ${formaterEuros(b.signe)}`}</title>
-              </rect>
+              />
               <text
                 x={b.centre}
                 y={H - 8}
@@ -100,6 +135,30 @@ export default function CourbeMensuelle({
             </g>
           ))}
         </svg>
+
+        {vise && survol && (
+          <BulleGraphe x={survol.x} y={survol.y} largeur={cadre.current?.clientWidth ?? 0}>
+            <p className="font-semibold text-ardoise-900">{vise.libelle}</p>
+            <p className="mt-1.5 flex items-center justify-between gap-3">
+              <span className="flex items-center gap-1.5 text-ardoise-600">
+                <span className="h-2 w-2 rounded-sm bg-marine-600" />
+                Encaissé
+              </span>
+              <span className="chiffres font-semibold text-ardoise-900">
+                {formaterEuros(vise.encaisse)}
+              </span>
+            </p>
+            <p className="mt-0.5 flex items-center justify-between gap-3">
+              <span className="flex items-center gap-1.5 text-ardoise-600">
+                <span className="h-2 w-2 rounded-sm bg-rose-400" />
+                Signé
+              </span>
+              <span className="chiffres font-semibold text-ardoise-900">
+                {formaterEuros(vise.signe)}
+              </span>
+            </p>
+          </BulleGraphe>
+        )}
       </div>
 
       <p className="mt-1 text-xs text-ardoise-400">
