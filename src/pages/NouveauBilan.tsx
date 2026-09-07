@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { useVilleAutomatique } from '../lib/villeAutomatique';
+import ChoixDeVille from '../components/ChoixDeVille';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -90,6 +92,13 @@ export default function NouveauBilan() {
   const [curseur, setCurseur] = useState(50);
   const [texte, setTexte] = useState('');
   const [contact, setContact] = useState({ ...CONTACT_VIDE });
+
+  // La ville se déduit du code postal quand il n'y a qu'une commune. Les deux
+  // écrans de coordonnées — l'accueil du bilan et l'étape finale — remplissent
+  // le même objet : un seul branchement suffit.
+  const villes = useVilleAutomatique(contact.code_postal, contact.ville, (v) =>
+    setContact((c) => ({ ...c, ville: v })),
+  );
   const [enregistrement, setEnregistrement] = useState(false);
 
   const bareme = baremeData?.bareme;
@@ -382,7 +391,10 @@ export default function NouveauBilan() {
                 <ChampContact id="a_adr" libelle="Adresse" v={contact.adresse} on={(v) => setContact((c) => ({ ...c, adresse: v }))} />
               </div>
               <ChampContact id="a_cp" libelle="Code postal" v={contact.code_postal} on={(v) => setContact((c) => ({ ...c, code_postal: v }))} />
-              <ChampContact id="a_ville" libelle="Ville" v={contact.ville} on={(v) => setContact((c) => ({ ...c, ville: v }))} />
+              <div>
+                <ChampContact id="a_ville" libelle="Ville" v={contact.ville} on={(v) => setContact((c) => ({ ...c, ville: v }))} />
+                <ChoixDeVille propositions={villes.propositions} onChoisir={villes.choisir} />
+              </div>
             </div>
           </div>
 
@@ -717,7 +729,10 @@ export default function NouveauBilan() {
                 <ChampContact id="c_adr" libelle="Adresse" v={contact.adresse} on={(v) => setContact((c) => ({ ...c, adresse: v }))} />
               </div>
               <ChampContact id="c_cp" libelle="Code postal" v={contact.code_postal} on={(v) => setContact((c) => ({ ...c, code_postal: v }))} />
-              <ChampContact id="c_ville" libelle="Ville" v={contact.ville} on={(v) => setContact((c) => ({ ...c, ville: v }))} />
+              <div>
+                <ChampContact id="c_ville" libelle="Ville" v={contact.ville} on={(v) => setContact((c) => ({ ...c, ville: v }))} />
+                <ChoixDeVille propositions={villes.propositions} onChoisir={villes.choisir} />
+              </div>
               <ChampContact id="c_age" libelle="Âge" type="number" v={contact.age} on={(v) => setContact((c) => ({ ...c, age: v }))} />
             </div>
           </>

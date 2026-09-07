@@ -14,6 +14,8 @@ import {
 } from '../../services/clientes';
 import ModaleSuppression from './ModaleSuppression';
 import { pronom } from '../../domain/civilite';
+import { useVilleAutomatique } from '../../lib/villeAutomatique';
+import ChoixDeVille from '../ChoixDeVille';
 import type { Cliente, ClienteSaisie } from '../../types/db';
 
 const SOURCES = [
@@ -53,6 +55,11 @@ export default function OngletCoordonnees({ centreId, cliente }: Props) {
   const qc = useQueryClient();
 
   const [saisie, setSaisie] = useState<ClienteSaisie>(VIDE);
+
+  // La ville se déduit du code postal quand il n'y a qu'une commune.
+  const villes = useVilleAutomatique(saisie.code_postal ?? '', saisie.ville ?? '', (v) =>
+    setSaisie((s) => ({ ...s, ville: v })),
+  );
   const [homonymes, setHomonymes] = useState<Cliente[]>([]);
   const [suppression, setSuppression] = useState(false);
 
@@ -249,7 +256,10 @@ export default function OngletCoordonnees({ centreId, cliente }: Props) {
               <Champ id="adresse" libelle="Adresse" valeur={saisie.adresse ?? ''} onChange={(v) => setSaisie((s) => ({ ...s, adresse: v }))} />
             </div>
             <Champ id="cp" libelle="Code postal" valeur={saisie.code_postal ?? ''} onChange={(v) => setSaisie((s) => ({ ...s, code_postal: v }))} />
-            <Champ id="ville" libelle="Ville" valeur={saisie.ville ?? ''} onChange={(v) => setSaisie((s) => ({ ...s, ville: v }))} />
+            <div>
+              <Champ id="ville" libelle="Ville" valeur={saisie.ville ?? ''} onChange={(v) => setSaisie((s) => ({ ...s, ville: v }))} />
+              <ChoixDeVille propositions={villes.propositions} onChoisir={villes.choisir} />
+            </div>
           </div>
         </section>
 
