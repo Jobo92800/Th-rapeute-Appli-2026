@@ -278,8 +278,8 @@ function Recapitulatif({
   if (!bilan.recap_pdf) {
     return (
       <p className="mt-4 border-t border-ardoise-100 pt-3 text-xs text-ardoise-400">
-        Aucun récapitulatif n’a encore été envoyé. Il s’envoie depuis le dernier écran
-        d’un bilan, avec le bouton « Envoyer le récap ».
+        Aucun récapitulatif n’a encore été envoyé. Il part du dernier écran d’un bilan,
+        avec le bouton « Bilan seul ».
       </p>
     );
   }
