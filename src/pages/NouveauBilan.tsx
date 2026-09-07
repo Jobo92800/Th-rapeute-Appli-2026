@@ -24,7 +24,7 @@ import { lireBaremeActif, lireGrilleTarifaire } from '../services/metier';
 import { creerCliente } from '../services/clientes';
 import { laCliente } from '../domain/civilite';
 import { formaterEuros } from '../domain/tarification';
-import { envoyerRecap } from '../services/recap';
+import { envoyerRecap, rangerBioPortrait } from '../services/recap';
 import { enregistrerBilan, creerProgramme } from '../services/metier';
 import {
   choix,
@@ -280,6 +280,39 @@ export default function NouveauBilan() {
           echeances: prescription.echeances,
           complementRecommande: complement?.nom ?? null,
         });
+      }
+
+      /*
+        Le BioPortrait seul est rangé pour CHAQUE bilan, quoi que la cliente
+        décide : cure validée, bilan seul, ou récapitulatif envoyé. C'est un
+        document qu'on garde au dossier, pas un envoi — aucun mail ne part.
+
+        Son échec est avalé exprès. Un PDF qui n'arrive pas dans le CRM ne
+        doit pas faire croire à la thérapeute que le bilan ne s'est pas
+        enregistré : il l'est, la tâche reste en file, et la synchro la
+        reprendra toute seule.
+      */
+      try {
+        await rangerBioPortrait({
+          bilanId: bilan.id,
+          bareme,
+          bioportrait,
+          inbody: mesuresInbody(bareme, reponses),
+          proposition: {
+            ...proposition,
+            prixGuide: grille.guide,
+            prixTenue: grille.tenue,
+          },
+          cliente: {
+            civilite: contact.civilite,
+            prenom: contact.prenom.trim(),
+            nom: contact.nom.trim(),
+          },
+          centre,
+          dateBilan: new Date().toISOString().slice(0, 10),
+        });
+      } catch (err) {
+        console.error(err);
       }
 
       /*

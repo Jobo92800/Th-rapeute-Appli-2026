@@ -91,6 +91,12 @@ const CHAMP_CONTRAT = 'fldxJHrZBuFN75wMr';
 */
 const CHAMP_RECAP_NOM = 'Récapitulatif BioPortrait';
 const CHAMP_RECAP_DATE = 'Récap envoyé le';
+/*
+  Le BioPortrait seul, gardé au dossier. Cherché par son nom comme le
+  récapitulatif, et surtout SANS champ date : celle du récapitulatif
+  déclenche l'envoi du mail, et ce document-là ne s'envoie pas tout seul.
+*/
+const CHAMP_BIOPORTRAIT_NOM = 'BioPortrait';
 const CHAMP_CONSENTEMENTS = 'fldn4f3NScLrXj31C';
 
 /** « Montant Cure » pour la première, « Montant cure N » ensuite. */
@@ -262,6 +268,51 @@ Deno.serve(async (req: Request) => {
    * L'ordre compte : c'est la date qui déclenche l'automatisation d'envoi du
    * mail. La poser avant la pièce jointe ferait partir un mail sans document.
    */
+  /**
+   * Dépose le BioPortrait seul sur la fiche Airtable.
+   *
+   * Deux différences avec le récapitulatif, et elles comptent. Aucune date
+   * n'est posée : ce document ne déclenche pas de mail. Et l'adresse email
+   * n'est pas exigée — on garde le BioPortrait d'une cliente même sans
+   * adresse, puisqu'on ne cherche pas à le lui envoyer maintenant.
+   */
+  async function traiterBioPortrait(bilanId: string) {
+    const { data: b } = await db
+      .from('bilans')
+      .select('id, cliente_id, bioportrait_pdf, date_bilan')
+      .eq('id', bilanId)
+      .maybeSingle();
+
+    if (!b) throw new Error('Bilan introuvable.');
+    if (!b.bioportrait_pdf) throw new Error("Aucun BioPortrait n'a été établi pour ce bilan.");
+
+    const { data: cliente } = await db
+      .from('clientes')
+      .select('prenom, nom, airtable_record_id')
+      .eq('id', b.cliente_id)
+      .maybeSingle();
+
+    if (!cliente) throw new Error('Cliente introuvable.');
+    if (!cliente.airtable_record_id) {
+      throw new Error("La fiche cliente n'est pas encore dans Airtable, nouvelle tentative plus tard.");
+    }
+
+    const suffixe = `${cliente.nom}_${cliente.prenom}`.replace(/[^\w\-]+/g, '_');
+    const jour = String(b.date_bilan ?? '').slice(0, 10);
+
+    await joindrePdf(
+      cliente.airtable_record_id,
+      await idDuChamp(CHAMP_BIOPORTRAIT_NOM),
+      `BioPortrait_${suffixe}${jour ? `_${jour}` : ''}.pdf`,
+      b.bioportrait_pdf,
+    );
+
+    await db
+      .from('bilans')
+      .update({ bioportrait_depose_le: new Date().toISOString() })
+      .eq('id', bilanId);
+  }
+
   async function traiterRecap(bilanId: string) {
     const { data: b } = await db
       .from('bilans')
@@ -602,6 +653,13 @@ Deno.serve(async (req: Request) => {
     // l'envoi du mail depuis Airtable.
     if (tache.entite === 'recap') {
       await traiterRecap(tache.entite_id);
+      return;
+    }
+
+    // Le BioPortrait seul : une pièce jointe, et rien d'autre. Pas de date,
+    // donc pas de mail — c'est un document qu'on garde, pas un envoi.
+    if (tache.entite === 'bioportrait') {
+      await traiterBioPortrait(tache.entite_id);
       return;
     }
 

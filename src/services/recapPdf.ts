@@ -211,13 +211,15 @@ function ligneTableau(
   return y + 7.5;
 }
 
-export function genererRecapPdf(d: DonneesRecap): jsPDF {
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+/*
+  La page du BioPortrait.
 
-  // =========================================================================
-  // Page 1 — ce que le bilan a révélé
-  // =========================================================================
-
+  Elle sert deux documents : le récapitulatif, où elle précède l'offre, et
+  le BioPortrait seul, où elle tient toute seule. Une page écrite deux fois
+  finirait par différer d'un document à l'autre, et la cliente qui les a
+  reçus tous les deux le verrait.
+*/
+function pageBioPortrait(doc: Doc, d: DonneesRecap): void {
   bandeau(doc, 'Diagnostic BioPortrait', d.dateBilan);
 
   let y = 44;
@@ -277,6 +279,12 @@ export function genererRecapPdf(d: DonneesRecap): jsPDF {
   }
 
   pied(doc, d, 1);
+}
+
+export function genererRecapPdf(d: DonneesRecap): jsPDF {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+  pageBioPortrait(doc, d);
 
   // =========================================================================
   // Page 2 — ce que nous vous proposons
@@ -285,7 +293,7 @@ export function genererRecapPdf(d: DonneesRecap): jsPDF {
   doc.addPage();
   bandeau(doc, 'Votre programme sur mesure', d.dateBilan);
 
-  y = 44;
+  let y = 44;
   police(doc, 22, 'normal');
   couleur(doc, ENCRE);
   ecrire(doc, 'Votre cure ', MARGE, y);
@@ -386,6 +394,25 @@ export function genererRecapPdf(d: DonneesRecap): jsPDF {
   doc.rect(0, 30, A4_W, 1.2, 'F');
 
   return doc;
+}
+
+/**
+ * Le BioPortrait seul, sans un mot sur la cure ni sur le prix.
+ *
+ * C'est le document qu'on garde de chaque bilan, et qu'on peut envoyer des
+ * mois plus tard sans réveiller une proposition commerciale périmée : les
+ * prix changent, le profil et le terrain d'une personne, non.
+ */
+export function genererBioPortraitPdf(d: DonneesRecap): jsPDF {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  pageBioPortrait(doc, d);
+  return doc;
+}
+
+export function bioPortraitEnBase64(d: DonneesRecap): string {
+  const doc = genererBioPortraitPdf(d);
+  const sortie = doc.output('datauristring');
+  return sortie.slice(sortie.indexOf(',') + 1);
 }
 
 /** Le PDF en base64, prêt à être rangé en base puis déposé dans Airtable. */

@@ -166,6 +166,9 @@ export interface Bilan {
   recap_pdf: string | null;
   recap_demande_le: string | null;
   recap_envoye_le: string | null;
+  /** Le BioPortrait seul, en base64. Gardé pour chaque bilan depuis la 050. */
+  bioportrait_pdf: string | null;
+  bioportrait_depose_le: string | null;
   cree_le: string;
   maj_le: string;
 }
