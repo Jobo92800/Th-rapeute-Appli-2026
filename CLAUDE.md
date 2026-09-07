@@ -229,6 +229,14 @@ décompte de ce qu'elle a payé contre ce qu'elle a reçu · **carnet de
 liaison interne**, annonces de la direction et signalements des
 thérapeutes, avec une pastille au menu.
 
+**L'application n'est pas encore entre les mains des thérapeutes** (état au
+7 septembre 2026) : Jonathan est seul à s'en servir, et les fiches créées
+dans la V2 sont des essais. Les seules données qui comptent sont les **680
+fiches reprises du CRM**. Conséquence pour les corrections : inutile de
+prévoir un rattrapage des données déjà écrites — ce qui est figé sur un
+bilan d'essai (l'`inbody`, une proposition) n'a aucune valeur. Cette ligne
+tombera le jour de la mise en service.
+
 **Tout est vérifié en conditions réelles** : fiches, bilan, cure, contrat,
 consentements, synchro Airtable et parcours audio fonctionnent. Le stock,
 lui, n'a été vu que sur des données factices : il attend la migration 015.
