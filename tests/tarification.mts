@@ -420,4 +420,82 @@ export function controlerTarification() {
     credit.echeances.reduce((n, e) => n + e.montant, 0),
     credit.montantARegler,
   );
+
+  /*
+    Le bilan réglé en ligne.
+
+    Il ressemble à l'acompte et n'a rien à voir : l'acompte répartit sa cure,
+    ici l'argent est entré ailleurs avant qu'on la voie. Le prix de la cure
+    ne bouge donc pas — c'est le choix retenu — mais elle ne doit plus au
+    centre que la différence, et cette ligne-là ne se réclame jamais.
+  */
+  section('Le bilan réglé en ligne se déduit de ce qui reste dû');
+
+  const CURE = 15 * 59 + 5 * 59 + 29; // 1 209 €, la cure de l'écran
+  const bilanPaye = construireEcheancierCure({
+    seances: 20,
+    prixSeance: 59,
+    options: 29,
+    methode: 'centre',
+    n: 4,
+    bilanDejaRegle: 129,
+  });
+
+  egalEuros('la cure vaut toujours autant', bilanPaye.montantARegler, CURE);
+  egal('le bilan est la première ligne', bilanPaye.echeances[0].type, 'bilan');
+  egalEuros('et vaut le prix du bilan', bilanPaye.echeances[0].montant, 129);
+  egal('quatre échéances suivent', bilanPaye.echeances.filter((e) => e.type === 'echeance').length, 4);
+  egalEuros(
+    'elles ne réclament que le reste',
+    bilanPaye.echeances.filter((e) => e.type === 'echeance').reduce((n, e) => n + e.montant, 0),
+    CURE - 129,
+  );
+  egalEuros(
+    'et tout retombe sur le prix de la cure',
+    bilanPaye.echeances.reduce((n, e) => n + e.montant, 0),
+    CURE,
+  );
+
+  section('Bilan réglé et acompte se cumulent sans se recouvrir');
+
+  const lesDeux = construireEcheancierCure({
+    seances: 20, prixSeance: 59, options: 29, methode: 'centre', n: 3,
+    bilanDejaRegle: 129, acompte: 177,
+  });
+
+  egal('les deux lignes sont là', lesDeux.echeances[0].type + '+' + lesDeux.echeances[1].type, 'bilan+acompte');
+  egalEuros('le total reste le prix de la cure', lesDeux.echeances.reduce((n, e) => n + e.montant, 0), CURE);
+  egalEuros('le montant annoncé ne bouge pas non plus', lesDeux.montantARegler, CURE);
+
+  section('Chez Alma, le crédit ne finance pas ce qui est déjà payé');
+
+  const almaSans = construireEcheancierCure({
+    seances: 20, prixSeance: 59, options: 29, methode: 'alma', n: 4,
+  });
+  const almaAvec = construireEcheancierCure({
+    seances: 20, prixSeance: 59, options: 29, methode: 'alma', n: 4,
+    bilanDejaRegle: 129,
+  });
+
+  verifie('les frais Alma baissent avec le montant financé', almaAvec.frais < almaSans.frais);
+  egal('le bilan sort du crédit, en tête', almaAvec.echeances[0].type, 'bilan');
+  egalEuros(
+    'et le tout vaut la cure plus les frais',
+    almaAvec.echeances.reduce((n, e) => n + e.montant, 0),
+    almaAvec.montantARegler,
+  );
+  egalEuros('la cure garde son prix, frais compris', almaAvec.montantARegler, CURE + almaAvec.frais);
+
+  section('Un bilan réglé plus grand que la cure ne creuse pas de trou');
+
+  const minuscule = construireEcheancierCure({
+    seances: 1, prixSeance: 59, options: 0, methode: 'centre', n: 1,
+    bilanDejaRegle: 129,
+  });
+  egalEuros('rien de négatif', Math.min(...minuscule.echeances.map((e) => e.montant)), 0);
+  egalEuros(
+    'et le compte tombe juste',
+    minuscule.echeances.reduce((n, e) => n + e.montant, 0),
+    minuscule.montantARegler,
+  );
 }

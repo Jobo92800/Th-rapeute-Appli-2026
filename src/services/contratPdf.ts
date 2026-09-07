@@ -240,7 +240,7 @@ export async function generateSignedContractPdf(
   y += 4;
 
   // Payment schedule box — estimate height first
-  const installmentLines = (data.deposit ? 1 : 0) + data.installments.length;
+  const installmentLines = (data.deposit ? 1 : 0) + (data.bilanRegle ? 1 : 0) + data.installments.length;
   const boxEstH = 9 + LINE_H + 1 + installmentLines * LINE_H + 6;
   y = ensureSpace(doc, y, boxEstH);
 
@@ -250,7 +250,8 @@ export async function generateSignedContractPdf(
     six mois plus tard pour savoir ce qu'on doit. Il mérite d'être trouvé
     d'un coup d'œil, d'où le fond teal pâle et le montant en gros.
   */
-  const lignesReglement = data.installments.length + (data.deposit ? 1 : 0);
+  const lignesReglement =
+    data.installments.length + (data.deposit ? 1 : 0) + (data.bilanRegle ? 1 : 0);
   const hauteurBloc = 18 + lignesReglement * LINE_H + 4;
   y = ensureSpace(doc, y, hauteurBloc + 4);
   const boxStartY = y;
@@ -286,6 +287,19 @@ export async function generateSignedContractPdf(
     y += LINE_H;
   };
 
+  /*
+    Le bilan réglé en ligne vient en tête : il a été encaissé avant tout le
+    reste, et il explique pourquoi la somme des échéances est inférieure au
+    montant total.
+  */
+  if (data.bilanRegle) {
+    ligneReglement(
+      'Bilan réglé en ligne',
+      data.bilanRegle.amount,
+      data.bilanRegle.date,
+      data.bilanRegle.method,
+    );
+  }
   if (data.deposit) {
     ligneReglement('Acompte', data.deposit.amount, data.deposit.date, data.deposit.method);
   }

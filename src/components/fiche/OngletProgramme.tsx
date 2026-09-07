@@ -307,9 +307,11 @@ export default function OngletProgramme({
                       className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border px-3 py-2.5 ${st.classe}`}
                     >
                       <span className="w-24 shrink-0 text-2xs font-semibold uppercase tracking-wide text-ardoise-500">
-                        {e.type === 'acompte'
-                          ? 'Acompte'
-                          : `${e.rang}${e.rang === 1 ? 'ère' : 'ème'} éch.`}
+                        {e.type === 'bilan'
+                          ? 'Bilan'
+                          : e.type === 'acompte'
+                            ? 'Acompte'
+                            : `${e.rang}${e.rang === 1 ? 'ère' : 'ème'} éch.`}
                       </span>
 
                       <span className="chiffres w-24 shrink-0 text-base font-bold text-ardoise-900">

@@ -36,9 +36,11 @@ export interface PrescriptionValidee {
   guide: boolean;
   tenue: boolean;
   montantTotal: number;
+  /** Ce que la cliente a déjà réglé en ligne. Zéro le plus souvent. */
+  bilanDejaRegle: number;
   modeReglement: ModeReglement;
   frais: number;
-  echeances: Array<{ rang: number; montant: number; type?: 'acompte' | 'echeance' }>;
+  echeances: Array<{ rang: number; montant: number; type?: 'acompte' | 'echeance' | 'bilan' }>;
 }
 
 const TECHNO: Record<Prestation, Technologie> = {
@@ -110,6 +112,13 @@ export default function CureEtDevis({
   */
   const [acompteOuvert, setAcompteOuvert] = useState(false);
   const [creneaux, setCreneaux] = useState<number | null>(null);
+  /*
+    Le bilan réglé en ligne, à la prise de rendez-vous. Rien à voir avec
+    l'acompte : là, l'argent est déjà entré, ailleurs, avant qu'on la voie.
+    La cure garde son prix ; c'est ce qu'il reste à régler au centre qui
+    baisse d'autant.
+  */
+  const [bilanRegleEnLigne, setBilanRegleEnLigne] = useState(false);
   const [devisRevele, setDevisRevele] = useState(false);
   const [bulle, setBulle] = useState<DetailInclus | null>(null);
   /*
@@ -161,10 +170,13 @@ export default function CureEtDevis({
     afficherait un échéancier que le plafond n'autorise plus.
   */
   const creneauxRetenus = creneaux ?? creneauxParDefaut(retenues.length);
+  const dejaRegle = bilanRegleEnLigne ? grille.bilan : 0;
   const acompte =
     acompteOuvert && methode === 'centre'
       ? montantAcompte({
-          prixBilan: grille.bilan,
+          // Le bilan déjà payé ne se redemande pas : l'acompte se réduit
+          // alors aux créneaux bloqués pour elle.
+          prixBilan: bilanRegleEnLigne ? 0 : grille.bilan,
           creneauxReserves: creneauxRetenus,
           prixSeance: grille.seance,
         })
@@ -174,6 +186,11 @@ export default function CureEtDevis({
     ? nEcheances
     : (choixEcheances[choixEcheances.length - 1] ?? 1);
 
+  /*
+    Ce qu'elle sort aujourd'hui : la première ligne qui n'est pas déjà
+    encaissée. Sans ça, le grand chiffre de l'écran annonçait « 129 € » à
+    une cliente qui doit en réalité poser le premier chèque de la cure.
+  */
   const echeancier = construireEcheancierCure({
     seances: totalSeances,
     prixSeance: grille.seance,
@@ -181,7 +198,10 @@ export default function CureEtDevis({
     methode,
     n: nRetenu,
     acompte,
+    bilanDejaRegle: dejaRegle,
   });
+
+  const premierARegler = echeancier.echeances.find((e) => e.type !== 'bilan');
 
   function ajuster(presta: Prestation, delta: number) {
     const actuelle = cure.find((l) => l.presta === presta)?.seances ?? 0;
@@ -203,7 +223,10 @@ export default function CureEtDevis({
       electro,
       guide: luxo,
       tenue: electro,
+      // Le prix de la cure ne bouge pas : le bilan déjà réglé en fait
+      // partie, il est simplement encaissé avant les autres.
       montantTotal: totalSeances * grille.seance + options,
+      bilanDejaRegle: dejaRegle,
       modeReglement: echeancier.mode,
       frais: echeancier.frais,
       echeances: echeancier.echeances,
@@ -467,9 +490,17 @@ export default function CureEtDevis({
             {methode === 'centre' && echeancier.n === 1 ? (
               <>
                 <div className="chiffres mt-5 text-5xl font-bold">
-                  {formaterEuros(echeancier.montantARegler)}
+                  {formaterEuros(echeancier.montantARegler - dejaRegle)}
                 </div>
-                <div className="mt-1.5 text-sm text-marine-200">en une fois · sans frais</div>
+                <div className="mt-1.5 text-sm text-marine-200">
+                  en une fois · sans frais
+                  {dejaRegle > 0 && (
+                    <span className="mt-0.5 block text-xs text-marine-300">
+                      cure {formaterEuros(echeancier.montantARegler)}, dont{' '}
+                      {formaterEuros(dejaRegle)} déjà réglés en ligne
+                    </span>
+                  )}
+                </div>
               </>
             ) : (
               <>
@@ -481,23 +512,37 @@ export default function CureEtDevis({
                     : `${echeancier.n} fois égales · via Alma`}
                 </div>
                 <div className="chiffres mt-1 text-5xl font-bold">
-                  {formaterEuros(echeancier.echeances[0]?.montant ?? 0, 2)}
+                  {/*
+                    Le bilan déjà réglé n'est pas ce qu'elle va sortir
+                    aujourd'hui : le gros chiffre montre le premier versement
+                    qui reste à faire.
+                  */}
+                  {formaterEuros(premierARegler?.montant ?? 0, 2)}
                   {methode === 'alma' && <span className="text-xl font-semibold"> /mois</span>}
                 </div>
 
                 {methode === 'centre' && (
                   <div className="mx-auto mt-4 max-w-xs">
-                    {echeancier.echeances.slice(1).map((e) => (
+                    {echeancier.echeances
+                      .filter((e) => e !== premierARegler)
+                      .map((e) => (
                       <div
-                        key={e.rang}
+                        key={`${e.type ?? 'echeance'}-${e.rang}`}
                         className="flex justify-between border-b border-white/15 py-1 text-[13px] text-marine-100"
                       >
-                        <span>{e.type === 'acompte' ? 'Acompte' : `Échéance ${e.rang}`}</span>
+                        <span>
+                          {e.type === 'bilan'
+                            ? 'Bilan déjà réglé'
+                            : e.type === 'acompte'
+                              ? 'Acompte'
+                              : `Échéance ${e.rang}`}
+                        </span>
                         <span className="chiffres font-semibold text-white">
+                          {e.type === 'bilan' ? '− ' : ''}
                           {formaterEuros(e.montant, 2)}
                         </span>
                       </div>
-                    ))}
+                      ))}
                   </div>
                 )}
 
@@ -505,6 +550,15 @@ export default function CureEtDevis({
                   Montant total : {formaterEuros(echeancier.montantARegler)}
                   {echeancier.frais > 0 && (
                     <> · dont {formaterEuros(echeancier.frais, 2)} de frais Alma</>
+                  )}
+                  {dejaRegle > 0 && (
+                    <span className="mt-0.5 block text-marine-300">
+                      dont {formaterEuros(dejaRegle)} déjà réglés en ligne · reste{' '}
+                      <b className="text-white">
+                        {formaterEuros(echeancier.montantARegler - dejaRegle)}
+                      </b>{' '}
+                      au centre
+                    </span>
                   )}
                 </div>
               </>
@@ -534,6 +588,32 @@ export default function CureEtDevis({
                   : 'Par chèques au centre. Le guide et la tenue sont sur la première échéance.'
                 : `Frais Alma de ${String(tauxFraisAlma(echeancier.n, totalSeances * grille.seance + options)).replace('.', ',')} %, à sa charge, compris dans la mensualité.`}
             </p>
+
+            {/*
+              Le bilan réglé en ligne. Toujours visible, contrairement à
+              l'acompte : la thérapeute doit se poser la question à chaque
+              cure, sinon on réclame à une cliente ce qu'elle a déjà payé.
+            */}
+            <div className="mx-auto mt-4 max-w-sm border-t border-white/15 pt-3">
+              <label className="flex cursor-pointer items-start gap-2.5 text-left">
+                <input
+                  type="checkbox"
+                  checked={bilanRegleEnLigne}
+                  onChange={(e) => setBilanRegleEnLigne(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/40 bg-white/10 accent-rose-500"
+                />
+                <span className="text-[11px] leading-snug text-marine-200">
+                  <span className="font-semibold text-white">
+                    Bilan déjà réglé en ligne ({formaterEuros(grille.bilan)})
+                  </span>
+                  <span className="block">
+                    {bilanRegleEnLigne
+                      ? 'Déduit de ce qu’elle règle au centre. La cure garde son prix.'
+                      : 'À cocher si elle a payé son bilan en prenant rendez-vous.'}
+                  </span>
+                </span>
+              </label>
+            </div>
 
             {/* L'acompte, rangé tant qu'on n'en a pas besoin. */}
             {methode === 'centre' && (

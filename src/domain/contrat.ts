@@ -68,6 +68,15 @@ export interface ContractData {
   totalAmount: string;
   installmentCount: number;
   deposit: ContractInstallment | null;
+  /**
+   * Le bilan réglé en ligne avant la venue, s'il y en a eu un.
+   *
+   * Il figure au contrat parce que sans lui les comptes ne tombent pas :
+   * le montant total inclut ces 129 €, mais les échéances à venir ne les
+   * réclament plus. Une cliente qui additionne ses chèques doit retrouver
+   * le total, sinon le document est faux à ses yeux — et il le serait.
+   */
+  bilanRegle: ContractInstallment | null;
   installments: ContractInstallment[];
 }
 
@@ -150,6 +159,7 @@ export function construireContrat(args: {
     .filter((id): id is string => Boolean(id));
 
   const acompte = echeances.find((e) => e.type === 'acompte') ?? null;
+  const bilanRegle = echeances.find((e) => e.type === 'bilan') ?? null;
   const suite = echeances
     .filter((e) => e.type === 'echeance')
     .sort((a, b) => a.rang - b.rang);
@@ -188,6 +198,14 @@ export function construireContrat(args: {
     activeServiceIds: [...new Set(activeServiceIds)],
     totalAmount: euros(Number(programme.montant_total) + Number(programme.frais_financement)),
     installmentCount: (acompte ? 1 : 0) + suite.length,
+    bilanRegle: bilanRegle
+      ? {
+          label: 'Bilan réglé en ligne',
+          amount: euros(Number(bilanRegle.montant)),
+          date: jour(bilanRegle.date_prevue),
+          method: LIBELLE_MOYEN[bilanRegle.moyen ?? ''] ?? '',
+        }
+      : null,
     deposit: acompte
       ? {
           label: 'Acompte',

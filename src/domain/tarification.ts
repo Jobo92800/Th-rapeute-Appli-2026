@@ -229,8 +229,12 @@ export const LIBELLES_MODE_REGLEMENT: Record<ModeReglement, string> = {
 export interface Echeance {
   rang: number;
   montant: number;
-  /** « acompte » pour le premier versement, quand il y en a un. */
-  type?: 'acompte' | 'echeance';
+  /**
+   * « acompte » pour le premier versement quand il y en a un, « bilan »
+   * pour le bilan déjà réglé en ligne — celui-là est encaissé avant même
+   * que la cure existe, il ne se réclame pas.
+   */
+  type?: 'acompte' | 'echeance' | 'bilan';
 }
 
 /**
@@ -401,6 +405,17 @@ export function construireEcheancierCure(args: {
    */
   acompte?: number;
   /**
+   * Le bilan réglé en ligne avant la venue, sur la prise de rendez-vous.
+   *
+   * À ne pas confondre avec l'acompte, même s'ils se ressemblent à l'écran.
+   * L'acompte répartit SA cure : elle ne peut pas tout donner aujourd'hui,
+   * le total ne bouge pas et le reste suivra. Ici, l'argent est déjà entré,
+   * ailleurs, avant qu'on la voie : la cure vaut toujours autant, mais elle
+   * n'a plus que la différence à régler au centre. Cette ligne sort donc
+   * déjà réglée, et ne se réclame jamais.
+   */
+  bilanDejaRegle?: number;
+  /**
    * Montant des séances, quand tous les soins n'ont pas le même prix — le
    * Dôme est moins cher. Sans lui, on multiplie simplement le nombre de
    * séances par le prix unitaire.
@@ -412,19 +427,33 @@ export function construireEcheancierCure(args: {
   const base = arrondir(montantDesSeances + options);
   const mode = modeReglement(methode, args.n);
 
+  /*
+    Le bilan déjà réglé sort du montant à répartir, quelle que soit la
+    méthode : la cliente ne le doit plus, et chez Alma le crédit ne le
+    finance pas non plus — les frais se calculent donc sur le reste.
+
+    Le montant de la cure, lui, ne bouge pas : elle vaut ce qu'elle vaut, et
+    ces 129 € en font partie. C'est le partage entre ce qui est encaissé et
+    ce qui reste dû qui change, pas le prix.
+  */
+  const dejaRegle = arrondir(Math.max(0, Math.min(args.bilanDejaRegle ?? 0, base)));
+  const ligneBilan: Echeance[] =
+    dejaRegle > 0 ? [{ rang: 1, montant: dejaRegle, type: 'bilan' as const }] : [];
+
   if (methode === 'centre') {
     const n = Math.max(1, Math.min(4, args.n));
 
     /*
-      Avec un acompte, il vient en tête et se déduit du total. Le reste suit
-      les séances comme d'habitude, à ceci près que le guide et la tenue ne
-      sont plus portés par la première échéance : l'acompte a déjà chargé le
-      début du parcours, inutile d'en rajouter.
+      Un versement en tête — acompte, bilan déjà réglé, ou les deux — retire
+      sa part du montant à répartir. Le reste suit les séances comme
+      d'habitude, à ceci près que le guide et la tenue ne sont plus portés
+      par la première échéance : le début du parcours est déjà chargé,
+      inutile d'en rajouter.
     */
-    const acompte = arrondir(Math.max(0, Math.min(args.acompte ?? 0, base)));
+    const acompte = arrondir(Math.max(0, Math.min(args.acompte ?? 0, base - dejaRegle)));
 
-    if (acompte > 0) {
-      const reste = arrondir(base - acompte);
+    if (acompte > 0 || dejaRegle > 0) {
+      const reste = arrondir(base - acompte - dejaRegle);
       const parts = repartirSeances(seances, n);
       const parPart = parts.map((s) => arrondir((reste * s) / Math.max(1, seances)));
       const ecart = arrondir(reste - parPart.reduce((a, b) => a + b, 0));
@@ -436,7 +465,8 @@ export function construireEcheancierCure(args: {
         frais: 0,
         montantARegler: base,
         echeances: [
-          { rang: 1, montant: acompte, type: 'acompte' as const },
+          ...ligneBilan,
+          ...(acompte > 0 ? [{ rang: 1, montant: acompte, type: 'acompte' as const }] : []),
           ...parPart.map((m, i) => ({
             rang: i + 1,
             montant: arrondir(m + (i === 0 ? ecart : 0)),
@@ -475,7 +505,12 @@ export function construireEcheancierCure(args: {
   }
 
   const n = ECHEANCES_ALMA.includes(args.n) ? args.n : 4;
-  const frais = fraisAlma(n, base);
+  /*
+    Alma ne finance que ce qui reste : le bilan a été payé ailleurs, il ne
+    passe pas par le crédit et n'a donc pas à porter de frais.
+  */
+  const aFinancer = arrondir(base - dejaRegle);
+  const frais = fraisAlma(n, aFinancer);
   const total = arrondir(base + frais);
 
   /*
@@ -489,8 +524,8 @@ export function construireEcheancierCure(args: {
     Vérifié sur six simulations : 1 623 € en 3× donne 569,07 puis 541 et 541.
   */
   if (n <= 4) {
-    const part = Math.floor((base / n) * 100) / 100;
-    const reliquat = arrondir(base - part * n);
+    const part = Math.floor((aFinancer / n) * 100) / 100;
+    const reliquat = arrondir(aFinancer - part * n);
 
     return {
       methode,
@@ -498,10 +533,14 @@ export function construireEcheancierCure(args: {
       mode,
       frais,
       montantARegler: total,
-      echeances: Array.from({ length: n }, (_, i) => ({
-        rang: i + 1,
-        montant: i === 0 ? arrondir(part + reliquat + frais) : part,
-      })),
+      echeances: [
+        ...ligneBilan,
+        ...Array.from({ length: n }, (_, i) => ({
+          rang: i + 1,
+          montant: i === 0 ? arrondir(part + reliquat + frais) : part,
+          type: 'echeance' as const,
+        })),
+      ],
     };
   }
 
@@ -510,8 +549,9 @@ export function construireEcheancierCure(args: {
     reliquat d'arrondi sur la première. Vérifié sur quatre simulations :
     973 € en 12× donne 87,72 puis onze fois 87,65.
   */
-  const mensualite = Math.floor((total / n) * 100) / 100;
-  const reste = arrondir(total - mensualite * n);
+  const aMensualiser = arrondir(aFinancer + frais);
+  const mensualite = Math.floor((aMensualiser / n) * 100) / 100;
+  const reste = arrondir(aMensualiser - mensualite * n);
 
   return {
     methode,
@@ -519,9 +559,13 @@ export function construireEcheancierCure(args: {
     mode,
     frais,
     montantARegler: total,
-    echeances: Array.from({ length: n }, (_, i) => ({
-      rang: i + 1,
-      montant: i === 0 ? arrondir(mensualite + reste) : mensualite,
-    })),
+    echeances: [
+      ...ligneBilan,
+      ...Array.from({ length: n }, (_, i) => ({
+        rang: i + 1,
+        montant: i === 0 ? arrondir(mensualite + reste) : mensualite,
+        type: 'echeance' as const,
+      })),
+    ],
   };
 }

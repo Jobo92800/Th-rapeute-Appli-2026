@@ -28,7 +28,7 @@ export interface Proposition {
   montantTotal: number;
   modeReglement: ModeReglement;
   frais: number;
-  echeances: Array<{ rang: number; montant: number }>;
+  echeances: Array<{ rang: number; montant: number; type?: string }>;
 }
 
 export interface AxeRecap {
@@ -174,7 +174,13 @@ export function construireRecap(args: {
     montantTotal: Number(p.montantTotal),
     montantRegle: Number(p.montantTotal) + Number(p.frais),
     reglement: LIBELLE_REGLEMENT[p.modeReglement] ?? 'À définir ensemble',
-    echeances: p.echeances,
+    /*
+      Le bilan déjà réglé en ligne ne figure pas parmi les échéances du
+      récapitulatif : ce document annonce à la cliente ce qu'elle aura à
+      régler. Le compter là ferait de la ligne « 1re » un versement qu'elle
+      a déjà fait, et décalerait le numéro de toutes les suivantes.
+    */
+    echeances: p.echeances.filter((e) => e.type !== 'bilan'),
     inclus: (bareme.INCLUS ?? []).map((i) => ({
       titre: sansBalises(i.t),
       detail: sansBalises(i.d),

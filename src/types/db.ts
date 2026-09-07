@@ -237,7 +237,12 @@ export type MoyenPaiement = 'cheque' | 'especes' | 'cb' | 'virement' | 'alma';
 export interface Echeance {
   id: string;
   programme_id: string;
-  type: 'acompte' | 'echeance';
+  /**
+   * `bilan` : les 129 € réglés en ligne à la prise de rendez-vous. Déjà
+   * encaissés, jamais réclamés — à ne pas confondre avec l'acompte, qui
+   * répartit la cure sans rien avoir encaissé d'avance.
+   */
+  type: 'acompte' | 'echeance' | 'bilan';
   rang: number;
   montant: number;
   date_prevue: string | null;

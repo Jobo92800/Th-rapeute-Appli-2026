@@ -145,7 +145,7 @@ export interface NouveauProgramme {
   montantTotal: number;
   modeReglement: Programme['mode_reglement'];
   fraisFinancement: number;
-  echeances: Array<{ rang: number; montant: number; type?: 'acompte' | 'echeance' }>;
+  echeances: Array<{ rang: number; montant: number; type?: 'acompte' | 'echeance' | 'bilan' }>;
   complementRecommande: string | null;
   /** Séances gagnées par parrainage, posées sur une technologie. Jamais facturées. */
   offertes?: { technologie: Technologie; seances: number } | null;
@@ -219,17 +219,47 @@ export async function creerProgramme(n: NouveauProgramme): Promise<Programme> {
   }
 
   if (n.echeances.length > 0) {
-    const dates = datesEcheancier(new Date(), n.echeances.length);
+    /*
+      Le bilan réglé en ligne ne consomme pas de date : il est déjà encaissé,
+      il porte celle du jour et naît payé. Les dates du calendrier sont donc
+      calculées pour les seules échéances qu'il restera à réclamer — sinon la
+      première d'entre elles hériterait de la date du bilan et tout le
+      calendrier glisserait d'un cran.
+    */
+    const aujourdhui = new Date().toISOString().slice(0, 10);
+    const aReclamer = n.echeances.filter((e) => e.type !== 'bilan');
+    const dates = datesEcheancier(new Date(), aReclamer.length);
+    let rangDate = 0;
+
     const { error: e } = await supabase.from('echeances').insert(
-      n.echeances.map((ech, i) => ({
-        programme_id: programme.id,
-        // L'acompte porte son propre type : le contrat l'annonce à part, et
-        // l'échéancier de la fiche ne doit pas le confondre avec une mensualité.
-        type: ech.type ?? ('echeance' as const),
-        rang: ech.rang,
-        montant: ech.montant,
-        date_prevue: dates[i],
-      })),
+      n.echeances.map((ech) => {
+        // L'acompte et le bilan portent leur propre type : le contrat les
+        // annonce à part, et l'échéancier de la fiche ne doit pas les
+        // confondre avec une mensualité.
+        const type = ech.type ?? ('echeance' as const);
+
+        if (type === 'bilan') {
+          return {
+            programme_id: programme.id,
+            type,
+            rang: ech.rang,
+            montant: ech.montant,
+            date_prevue: aujourdhui,
+            moyen: 'cb' as const,
+            statut: 'paye' as const,
+            date_reglement: aujourdhui,
+            note: 'Réglé en ligne à la prise de rendez-vous',
+          };
+        }
+
+        return {
+          programme_id: programme.id,
+          type,
+          rang: ech.rang,
+          montant: ech.montant,
+          date_prevue: dates[rangDate++],
+        };
+      }),
     );
     if (e) throw e;
   }
