@@ -76,6 +76,7 @@ mensualités sont égales. Les anciennes valeurs `4x_maison` et `10x_alma` reste
 | Avoir | **Accorder, dépenser et rembourser reviennent à la direction. Le solde, lui, se lit par tout le monde** : ce n'est pas une décision, c'est un fait — une thérapeute qui l'ignore réclame une échéance déjà couverte, et le cacher fabrique des malentendus au comptoir. Ce que le centre doit à une cliente. Il naît d'un arrêt de cure — elle a payé plus qu'elle n'a reçu — ou d'un geste commercial. **Il ne se stocke pas, il se calcule** : on écrit des mouvements (accordé, utilisé, remboursé) et le solde est leur somme, comme le stock. Il se dépense sur une cure — il descend l'échéancier en partant de la dernière échéance, **sans toucher au montant signé** — ou se rembourse en argent. Un avoir traverse les 5 centres, comme le parrainage. Le montant proposé à l'arrêt (encaissé moins consommé) n'est jamais imposé : la thérapeute le corrige. |
 | Messages internes | Un **carnet de liaison**, pas une messagerie : pas de fil de discussion, pas de pièce jointe, rien entre thérapeutes. Deux objets qui se ressemblent et qu'il ne faut pas confondre, parce que leur état utile n'est pas le même. Une **annonce** part de la direction vers des thérapeutes : ce qu'on veut savoir, c'est **qui l'a lue**. Un **signalement** part d'une thérapeute vers la direction : ce qu'on veut savoir, c'est **où en est le traitement** (nouveau, en cours, traité, sans suite). Un statut unique pour les deux aurait obligé à répondre « traité » à une annonce. Une thérapeute ne voit pas les signalements de ses collègues — l'un d'eux peut dire « le stock que Marie a compté est faux », et ça se règle avec la direction — ni le compte de diffusion d'une annonce, qui ne regarde qu'elle. La direction, elle, voit **les prénoms** de celles qui ont lu et de celles qui n'ont pas encore ouvert : « 9 sur 13 » ne dit pas à qui en toucher un mot. |
 | Bilan santé | Quatorze questions — sept oui/non, sept champs libres — sous le BioPortrait de la fiche. Elles vivent **sur la cliente, pas sur le bilan** : un bilan est daté et fige un instant, la santé bouge, et ce qu'il faut avoir sous les yeux avant une séance c'est l'état d'aujourd'hui. **N'entre dans aucun calcul** : ni BioPortrait, ni prescription, ni prix. À ne pas confondre avec l'exception cure — ce qui doit *empêcher* un soin va en exception cure, où c'est rouge ; ici on note un contexte. « Enceinte » ne se demande pas à un monsieur. Une question sans réponse n'a pas de clé du tout : « non » et « on n'a pas demandé » ne se confondent jamais. Ce champ **ne part pas dans Airtable** — données de santé, à rouvrir seulement si la direction le demande. |
+| Comptes de connexion | Un écran **Comptes**, direction seule, dit qui peut se connecter et **ce qui bloque quand ça ne marche pas** — compte absent, lien mort vers un compte supprimé puis recréé, fiche inactive, email jamais confirmé. La direction y **redonne un mot de passe** ; la thérapeute peut ensuite changer le sien depuis la barre de gauche. Il n'y a **pas de « mot de passe oublié » par email et il ne peut pas y en avoir** : `prenom@mabeautyplus.fr` sont des identifiants, pas des boîtes aux lettres — un lien de réinitialisation n'arriverait nulle part. Ce que l'écran ne dira jamais : si un mot de passe est faux ou seulement oublié. Supabase ne rend pas un mot de passe, même à la clé de service ; quand tout est vert et que la connexion échoue, c'est celui-là, et il se remplace. Changer le mot de passe de quelqu'un d'autre demande la clé de service, donc une **fonction Edge** (`gerer-les-comptes`) qui vérifie `est_direction()` **côté serveur** — un écran peut mentir, la base non. |
 | Suppression | **Archiver** est le geste courant : réversible, rien n'est perdu. **Supprimer** est définitif, emporte tout le dossier, exige de retaper le nom, et reste réservé à la direction. |
 
 ---
@@ -372,6 +373,13 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   (`est_destinataire`, `a_ecrit_le_message`), qui coupent la boucle sans
   rien changer à qui voit quoi. **Une règle de sécurité ne doit jamais
   interroger une table dont la règle interroge la première.**
+- **« [object Object] ».** Ni Postgrest ni les fonctions Edge ne rendent des
+  `Error` : ils rendent des objets qui portent un `message`. `String(e)`
+  dessus écrit donc, en toutes lettres, le mot qui n'apprend rien à
+  personne — c'était le cas dans quatorze fichiers, et ça vidait de son sens
+  la règle ci-dessous. Tout ce qui s'affiche passe désormais par
+  `texteErreur()` (`src/lib/erreurs.ts`), qui lit les deux formes et remonte
+  `details` et `hint` quand PostgreSQL les donne.
 - **Une panne qui ressemble à une liste vide.** Ce qui a fait durer le bug
   ci-dessus : l'écran ne regardait que `isLoading`, et une requête en erreur
   s'affichait comme « aucun message ». Tout écran qui liste doit distinguer
@@ -391,6 +399,21 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   données serveur : `[cliente]` se déclenche à chaque rechargement de la
   fiche, `[cliente.id, cliente.maj_le]` seulement quand l'enregistrement a
   vraiment bougé.
+- **Une liste figée à côté d'un contenu versionné.** Sept intitulés de
+  mesures InBody vivaient dans le code, hérités d'un questionnaire qui
+  posait sept questions d'analyse. La v3 n'en pose que cinq : les deux
+  dernières prenaient le nom du rang précédent, et le « Score InBody / 100 »
+  s'affichait sous le nom « Rétention » — sur la fiche, et dans le
+  récapitulatif envoyé à la cliente. Le questionnaire vit en base et chaque
+  bilan retient sa version : **tout ce qui le décrit se lit dedans**, jamais
+  dans une constante parallèle. Les bilans déjà enregistrés gardent
+  l'étiquetage qu'ils portaient : `inbody` est écrit à la validation.
+- **Une clé React qui n'identifie rien.** Le tableau de bord groupe le signé
+  par thérapeute *et* par centre : plusieurs lignes pouvaient s'appeler
+  « Non renseignée », et l'écran les identifiait par leur libellé. React en
+  escamotait alors une partie, sans erreur visible pour qui ne regarde pas
+  la console. Une clé se prend sur un identifiant, jamais sur un texte
+  affiché — et deux centres peuvent employer deux personnes du même prénom.
 - **Doublons Airtable.** Le parcours du bilan enchaîne trois écritures ;
   sans verrou, trois synchros parallèles créaient trois fiches. Réglé par
   `reclamer_taches_airtable` (SKIP LOCKED), un verrou par cliente et un
@@ -412,7 +435,7 @@ doit rester vert après toute modification.
 
 ## Banc d'essai
 
-`npm test` — **361 contrôles, à garder verts.** Ils couvrent ce qui décide
+`npm test` — **383 contrôles, à garder verts.** Ils couvrent ce qui décide
 de ce qu'une cliente paie, reçoit et se voit refuser pour raison de santé :
 tarification et échéanciers (centre et Alma), prescription et
 contre-indications, planchers des formules, BioPortrait, parrainage, stock,
@@ -496,7 +519,7 @@ dans le dépôt, c'est se garantir qu'un jour les deux diffèrent.
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
-Migrations passées jusqu'à **047** incluse, `synchro-airtable` redéployée,
+Migrations passées jusqu'à **047** incluse (la **048** attend, et la fonction Edge `gerer-les-comptes` attend son déploiement), `synchro-airtable` redéployée,
 et les deux champs du récapitulatif créés dans Airtable. Vérifié le
 5 septembre 2026 depuis l'extérieur : `renvoyer_au_crm`,
 `est_destinataire`, `a_ecrit_le_message`, `envoyer_annonce` et

@@ -9,11 +9,13 @@ import {
   BarChart3,
   BookOpen,
   MessageSquare,
+  KeyRound,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { messagesEnAttente } from '../services/messages';
 import { TOUS_LES_CENTRES, useSession } from '../lib/session';
+import MonMotDePasse from './MonMotDePasse';
 
 const LIENS = [
   { to: '/', libelle: 'Accueil', icone: LayoutDashboard, exact: true, direction: false },
@@ -24,6 +26,9 @@ const LIENS = [
   // Les chiffres ne concernent pas les thérapeutes : le lien ne leur est
   // même pas montré, et la base refuserait de répondre.
   { to: '/tableau-de-bord', libelle: 'Tableau de bord', icone: BarChart3, exact: false, direction: true },
+  // Les comptes de connexion : qui peut entrer, et le mot de passe à
+  // redonner quand une thérapeute est bloquée devant l'écran.
+  { to: '/comptes', libelle: 'Comptes', icone: KeyRound, exact: false, direction: true },
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -125,6 +130,8 @@ export default function Layout({ children }: { children: ReactNode }) {
               </span>
             </div>
           )}
+
+          {therapeute && <MonMotDePasse />}
           <button
             type="button"
             onClick={() => plusieursCentres && setMenuOuvert((o) => !o)}
