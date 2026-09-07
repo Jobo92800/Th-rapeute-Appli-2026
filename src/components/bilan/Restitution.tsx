@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronLeft } from 'lucide-react';
+import { ArrowRight, Check, ChevronLeft } from 'lucide-react';
 import {
   SEUIL_PRESENCE,
   type Axe,
@@ -15,6 +15,16 @@ interface Props {
   mesures: MesureInbody[];
   onRetour: () => void;
   onSuite: () => void;
+  /**
+   * Refaire un point ne veut pas dire revendre une cure.
+   *
+   * Proposé seulement quand on repasse un BioPortrait sur quelqu'un qu'on
+   * suit déjà : on enregistre le nouveau profil et on s'arrête là. Le devis
+   * reste accessible pour celles qui repartent sur une cure — mais il n'est
+   * plus le seul chemin vers la sortie.
+   */
+  onEnregistrerSeulement?: () => void;
+  enregistrement?: boolean;
 }
 
 /**
@@ -29,6 +39,8 @@ export default function Restitution({
   mesures,
   onRetour,
   onSuite,
+  onEnregistrerSeulement,
+  enregistrement,
 }: Props) {
   const { profilDominant: dp, terrainDominant: dt, pourcentages } = bioportrait;
 
@@ -91,15 +103,29 @@ export default function Restitution({
         pourcentages={pourcentages}
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <button onClick={onRetour} className="bouton-discret">
           <ChevronLeft className="h-4 w-4" />
           Revenir au questionnaire
         </button>
-        <button onClick={onSuite} className="bouton-fort">
-          Voir la cure préconisée
-          <ArrowRight className="h-4 w-4" />
-        </button>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {onEnregistrerSeulement && (
+            <button
+              onClick={onEnregistrerSeulement}
+              disabled={enregistrement}
+              className="bouton-discret"
+              title="Le nouveau BioPortrait est enregistré sur sa fiche. Aucune cure n'est ouverte, rien n'est facturé."
+            >
+              <Check className="h-4 w-4" />
+              Enregistrer ce BioPortrait
+            </button>
+          )}
+          <button onClick={onSuite} disabled={enregistrement} className="bouton-fort">
+            Voir la cure préconisée
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

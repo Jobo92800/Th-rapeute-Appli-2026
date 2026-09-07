@@ -56,6 +56,26 @@ function ageDepuis(naissance: string): string {
   return age > 0 && age < 120 ? String(age) : '';
 }
 
+/*
+  Une proposition qui ne propose rien.
+
+  Sur un point de suivi, aucune cure n'a été présentée. Le PDF du
+  BioPortrait n'imprime ni cure ni prix, mais il attend la forme : on lui
+  donne donc une proposition vide plutôt qu'un objet à trous, pour que le
+  document sorte le même dans les deux cas.
+*/
+const PROPOSITION_VIDE: PrescriptionValidee = {
+  lignes: [],
+  electro: false,
+  guide: false,
+  tenue: false,
+  montantTotal: 0,
+  bilanDejaRegle: 0,
+  modeReglement: 'inconnu',
+  frais: 0,
+  echeances: [],
+};
+
 const CONTACT_VIDE = {
   civilite: 'Mme' as 'Mme' | 'M.',
   date_naissance: '',
@@ -254,10 +274,20 @@ export default function NouveauBilan() {
    * recalculent pas.
    */
   async function enregistrerTout(
-    proposition: PrescriptionValidee,
+    proposition: PrescriptionValidee | null,
     issue: { valider: boolean; recap: boolean },
   ) {
-    const prescription = issue.valider ? proposition : null;
+    /*
+      `proposition` absente = on refait le point, sans passer par le devis.
+
+      Refaire un BioPortrait ne veut pas dire revendre une cure : on
+      enregistre le nouveau profil sur la fiche et on s'arrête là. Rien
+      n'est facturé — ce n'est pas un bilan d'entrée, c'est un point de
+      suivi — et aucune proposition n'est écrite, puisqu'aucune n'a été
+      présentée.
+    */
+    const suivi = proposition === null;
+    const prescription = issue.valider && proposition ? proposition : null;
     if (!contact.prenom.trim() || !contact.nom.trim()) {
       toast.error('Le nom et le prénom sont nécessaires pour enregistrer.');
       return;
@@ -307,13 +337,15 @@ export default function NouveauBilan() {
         terrain_dominant: bioportrait.terrainDominant,
         profils_secondaires: bioportrait.profilsSecondaires,
         terrains_secondaires: bioportrait.terrainsSecondaires,
-        facturation: prescription ? 'offert' : 'facture',
-        montant_facture: prescription ? 0 : grille.bilan,
-        proposition: {
-          ...proposition,
-          prixGuide: grille.guide,
-          prixTenue: grille.tenue,
-        } as unknown as Record<string, unknown>,
+        facturation: prescription || suivi ? 'offert' : 'facture',
+        montant_facture: prescription || suivi ? 0 : grille.bilan,
+        proposition: suivi
+          ? null
+          : ({
+              ...proposition,
+              prixGuide: grille.guide,
+              prixTenue: grille.tenue,
+            } as unknown as Record<string, unknown>),
       });
 
       if (prescription) {
@@ -352,8 +384,13 @@ export default function NouveauBilan() {
           bareme,
           bioportrait,
           inbody: mesuresInbody(bareme, reponses),
+          /*
+            Le PDF du BioPortrait ne montre ni cure ni prix : la proposition
+            ne lui sert qu'à remplir des champs qu'il n'imprime pas. Sur un
+            point de suivi, où il n'y en a aucune, on lui en passe une vide.
+          */
           proposition: {
-            ...proposition,
+            ...(proposition ?? PROPOSITION_VIDE),
             prixGuide: grille.guide,
             prixTenue: grille.tenue,
           },
@@ -374,7 +411,8 @@ export default function NouveauBilan() {
         échouait, le bilan serait quand même sauvé, et la thérapeute pourra
         le renvoyer depuis la fiche.
       */
-      if (issue.recap) {
+      // Un point de suivi n'a pas de proposition à envoyer : il n'y a pas eu de devis.
+      if (issue.recap && proposition) {
         try {
           await envoyerRecap({
             bilanId: bilan.id,
@@ -407,9 +445,11 @@ export default function NouveauBilan() {
         // Le montant vient de la grille, jamais d'un nombre écrit ici : sinon
         // le message et la facture se contrediraient au prochain changement.
         toast.success(
-          prescription
-            ? 'Cure validée et enregistrée'
-            : `Bilan enregistré (${formaterEuros(grille.bilan)} à facturer)`,
+          suivi
+            ? 'Nouveau BioPortrait enregistré sur sa fiche'
+            : prescription
+              ? 'Cure validée et enregistrée'
+              : `Bilan enregistré (${formaterEuros(grille.bilan)} à facturer)`,
         );
       }
       navigate(`/clientes/${cliente.id}`);
@@ -673,6 +713,15 @@ export default function NouveauBilan() {
           setVue('devis');
           window.scrollTo(0, 0);
         }}
+        /*
+          La sortie directe n'existe que pour un point de suivi. Sur un
+          premier bilan, la cure et le devis font partie du rendez-vous :
+          proposer d'en sortir avant les aurait rendus facultatifs.
+        */
+        onEnregistrerSeulement={
+          clienteExistante ? () => enregistrerTout(null, { valider: false, recap: false }) : undefined
+        }
+        enregistrement={enregistrement}
       />
     );
   }
