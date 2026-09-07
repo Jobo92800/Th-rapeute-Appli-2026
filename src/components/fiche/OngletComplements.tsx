@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { texteErreur } from '../../lib/erreurs';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Package, Plus, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -257,7 +258,7 @@ function FormulaireVente({
       setQuantite(1);
     } catch (e) {
       console.error(e);
-      toast.error(e instanceof Error ? e.message : "La vente n'a pas pu être enregistrée.");
+      toast.error(texteErreur(e) || "La vente n'a pas pu être enregistrée.");
     } finally {
       setEnCours(false);
     }

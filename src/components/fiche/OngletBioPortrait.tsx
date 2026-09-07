@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { texteErreur } from '../../lib/erreurs';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Loader2, Mail, Sparkles } from 'lucide-react';
@@ -197,7 +198,7 @@ function Recapitulatif({
       setConfirme(false);
     },
     onError: (e) =>
-      toast.error(e instanceof Error ? e.message : "Le récapitulatif n'a pas pu être renvoyé."),
+      toast.error(texteErreur(e) || "Le récapitulatif n'a pas pu être renvoyé."),
   });
 
   if (!bilan.recap_pdf) {

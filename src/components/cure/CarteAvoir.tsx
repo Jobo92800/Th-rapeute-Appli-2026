@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { texteErreur } from '../../lib/erreurs';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -255,7 +256,7 @@ function Utiliser({
       toast.success('Avoir déduit de son échéancier');
       onFini();
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "L'avoir n'a pas pu être posé."),
+    onError: (e) => toast.error(texteErreur(e) || "L'avoir n'a pas pu être posé."),
   });
 
   if (candidates.length === 0) {
@@ -350,7 +351,7 @@ function Rembourser({
       onFini();
     },
     onError: (e) =>
-      toast.error(e instanceof Error ? e.message : "Le remboursement n'a pas pu être enregistré."),
+      toast.error(texteErreur(e) || "Le remboursement n'a pas pu être enregistré."),
   });
 
   return (
@@ -431,7 +432,7 @@ function Accorder({
       toast.success('Avoir accordé');
       onFini();
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "L'avoir n'a pas pu être créé."),
+    onError: (e) => toast.error(texteErreur(e) || "L'avoir n'a pas pu être créé."),
   });
 
   return (

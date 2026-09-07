@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Eye, FileSignature, Headphones, Loader2, Maximize2, Shirt, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { estUnePageDepassee, texteErreur } from '../../lib/erreurs';
 import Signature, { type SignatureHandle } from './Signature';
 import { ENGAGEMENTS, construireContrat, type ContractData } from '../../domain/contrat';
 import { laCliente, majuscule, pronom } from '../../domain/civilite';
@@ -55,11 +56,10 @@ function urlDepuisBase64(base64: string): string {
  * encore faut-il le dire.
  */
 function messageErreur(e: unknown, defaut: string): string {
-  const texte = e instanceof Error ? e.message : String(e);
-  if (/dynamically imported module|Importing a module script failed|Failed to fetch/i.test(texte)) {
+  if (estUnePageDepassee(e)) {
     return "L'application a été mise à jour depuis l'ouverture de cette page. Rechargez-la (Cmd + R) et recommencez.";
   }
-  return `${defaut} ${texte}`.slice(0, 220);
+  return `${defaut} ${texteErreur(e)}`.slice(0, 220);
 }
 
 const TITRE_CONSENTEMENT: Record<string, string> = {

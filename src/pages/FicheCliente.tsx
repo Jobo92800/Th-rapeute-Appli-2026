@@ -21,6 +21,7 @@ import { fr } from 'date-fns/locale';
 import { useCentre, useSession } from '../lib/session';
 import ChoisirUnCentre from '../components/ChoisirUnCentre';
 import { supabase } from '../lib/supabase';
+import { texteErreur } from '../lib/erreurs';
 import { lireCliente } from '../services/clientes';
 import { bilansDeLaCliente, notesDeLaCliente } from '../services/metier';
 import OngletCoordonnees from '../components/fiche/OngletCoordonnees';
@@ -147,7 +148,7 @@ export default function FicheCliente() {
             recommence, vérifiez la connexion du centre.
           </p>
           <p className="mt-2 text-xs text-amber-800">
-            {error instanceof Error ? error.message : String(error)}
+            {texteErreur(error)}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button

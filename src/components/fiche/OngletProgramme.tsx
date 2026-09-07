@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { texteErreur } from '../../lib/erreurs';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { OctagonX, Plus, RotateCcw, Sparkles, Wallet } from 'lucide-react';
@@ -71,7 +72,7 @@ export default function OngletProgramme({
       toast.success('Cure rouverte');
     } catch (err) {
       // Le refus vient de la base et dit précisément pourquoi : on le montre.
-      toast.error(err instanceof Error ? err.message : "La cure n'a pas pu être rouverte.");
+      toast.error(texteErreur(err) || "La cure n'a pas pu être rouverte.");
     }
   }
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { texteErreur } from '../../lib/erreurs';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowDownToLine, ArrowUpFromLine, Check, ClipboardList, Loader2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -93,7 +94,7 @@ export default function ModaleMouvement({ ligne, auteur, onFerme, onEnregistre }
     } catch (e) {
       console.error(e);
       toast.error(
-        e instanceof Error ? e.message : "Le mouvement n'a pas pu être enregistré. Réessayez.",
+        texteErreur(e) || "Le mouvement n'a pas pu être enregistré. Réessayez.",
       );
       setEnCours(false);
     }

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { texteErreur } from '../../lib/erreurs';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, OctagonX, X } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -74,7 +75,7 @@ export default function ModaleArretCure({
       );
       onFerme();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "La cure n'a pas pu être arrêtée.");
+      toast.error(texteErreur(e) || "La cure n'a pas pu être arrêtée.");
     } finally {
       setEnCours(false);
     }

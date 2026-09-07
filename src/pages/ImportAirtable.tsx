@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { texteErreur } from '../lib/erreurs';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, ArrowLeft, CheckCircle2, Download, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -42,7 +43,7 @@ export default function ImportAirtable() {
         );
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'La reprise a échoué.', { duration: 8000 });
+      toast.error(texteErreur(e) || 'La reprise a échoué.', { duration: 8000 });
     } finally {
       setEnCours(false);
     }

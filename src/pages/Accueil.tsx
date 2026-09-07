@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { texteErreur } from '../lib/erreurs';
 import toast from 'react-hot-toast';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -393,7 +394,7 @@ export default function Accueil() {
                 toast.success('Rien en attente, tout est à jour');
               }
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : 'La relance a échoué.');
+              toast.error(texteErreur(e) || 'La relance a échoué.');
             } finally {
               setRelance(false);
             }
@@ -410,7 +411,7 @@ export default function Accueil() {
                 { duration: 6000 },
               );
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : "Les erreurs n'ont pas pu être écartées.");
+              toast.error(texteErreur(e) || "Les erreurs n'ont pas pu être écartées.");
             } finally {
               setOubli(false);
             }

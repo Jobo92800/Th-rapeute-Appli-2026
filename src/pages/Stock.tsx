@@ -10,6 +10,7 @@ import { LIBELLES_MOTIF, niveauStock } from '../domain/stock';
 import CarteProduit from '../components/stock/CarteProduit';
 import ModaleMouvement from '../components/stock/ModaleMouvement';
 import type { CategorieProduit, EtatStock } from '../types/db';
+import { texteErreur } from '../lib/erreurs';
 
 const SECTIONS: { categorie: CategorieProduit; titre: string }[] = [
   { categorie: 'complement', titre: 'Compléments alimentaires' },
@@ -21,7 +22,7 @@ const SECTIONS: { categorie: CategorieProduit; titre: string }[] = [
 
 /** La table manque tant que la migration n'a pas été passée : le dire. */
 function messageErreur(e: unknown): string {
-  const texte = e instanceof Error ? e.message : String(e);
+  const texte = texteErreur(e);
   if (/does not exist|schema cache/i.test(texte)) {
     return 'Le stock n’existe pas encore dans la base. Passez la migration 015 dans l’éditeur SQL de Supabase (projet MAbeautyplus V2), puis rechargez cette page.';
   }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { texteErreur } from '../../lib/erreurs';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, FileSignature, FileText, Loader2, ShieldCheck, Upload } from 'lucide-react';
 import { format } from 'date-fns';
@@ -251,7 +252,7 @@ function EnvoyerAuCrm({ cliente }: { cliente: Cliente }) {
       );
     },
     onError: (e) =>
-      toast.error(e instanceof Error ? e.message : "L'envoi au CRM n'a pas abouti."),
+      toast.error(texteErreur(e) || "L'envoi au CRM n'a pas abouti."),
   });
 
   return (

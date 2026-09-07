@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { texteErreur } from '../../lib/erreurs';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, Clock, Headphones, Loader2, Send } from 'lucide-react';
 import { format } from 'date-fns';
@@ -60,7 +61,7 @@ export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
         { duration: 6000 },
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "L'accès n'a pas pu être créé.");
+      toast.error(texteErreur(e) || "L'accès n'a pas pu être créé.");
     } finally {
       setAction(null);
     }
@@ -72,7 +73,7 @@ export default function CarteParcoursAudio({ cliente }: { cliente: Cliente }) {
       const email = await renvoyerInvitationParcours(cliente.id);
       toast.success(`Invitation renvoyée à ${email || cliente.email}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "L'invitation n'a pas pu être renvoyée.");
+      toast.error(texteErreur(e) || "L'invitation n'a pas pu être renvoyée.");
     } finally {
       setAction(null);
     }

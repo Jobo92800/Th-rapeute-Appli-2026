@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { texteErreur } from '../lib/erreurs';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -99,7 +100,7 @@ export default function Messages() {
           direction, et réessayez dans un instant.
         </p>
         <p className="mt-3 font-mono text-xs text-ardoise-400">
-          {error instanceof Error ? error.message : String(error)}
+          {texteErreur(error)}
         </p>
       </div>
     );
@@ -167,7 +168,7 @@ function Signaler({ onEnvoye }: { onEnvoye: () => void }) {
       setCorps('');
       onEnvoye();
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Le message n'est pas parti."),
+    onError: (e) => toast.error(texteErreur(e) || "Le message n'est pas parti."),
   });
 
   return (
@@ -261,7 +262,7 @@ function Annoncer({ onEnvoye }: { onEnvoye: () => void }) {
       setOuvert(false);
       onEnvoye();
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "L'annonce n'est pas partie."),
+    onError: (e) => toast.error(texteErreur(e) || "L'annonce n'est pas partie."),
   });
 
   function basculer(id: string) {

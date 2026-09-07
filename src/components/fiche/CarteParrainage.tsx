@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { texteErreur } from '../../lib/erreurs';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Gift, HeartHandshake, Loader2, Plus, Search, X } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -93,7 +94,7 @@ export default function CarteParrainage({ cliente }: { cliente: Cliente }) {
                     rafraichir();
                     toast.success('Parrainage retiré');
                   } catch (e) {
-                    toast.error(e instanceof Error ? e.message : 'Le retrait a échoué.');
+                    toast.error(texteErreur(e) || 'Le retrait a échoué.');
                   }
                 }}
                 className="text-xs font-semibold text-ardoise-500 hover:text-rose-600"
@@ -113,7 +114,7 @@ export default function CarteParrainage({ cliente }: { cliente: Cliente }) {
                     rafraichir();
                     toast.success(`${c.prenom} ${c.nom} l’a ${accorde('parrainé', cliente.civilite)}`);
                   } catch (e) {
-                    toast.error(e instanceof Error ? e.message : 'Le rattachement a échoué.');
+                    toast.error(texteErreur(e) || 'Le rattachement a échoué.');
                   }
                 }}
               />
@@ -197,7 +198,7 @@ export default function CarteParrainage({ cliente }: { cliente: Cliente }) {
                     rafraichir();
                     toast.success(`Parrainage enregistré : ${c.prenom} ${c.nom}`);
                   } catch (e) {
-                    toast.error(e instanceof Error ? e.message : 'Le rattachement a échoué.');
+                    toast.error(texteErreur(e) || 'Le rattachement a échoué.');
                   }
                 }}
               />
