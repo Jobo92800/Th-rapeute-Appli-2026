@@ -9,6 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { section, verifie, egal } from './harnais.mts';
 import type { Bareme, Prestation } from '../src/domain/bioportrait.ts';
+import { mesuresInbody } from '../src/domain/bioportrait.ts';
 import {
   appliquerFormule,
   depouiller,
@@ -215,4 +216,35 @@ export function controlerPrescription() {
   egal('la luxothérapie démarre à son plancher', seancesALAjout('LUXO'), 10);
   egal('les autres au leur', seancesALAjout('ISHAPE'), 4);
   verifie('la ligne se dit ajoutée', ligneAjoutee(rien, 'RELAX').ajoute === true);
+
+  /*
+    Les mesures InBody, nommées par le barème.
+
+    Une liste de sept intitulés vivait dans le code, héritée d'un
+    questionnaire qui posait sept questions d'analyse. La version 3 n'en pose
+    que cinq : « Rétention d'eau » s'affichait sous le nom « Localisation »
+    et le « Score InBody » sous celui de « Rétention » — sur la fiche, et
+    dans le récapitulatif envoyé à la cliente. Ce contrôle refuse que les
+    libellés se remettent à diverger du questionnaire.
+  */
+  section('Les mesures InBody portent leur vrai nom');
+
+  const etapesAnalyse = bareme.STEPS.map((e, i) => ({ e, i })).filter(({ e }) => e.phase === 'analyse');
+  const toutesRepondues = Object.fromEntries(etapesAnalyse.map(({ i }) => [String(i), [0]]));
+  const releve = mesuresInbody(bareme, toutesRepondues as never);
+
+  egal('les cinq mesures ressortent', releve.length, 5);
+
+  for (const [rang, { e }] of etapesAnalyse.entries()) {
+    egal(
+      `la mesure ${rang + 1} s'appelle comme dans le questionnaire`,
+      releve[rang].libelle,
+      e.t ?? '',
+    );
+  }
+
+  verifie(
+    'aucune mesure ne sort sans nom',
+    releve.every((m) => m.libelle.trim().length > 0),
+  );
 }

@@ -187,35 +187,35 @@ export function calculerBioPortrait(bareme: Bareme, reponses: Reponses): BioPort
   };
 }
 
-/** Les 7 mesures InBody, dans l'ordre où elles sont saisies. */
-export const LIBELLES_INBODY = [
-  'Graisse viscérale',
-  'Masse musculaire',
-  'Métabolisme',
-  'Localisation',
-  'Rétention',
-  'Âge métabolique',
-  'Masse grasse',
-];
-
 export interface MesureInbody {
   libelle: string;
   valeur: string;
 }
 
 /** Reconstitue les mesures InBody lisibles à partir des réponses. */
+/*
+  Les mesures relevées sur la balance, telles que la cliente les lira.
+
+  Les libellés viennent du BARÈME, jamais d'une liste écrite ici. Il y en a
+  eu une : sept intitulés figés, hérités d'une version du questionnaire qui
+  posait sept questions d'analyse. La version 3 n'en pose que cinq, et les
+  deux dernières se retrouvaient étiquetées avec les libellés des rangs
+  précédents — « Score InBody » s'affichait sous le nom « Rétention », sur
+  la fiche comme dans le récapitulatif envoyé à la cliente.
+
+  Le barème est versionné et chaque bilan retient le sien : lire l'intitulé
+  dedans nomme donc juste, y compris pour les bilans passés.
+*/
 export function mesuresInbody(bareme: Bareme, reponses: Reponses): MesureInbody[] {
   const sortie: MesureInbody[] = [];
-  let rang = 0;
 
   bareme.STEPS.forEach((etape, index) => {
     if (etape.phase !== 'analyse' || etape.type !== 'radio' || !etape.o) return;
 
     const [i] = choix(reponses, index);
     if (i != null) {
-      sortie.push({ libelle: LIBELLES_INBODY[rang] ?? etape.t ?? '', valeur: etape.o[i][0] });
+      sortie.push({ libelle: etape.t ?? '', valeur: etape.o[i][0] });
     }
-    rang += 1;
   });
 
   return sortie;
