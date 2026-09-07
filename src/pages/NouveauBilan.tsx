@@ -203,7 +203,8 @@ export default function NouveauBilan() {
   }
 
   /**
-   * L'enregistrement de fin de bilan, dans ses trois issues.
+   * L'enregistrement de fin de bilan, dans ses deux issues : elle démarre,
+   * ou elle repart avec son BioPortrait et la proposition.
    *
    * `proposition` est toujours ce qui était à l'écran — on l'écrit sur le
    * bilan quoi qu'il arrive. Sans elle, un récapitulatif renvoyé trois
@@ -619,8 +620,9 @@ export default function NouveauBilan() {
         prenom={prenomAffiche}
         enregistrement={enregistrement}
         onRetour={() => setVue('restitution')}
-        onBilanSeul={(p) => enregistrerTout(p, { valider: false, recap: false })}
-        onRecap={(p) => enregistrerTout(p, { valider: false, recap: true })}
+        // « Bilan seul » envoie le récapitulatif : il n'y a plus qu'un
+        // bouton pour la cliente qui ne démarre pas, et il fait les deux.
+        onBilanSeul={(p) => enregistrerTout(p, { valider: false, recap: true })}
         onValider={(p) => enregistrerTout(p, { valider: true, recap: false })}
       />
     );

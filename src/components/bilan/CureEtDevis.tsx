@@ -63,10 +63,11 @@ interface Props {
   prenom: string;
   enregistrement: boolean;
   onRetour: () => void;
-  /** La cliente ne démarre pas : on garde le bilan, et ce qu'on lui a proposé. */
+  /**
+   * La cliente ne démarre pas : on garde le bilan et ce qu'on lui a
+   * proposé, et son BioPortrait part par mail avec la proposition.
+   */
   onBilanSeul: (propose: PrescriptionValidee) => void;
-  /** Elle veut réfléchir : même chose, plus le récapitulatif par mail. */
-  onRecap: (propose: PrescriptionValidee) => void;
   onValider: (p: PrescriptionValidee) => void;
 }
 
@@ -91,7 +92,6 @@ export default function CureEtDevis({
   enregistrement,
   onRetour,
   onBilanSeul,
-  onRecap,
   onValider,
 }: Props) {
   const formules = bareme.FORMULAS ?? [];
@@ -734,20 +734,23 @@ export default function CureEtDevis({
         </button>
 
         <div className="flex flex-wrap gap-3">
-          <button
-            onClick={() => onRecap(propositionCourante())}
-            disabled={enregistrement || totalSeances === 0}
-            className="bouton-discret"
-            title="Le bilan est facturé, la cure n'est pas ouverte, et le BioPortrait part par mail avec cette proposition."
-          >
-            <Mail className="h-4 w-4" />
-            Envoyer le récap · {formaterEuros(grille.bilan)}
-          </button>
+          {/*
+            Un seul bouton pour la cliente qui ne démarre pas.
+
+            Il y en avait deux — « Bilan seul » et « Envoyer le récap » —
+            et la différence ne se voyait pas : les deux facturaient le
+            bilan et n'ouvraient pas de cure, seul le mail les séparait. On
+            ne choisit plus : elle repart avec son BioPortrait et la
+            proposition qu'on vient de lui présenter, toujours. Ne pas les
+            lui envoyer n'a jamais rien fait gagner à personne.
+          */}
           <button
             onClick={() => onBilanSeul(propositionCourante())}
-            disabled={enregistrement}
+            disabled={enregistrement || totalSeances === 0}
             className="bouton-discret"
+            title="Le bilan est facturé, la cure n'est pas ouverte, et son BioPortrait part par mail avec cette proposition."
           >
+            <Mail className="h-4 w-4" />
             Bilan seul · {formaterEuros(grille.bilan)}
           </button>
           <button
