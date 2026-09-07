@@ -10,7 +10,12 @@ export default function Repartition({
   vide = 'Rien sur cette période',
 }: {
   titre: string;
-  lignes: Array<{ libelle: string; valeur: number; detail?: string }>;
+  /*
+    `cle` sert d'identité quand deux lignes peuvent porter le même libellé —
+    deux thérapeutes homonymes dans deux centres, ou plusieurs « Non
+    renseignée ». Sans elle, React confondait les lignes et en escamotait.
+  */
+  lignes: Array<{ cle?: string; libelle: string; valeur: number; detail?: string }>;
   format?: (n: number) => string;
   vide?: string;
 }) {
@@ -24,8 +29,8 @@ export default function Repartition({
         <p className="mt-3 text-sm text-ardoise-400">{vide}</p>
       ) : (
         <ul className="mt-3 space-y-2.5">
-          {lignes.map((l) => (
-            <li key={l.libelle}>
+          {lignes.map((l, rang) => (
+            <li key={l.cle ?? `${l.libelle}-${rang}`}>
               <div className="flex items-baseline justify-between gap-3 text-sm">
                 <span className="truncate text-ardoise-700">{l.libelle}</span>
                 <span className="chiffres shrink-0 font-semibold text-ardoise-900">

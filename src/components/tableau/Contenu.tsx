@@ -1,6 +1,6 @@
 import { AlertTriangle, Gift, Package, TrendingUp, Wallet } from 'lucide-react';
 import { LIBELLES_TECHNOLOGIE, formaterEuros } from '../../domain/tarification';
-import type { DonneesTableauDeBord } from '../../services/tableauDeBord';
+import type { DonneesTableauDeBord, LigneTherapeute } from '../../services/tableauDeBord';
 import Repartition from './Repartition';
 import CourbeMensuelle from './CourbeMensuelle';
 import CourbeParCentre from './CourbeParCentre';
@@ -29,6 +29,34 @@ const LIBELLES_MODE: Record<string, string> = {
  * Les chiffres eux-mêmes, séparés de la page qui les va chercher : c'est ce
  * qui permet de les regarder avec des données d'exemple avant de livrer.
  */
+/*
+  Le signé par thérapeute, une ligne par personne.
+
+  La base groupe par thérapeute ET par centre : sur « Tous les centres », une
+  personne qui a signé dans deux centres sortait deux fois, et les cures sans
+  thérapeute sortaient une fois par centre — toutes nommées « Non
+  renseignée ». On additionne donc par identifiant, jamais par prénom : deux
+  centres peuvent employer deux personnes du même prénom, et les confondre
+  attribuerait à l'une ce que l'autre a signé.
+*/
+function signeParTherapeute(lignes: LigneTherapeute[]) {
+  const parPersonne = new Map<string, { libelle: string; valeur: number; nb: number }>();
+
+  for (const t of lignes) {
+    const cle = t.therapeute_id ?? 'sans-therapeute';
+    const deja = parPersonne.get(cle);
+    parPersonne.set(cle, {
+      libelle: t.therapeute,
+      valeur: (deja?.valeur ?? 0) + Number(t.montant),
+      nb: (deja?.nb ?? 0) + Number(t.nb),
+    });
+  }
+
+  return [...parPersonne.entries()]
+    .map(([cle, l]) => ({ cle, libelle: l.libelle, valeur: l.valeur, detail: `· ${l.nb}` }))
+    .sort((a, b) => b.valeur - a.valeur);
+}
+
 export default function ContenuTableauDeBord({
   data,
   nomAxe,
@@ -145,11 +173,7 @@ export default function ContenuTableauDeBord({
           titre="Signé par thérapeute"
           format={formaterEuros}
           vide="Aucune cure signée sur cette période"
-          lignes={data.par_therapeute.map((t) => ({
-            libelle: t.therapeute,
-            valeur: Number(t.montant),
-            detail: `· ${t.nb}`,
-          }))}
+          lignes={signeParTherapeute(data.par_therapeute)}
         />
       </section>
 
