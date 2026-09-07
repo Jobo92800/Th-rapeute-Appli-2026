@@ -1,13 +1,22 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, CheckCircle2, KeyRound, RefreshCw, ShieldAlert } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  KeyRound,
+  RefreshCw,
+  ShieldAlert,
+  UserCheck,
+  UserX,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useSession } from '../lib/session';
 import { texteErreur } from '../lib/erreurs';
 import {
   MOT_DE_PASSE_MIN,
+  changerLActivite,
   changerLeMotDePasse,
   etatDesComptes,
   type EtatCompte,
@@ -30,6 +39,7 @@ export default function Comptes() {
   const { role } = useSession();
   const qc = useQueryClient();
   const [cible, setCible] = useState<EtatCompte | null>(null);
+  const [montrerInactives, setMontrerInactives] = useState(false);
 
   const {
     data: comptes = [],
@@ -43,6 +53,16 @@ export default function Comptes() {
     enabled: role === 'direction',
   });
 
+  const activite = useMutation({
+    mutationFn: ({ id, actif }: { id: string; actif: boolean }) => changerLActivite(id, actif),
+    onSuccess: (_, { actif }) => {
+      toast.success(actif ? 'Remise en service.' : 'Retirée du service.');
+      void qc.invalidateQueries({ queryKey: ['comptes'] });
+      void qc.invalidateQueries({ queryKey: ['therapeutes'] });
+    },
+    onError: (e) => toast.error(texteErreur(e) || "L'état n'a pas pu être changé."),
+  });
+
   if (role !== 'direction') {
     return (
       <div className="carte flex items-start gap-3 p-5">
@@ -54,8 +74,17 @@ export default function Comptes() {
     );
   }
 
+  /*
+    Les inactives sont rangées, pas effacées. Elles ne travaillent plus, leur
+    diagnostic n'intéresse personne, et laissées dans la liste elles font
+    prendre pour une panne ce qui est une décision. Un compteur suffit à
+    dire qu'elles existent.
+  */
+  const inactives = comptes.filter((c) => !c.actif);
+  const visibles = montrerInactives ? comptes : comptes.filter((c) => c.actif);
+
   const parCentre = new Map<string, EtatCompte[]>();
-  for (const c of comptes) {
+  for (const c of visibles) {
     const cle = c.centre_nom ?? 'Direction';
     parCentre.set(cle, [...(parCentre.get(cle) ?? []), c]);
   }
@@ -70,10 +99,23 @@ export default function Comptes() {
             Qui peut se connecter, et quoi faire quand ça ne marche plus.
           </p>
         </div>
-        <button onClick={() => void refetch()} disabled={isFetching} className="bouton-discret">
-          <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-          Relire
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {inactives.length > 0 && (
+            <button
+              onClick={() => setMontrerInactives((v) => !v)}
+              className="bouton-discret"
+            >
+              {montrerInactives ? <UserCheck className="h-4 w-4" /> : <UserX className="h-4 w-4" />}
+              {montrerInactives
+                ? 'Masquer les inactives'
+                : `Voir les ${inactives.length} inactive${inactives.length > 1 ? 's' : ''}`}
+            </button>
+          )}
+          <button onClick={() => void refetch()} disabled={isFetching} className="bouton-discret">
+            <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+            Relire
+          </button>
+        </div>
       </header>
 
       {error ? (
@@ -155,30 +197,60 @@ export default function Comptes() {
                       )}
                     </span>
 
-                    <button
-                      onClick={() => setCible(c)}
-                      disabled={!c.a_un_compte}
-                      className="bouton-discret shrink-0"
-                      title={
-                        c.a_un_compte
-                          ? undefined
-                          : 'Cette personne n’a pas encore de compte de connexion.'
-                      }
-                    >
-                      <KeyRound className="h-4 w-4" />
-                      Mot de passe
-                    </button>
+                    <span className="flex shrink-0 gap-2">
+                      <button
+                        onClick={() => setCible(c)}
+                        disabled={!c.a_un_compte || !c.actif}
+                        className="bouton-discret"
+                        title={
+                          !c.actif
+                            ? 'Remettez-la en service avant de lui redonner un mot de passe.'
+                            : c.a_un_compte
+                              ? undefined
+                              : 'Cette personne n’a pas encore de compte de connexion.'
+                        }
+                      >
+                        <KeyRound className="h-4 w-4" />
+                        Mot de passe
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          const question = c.actif
+                            ? `Retirer ${c.prenom} du service ? Elle ne pourra plus se connecter et ne sera plus proposée sur les fiches. Ce qu’elle a fait reste à son nom, et le geste se défait.`
+                            : `Remettre ${c.prenom} en service ?`;
+                          if (!confirm(question)) return;
+                          activite.mutate({ id: c.therapeute_id, actif: !c.actif });
+                        }}
+                        disabled={activite.isPending}
+                        className="bouton-discret"
+                        title={c.actif ? 'Retirer du service' : 'Remettre en service'}
+                      >
+                        {c.actif ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                        <span className="sr-only">
+                          {c.actif ? 'Retirer du service' : 'Remettre en service'}
+                        </span>
+                      </button>
+                    </span>
                   </li>
                 ))}
               </ul>
             </section>
           ))}
 
-          <p className="text-xs text-ardoise-500">
-            Un compte « qui peut se connecter » et un mot de passe juste sont deux choses
-            différentes. Supabase ne rend jamais un mot de passe, même ici : quand tout est vert
-            et que la connexion échoue quand même, c’est celui-là — remplacez-le.
-          </p>
+          <div className="space-y-2 text-xs text-ardoise-500">
+            <p>
+              Un compte « qui peut se connecter » et un mot de passe juste sont deux choses
+              différentes. Supabase ne rend jamais un mot de passe, même ici : quand tout est vert
+              et que la connexion échoue quand même, c’est celui-là — remplacez-le.
+            </p>
+            <p>
+              Une personne se <strong>retire du service</strong>, elle ne s’efface pas : son nom
+              reste sur les séances qu’elle a faites, les bilans qu’elle a passés et les
+              règlements qu’elle a encaissés. Retirée, elle ne se connecte plus et n’est plus
+              proposée nulle part — et vous pouvez la remettre quand vous voulez.
+            </p>
+          </div>
         </>
       )}
 

@@ -64,3 +64,21 @@ export async function changerMonMotDePasse(motDePasse: string): Promise<void> {
   const { error } = await supabase.auth.updateUser({ password: motDePasse });
   if (error) throw new Error(error.message);
 }
+
+/**
+ * Retirer une thérapeute du service, ou l'y remettre.
+ *
+ * On désactive, on ne supprime pas — et ce n'est pas de la prudence de
+ * principe : dix tables portent son identifiant, dont les séances, les
+ * bilans, les contrats et les mouvements de stock. « Qui a réalisé cette
+ * séance » est une information qui compte, et la base refuserait de toute
+ * façon d'effacer quelqu'un qui a travaillé.
+ *
+ * Une fiche inactive ne se propose plus nulle part, et son compte ne mène
+ * plus à rien : la connexion réussit, l'application ne trouve personne
+ * derrière. Le geste se défait d'un clic.
+ */
+export async function changerLActivite(therapeuteId: string, actif: boolean): Promise<void> {
+  const { error } = await supabase.from('therapeutes').update({ actif }).eq('id', therapeuteId);
+  if (error) throw error;
+}
