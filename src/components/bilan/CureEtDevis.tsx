@@ -214,6 +214,14 @@ export default function CureEtDevis({
 
   const premierARegler = echeancier.echeances.find((e) => e.type !== 'bilan');
 
+  /*
+    Alma ne s'y prend pas de la même façon selon la formule : en 10× et 12×
+    les mensualités sont égales, en 2×, 3× et 4× tous les frais tombent sur
+    le premier versement. L'écran doit dire laquelle des deux, sinon la
+    cliente attend un montant et en voit un autre.
+  */
+  const mensualitesEgales = methode === 'alma' && echeancier.n >= 10;
+
   function ajuster(presta: Prestation, delta: number) {
     const actuelle = cure.find((l) => l.presta === presta)?.seances ?? 0;
     setAjusts((a) => ({ ...a, [presta]: Math.max(0, actuelle + delta) }));
@@ -541,7 +549,16 @@ export default function CureEtDevis({
                     ? acompte > 0
                       ? 'Acompte · avant la prochaine séance'
                       : '1re échéance · sans frais'
-                    : `${echeancier.n} fois égales · via Alma`}
+                    : /*
+                        « Fois égales » n'est vrai qu'en 10× et 12×. En 2×, 3×
+                        et 4×, Alma prend la totalité de ses frais sur le
+                        premier versement : annoncer l'égalité, c'est
+                        promettre à la cliente un prélèvement qu'elle ne
+                        verra pas sur son relevé.
+                      */
+                      mensualitesEgales
+                      ? `${echeancier.n} mensualités égales · via Alma`
+                      : `1er versement · ${echeancier.n} fois via Alma`}
                 </div>
                 <div className="chiffres mt-1 text-5xl font-bold">
                   {/*
@@ -550,11 +567,11 @@ export default function CureEtDevis({
                     qui reste à faire.
                   */}
                   {formaterEuros(premierARegler?.montant ?? 0, 2)}
-                  {methode === 'alma' && <span className="text-xl font-semibold"> /mois</span>}
+                  {/* « /mois » ne vaut que quand les mensualités le sont vraiment. */}
+                  {mensualitesEgales && <span className="text-xl font-semibold"> /mois</span>}
                 </div>
 
-                {methode === 'centre' && (
-                  <div className="mx-auto mt-4 max-w-xs">
+                <div className="mx-auto mt-4 max-w-xs">
                     {echeancier.echeances
                       .filter((e) => e !== premierARegler)
                       .map((e) => (
@@ -575,8 +592,7 @@ export default function CureEtDevis({
                         </span>
                       </div>
                       ))}
-                  </div>
-                )}
+                </div>
 
                 <div className="mt-3 text-xs text-marine-200">
                   Montant total : {formaterEuros(echeancier.montantARegler)}
@@ -618,7 +634,11 @@ export default function CureEtDevis({
                 ? acompte > 0
                   ? 'Par chèques au centre. L’acompte se déduit du total ; le reste, guide et tenue compris, se répartit sur les échéances.'
                   : 'Par chèques au centre. Le guide et la tenue sont sur la première échéance.'
-                : `Frais Alma de ${String(tauxFraisAlma(echeancier.n, totalSeances * grille.seance + options)).replace('.', ',')} %, à sa charge, compris dans la mensualité.`}
+                : `Frais Alma de ${String(tauxFraisAlma(echeancier.n, totalSeances * grille.seance + options)).replace('.', ',')} %, à sa charge${
+                    mensualitesEgales
+                      ? ', répartis sur les mensualités.'
+                      : ', pris en totalité sur le premier versement.'
+                  }`}
             </p>
 
             {/*
