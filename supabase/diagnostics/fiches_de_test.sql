@@ -24,6 +24,21 @@ FROM clientes
 GROUP BY origine
 ORDER BY origine;
 
+/*
+  1 bis. Les fiches nées dans la V2, jour par jour.
+
+  L'heure est lue à Paris, pas en UTC : une fiche créée à une heure du matin
+  appartient au jour où la thérapeute l'a saisie, pas à la veille.
+*/
+SELECT
+  (cree_le AT TIME ZONE 'Europe/Paris')::date AS jour,
+  COUNT(*)                                    AS fiches,
+  string_agg(prenom || ' ' || nom, ' · ' ORDER BY cree_le) AS lesquelles
+FROM clientes
+WHERE origine = 'v2'
+GROUP BY 1
+ORDER BY 1 DESC;
+
 -- 2. Le détail de ce qui serait effacé, une ligne par fiche.
 SELECT
   c.prenom || ' ' || c.nom                   AS fiche,
