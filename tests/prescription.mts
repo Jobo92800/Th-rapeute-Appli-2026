@@ -251,6 +251,26 @@ export function controlerPrescription() {
     12,
   );
 
+  /*
+    Le libellé de la question du transit.
+
+    Il a été élargi (051) parce qu'une cliente sujette à la diarrhée ne se
+    reconnaissait dans aucune réponse et cochait « Réguliers » — ce qui
+    effaçait un terrain digestif. Ce contrôle tient les deux bouts : le texte
+    affiché, et le fait que les points n'ont pas bougé au passage.
+  */
+  section('La question du transit couvre les deux sens du désordre');
+
+  const transit = bareme.STEPS[16];
+  egal('c’est bien la question du transit', transit.t, 'Votre digestion / transit :');
+  egal(
+    'sa troisième réponse nomme les trois troubles',
+    transit.o?.[2][0],
+    'Constipation / Diarrhée / Ventre gonflé',
+  );
+  egal('elle pèse toujours trois points de terrain digestif', transit.o?.[2][1]?.T5, 3);
+  egal('et deux de pressodynamie', transit.o?.[2][2]?.PRESSO, 2);
+
   section('Les paliers, un par un');
 
   for (const p of PRESTATIONS) {
