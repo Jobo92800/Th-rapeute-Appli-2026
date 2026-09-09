@@ -14,6 +14,11 @@ import {
   type Filleule,
 } from '../src/domain/parrainage.ts';
 import { finDeCure, libelleFinDeCure, niveauStock } from '../src/domain/stock.ts';
+import {
+  echeanceIntouchable,
+  reechelonner,
+  refusDeReechelonner,
+} from '../src/domain/reglement.ts';
 import { evolution, libelleEvolution } from '../src/domain/tableauDeBord.ts';
 import { construireContrat } from '../src/domain/contrat.ts';
 import type { Centre, Cliente, Echeance, LigneProgramme, Programme } from '../src/types/db.ts';
@@ -218,5 +223,95 @@ export function controlerMetier() {
     'la Relaxation ne fait pas signer un consentement de plus',
     contrat.activeServiceIds.filter((s) => s === 'luxo-pdp').length === 1,
     contrat.activeServiceIds.join(','),
+  );
+
+  /*
+    REDÉCOUPER UN ÉCHÉANCIER.
+
+    Ce qui se joue ici, c'est de l'argent déjà annoncé à une cliente : le
+    total ne doit pas bouger d'un centime, et ce qui a été réglé ne doit
+    jamais être touché.
+  */
+  section('Redécouper ce qui reste dû');
+
+  const ech = (
+    rang: number,
+    montant: number,
+    statut: Echeance['statut'],
+    type: Echeance['type'] = 'echeance',
+  ) => ({ id: `e${rang}${type}`, rang, montant, statut, type }) as unknown as Echeance;
+
+  const quatreDues = [
+    ech(1, 501, 'a_venir'),
+    ech(2, 472, 'a_venir'),
+    ech(3, 413, 'a_venir'),
+    ech(4, 413, 'a_venir'),
+  ];
+
+  const enTrois = reechelonner(quatreDues, 3, new Date('2026-10-09'));
+  egal('trois échéances ressortent', enTrois.echeances.length, 3);
+  egalEuros('et leur somme vaut ce qui restait dû', enTrois.echeances.reduce((n, e) => n + e.montant, 0), 1799);
+  egal('la première tombe à la date donnée', enTrois.echeances[0].date_prevue, '2026-10-09');
+  egal('la suivante un mois après', enTrois.echeances[1].date_prevue, '2026-11-09');
+
+  const enUne = reechelonner(quatreDues, 1, new Date('2026-10-09'));
+  egal('en une fois, une seule ligne', enUne.echeances.length, 1);
+  egalEuros('qui porte tout', enUne.echeances[0].montant, 1799);
+
+  section('Ce qui est réglé ne se redécoupe pas');
+
+  const partiellementReglee = [
+    ech(1, 129, 'paye', 'bilan'),
+    ech(2, 501, 'paye'),
+    ech(3, 472, 'a_venir'),
+    ech(4, 413, 'impaye'),
+  ];
+
+  verifie('un chèque encaissé est intouchable', echeanceIntouchable(partiellementReglee[1]));
+  verifie('le bilan réglé en ligne aussi', echeanceIntouchable(partiellementReglee[0]));
+  verifie('une échéance à venir ne l’est pas', !echeanceIntouchable(partiellementReglee[2]));
+  verifie('une impayée non plus — elle est toujours due', !echeanceIntouchable(partiellementReglee[3]));
+
+  const resteRedecoupe = reechelonner(partiellementReglee, 2, new Date('2026-10-09'));
+  egalEuros(
+    'seul ce qui restait dû est redécoupé',
+    resteRedecoupe.echeances.reduce((n, e) => n + e.montant, 0),
+    472 + 413,
+  );
+  egal('en deux fois', resteRedecoupe.echeances.length, 2);
+
+  section('Le redécoupage tombe juste, même quand ça ne divise pas');
+
+  for (const [du, n] of [[1000, 3], [1799, 3], [1, 4], [999.99, 7]] as const) {
+    const r = reechelonner([ech(1, du, 'a_venir')], n, new Date('2026-10-09'));
+    egalEuros(`${du} € en ${n} fois retombe sur ${du} €`, r.echeances.reduce((s, e) => s + e.montant, 0), du);
+    verifie(`et aucune part n’est négative (${du} en ${n})`, r.echeances.every((e) => e.montant >= 0));
+  }
+
+  section('Ce qu’on refuse de redécouper, et ce qu’on répond');
+
+  verifie(
+    'une cure au centre encore due se redécoupe',
+    refusDeReechelonner({ modeReglement: 'centre_4x', statutCure: 'valide', echeances: quatreDues }) === null,
+  );
+  verifie(
+    'Alma, non',
+    (refusDeReechelonner({ modeReglement: 'alma_10x', statutCure: 'valide', echeances: quatreDues }) ?? '').includes('crédit'),
+  );
+  verifie(
+    'une cure arrêtée non plus',
+    (refusDeReechelonner({ modeReglement: 'centre_4x', statutCure: 'abandonne', echeances: quatreDues }) ?? '').includes('arrêtée'),
+  );
+  verifie(
+    'une cure reprise du CRM non plus',
+    (refusDeReechelonner({ modeReglement: 'inconnu', statutCure: 'valide', echeances: quatreDues }) ?? '').length > 0,
+  );
+  verifie(
+    'et une cure entièrement soldée non plus',
+    (refusDeReechelonner({
+      modeReglement: 'centre_4x',
+      statutCure: 'valide',
+      echeances: [ech(1, 501, 'paye'), ech(2, 472, 'paye')],
+    }) ?? '').includes('réglé'),
   );
 }

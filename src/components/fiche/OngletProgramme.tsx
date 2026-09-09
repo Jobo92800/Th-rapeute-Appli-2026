@@ -6,17 +6,28 @@ import { OctagonX, Plus, RotateCcw, Sparkles, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { majEcheance, programmesDeLaCliente } from '../../services/metier';
+import {
+  majEcheance,
+  programmesDeLaCliente,
+  reechelonnerLesEcheances,
+} from '../../services/metier';
 import type { ProgrammeComplet } from '../../services/metier';
 import { LIBELLES_TECHNOLOGIE, formaterEuros } from '../../domain/tarification';
-import { STATUTS_SAISISSABLES, TEINTE_STATUT, etatEcheance } from '../../domain/reglement';
+import {
+  STATUTS_SAISISSABLES,
+  TEINTE_STATUT,
+  echeanceIntouchable,
+  etatEcheance,
+  reechelonner,
+  refusDeReechelonner,
+} from '../../domain/reglement';
 import ModaleNouvelleCure from '../cure/ModaleNouvelleCure';
 import ModaleArretCure from '../cure/ModaleArretCure';
 import CarteAvoir, { BoutonAvoir } from '../cure/CarteAvoir';
 import { resteAEncaisser } from '../../domain/avoir';
 import { rouvrirCure } from '../../services/avoirs';
 import { useSession } from '../../lib/session';
-import type { Cliente, Echeance, StatutEcheance } from '../../types/db';
+import type { Cliente, Echeance, Programme, StatutEcheance } from '../../types/db';
 
 const LIBELLE_MODE: Record<string, string> = {
   comptant: 'Comptant',
@@ -42,6 +53,11 @@ export default function OngletProgramme({
     queryKey: ['programmes', clienteId],
     queryFn: () => programmesDeLaCliente(clienteId),
   });
+
+  function rafraichir() {
+    qc.invalidateQueries({ queryKey: ['programmes', clienteId] });
+    qc.invalidateQueries({ queryKey: ['situations', centreId] });
+  }
 
   async function changerStatut(e: Echeance, statut: StatutEcheance) {
     try {
@@ -298,6 +314,8 @@ export default function OngletProgramme({
                 règlement.
               </p>
 
+              <Reechelonner programme={p} echeances={echeances} onFait={rafraichir} />
+
               <div className="mt-3 space-y-1.5">
                 {echeances.map((e) => {
                   const st = etatEcheance(e);
@@ -463,6 +481,154 @@ function Bloc({
       >
         {valeur}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Changer le nombre de chèques d'une cure déjà signée.
+ *
+ * Elle a signé en quatre fois et rappelle trois jours plus tard pour en
+ * demander trois. Jusqu'ici il fallait arrêter la cure et la refaire — un
+ * geste lourd, qui crée un avoir et fausse le tableau de bord pour une
+ * histoire de chèques.
+ *
+ * Ce bloc reste replié : le cas courant est de ne rien changer, et un
+ * sélecteur ouvert au milieu de l'échéancier inviterait à y toucher.
+ */
+function Reechelonner({
+  programme,
+  echeances,
+  onFait,
+}: {
+  programme: Programme;
+  echeances: Echeance[];
+  onFait: () => void;
+}) {
+  const [ouvert, setOuvert] = useState(false);
+  const [nChoisi, setN] = useState<number | null>(null);
+  const [enCours, setEnCours] = useState(false);
+
+  const refus = refusDeReechelonner({
+    modeReglement: programme.mode_reglement,
+    statutCure: programme.statut,
+    echeances,
+  });
+  if (refus) return null;
+
+  const aRedecouper = echeances.filter((e) => !echeanceIntouchable(e));
+  const restantes = aRedecouper.length;
+  const n = nChoisi ?? restantes;
+
+  /*
+    La première nouvelle échéance reprend la date qui était déjà annoncée à
+    la cliente. Recommencer au mois prochain repousserait tout d'un cran
+    sans qu'on l'ait demandé, et une échéance en retard cesserait de l'être
+    au seul motif qu'on a changé le nombre de chèques.
+  */
+  const premiereDate = aRedecouper
+    .map((e) => e.date_prevue)
+    .filter((d): d is string => Boolean(d))
+    .sort()[0];
+
+  const apercu = reechelonner(
+    echeances,
+    n,
+    premiereDate ? new Date(premiereDate) : new Date(),
+  );
+
+  async function appliquer() {
+    setEnCours(true);
+    try {
+      await reechelonnerLesEcheances(programme.id, apercu.echeances);
+      toast.success(
+        n === 1 ? 'Échéancier ramené à une seule échéance' : `Échéancier redécoupé en ${n} fois`,
+      );
+      setOuvert(false);
+      setN(null);
+      onFait();
+    } catch (err) {
+      // Le refus vient de la base et dit précisément pourquoi : on le montre.
+      toast.error(texteErreur(err) || "L'échéancier n'a pas pu être redécoupé.");
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  if (!ouvert) {
+    return (
+      <button
+        onClick={() => setOuvert(true)}
+        className="mt-2 text-xs font-medium text-marine-700 underline underline-offset-2 hover:text-marine-900"
+      >
+        Changer le nombre d’échéances
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-3 rounded-xl border border-marine-200 bg-marine-50/60 px-4 py-3">
+      <p className="text-xs text-ardoise-700">
+        <b>{formaterEuros(apercu.totalRedecoupe)}</b> restent dus sur cette cure.
+        {restantes > 1 ? ` Ils sont aujourd’hui répartis en ${restantes} fois.` : ''} Le montant
+        de la cure ne change pas, et ce qui est déjà réglé n’est pas touché.
+      </p>
+
+      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+        {[1, 2, 3, 4].map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => setN(c)}
+            aria-pressed={n === c}
+            className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+              n === c
+                ? 'border-marine-600 bg-marine-600 text-white'
+                : 'border-ardoise-300 bg-white text-ardoise-700 hover:border-marine-400'
+            }`}
+          >
+            {c}×
+          </button>
+        ))}
+      </div>
+
+      <ul className="mt-2.5 space-y-0.5 text-xs text-ardoise-600">
+        {apercu.echeances.map((e) => (
+          <li key={e.rang} className="flex justify-between gap-3">
+            <span>
+              Échéance {e.rang} · {format(new Date(e.date_prevue), 'd MMM yyyy', { locale: fr })}
+            </span>
+            <span className="chiffres font-semibold text-ardoise-900">
+              {formaterEuros(e.montant, 2)}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          onClick={appliquer}
+          disabled={enCours || n === restantes}
+          className="bouton-fort text-xs"
+          title={n === restantes ? 'C’est déjà le découpage actuel.' : undefined}
+        >
+          {enCours ? 'Enregistrement…' : `Redécouper en ${n} fois`}
+        </button>
+        <button
+          onClick={() => {
+            setOuvert(false);
+            setN(null);
+          }}
+          className="bouton-discret text-xs"
+        >
+          Annuler
+        </button>
+      </div>
+
+      <p className="mt-2 text-2xs text-ardoise-500">
+        Si le contrat est déjà signé, il porte l’ancien échéancier : refaites-le si la cliente
+        doit en garder une trace.
+      </p>
     </div>
   );
 }

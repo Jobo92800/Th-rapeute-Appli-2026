@@ -191,3 +191,103 @@ export function etatCliente(s: SituationReglement | undefined): {
     classe: 'border-ardoise-200 bg-white text-ardoise-700',
   };
 }
+
+// ---------------------------------------------------------------------------
+// RÉÉCHELONNER UNE CURE DÉJÀ SIGNÉE
+// ---------------------------------------------------------------------------
+
+/*
+  Changer le nombre de chèques après coup.
+
+  Ça arrive au comptoir : la cliente a signé en quatre fois, elle rappelle
+  trois jours plus tard pour demander trois, ou l'inverse. Jusqu'ici il
+  fallait arrêter la cure et la refaire — un geste lourd, qui crée un avoir
+  et fausse le tableau de bord pour une histoire de chèques.
+
+  QUATRE RÈGLES, ET AUCUNE N'EST NÉGOCIABLE.
+
+  Le montant total ne bouge pas. On ne rééchelonne pas un prix : on
+  redécoupe ce qui reste dû. La somme des échéances vaut toujours ce que la
+  cliente doit, avant comme après.
+
+  Ce qui est réglé ne se touche pas. Un chèque encaissé, une échéance
+  offerte, le bilan déjà payé en ligne : ce sont des faits, pas des
+  prévisions. On ne redécoupe que ce qui est encore à venir ou impayé.
+
+  Au centre seulement. Chez Alma, le calendrier appartient à l'organisme de
+  crédit : le redécouper ici ne changerait rien à ce qu'il prélève, et
+  l'écran mentirait à la cliente.
+
+  Les dates repartent du mois prochain. Une échéance qu'on vient de créer
+  n'est pas en retard, et la première du nouveau découpage tombe à la
+  prochaine date prévue — celle qui était déjà annoncée.
+*/
+
+export interface Reechelonnement {
+  /** Ce qu'on écrit à la place des échéances encore dues. */
+  echeances: Array<{ rang: number; montant: number; date_prevue: string }>;
+  /** La somme redécoupée, pour que l'appelant puisse la vérifier. */
+  totalRedecoupe: number;
+}
+
+/** Ce qu'on ne redécoupe jamais : ce qui est déjà réglé, ou déjà encaissé. */
+export function echeanceIntouchable(e: Echeance): boolean {
+  return e.statut === 'paye' || e.statut === 'donne' || e.type === 'bilan' || e.type === 'acompte';
+}
+
+/**
+ * Redécoupe en `n` fois ce qui reste dû sur une cure.
+ *
+ * La répartition se fait en parts égales, le reliquat d'arrondi sur la
+ * première. Le devis, lui, répartit au prorata des séances — mais ici une
+ * partie a pu être réglée, et « la première échéance porte le guide et la
+ * tenue » n'a plus de sens : ils sont déjà payés.
+ */
+export function reechelonner(
+  echeances: Echeance[],
+  n: number,
+  premiereDate: Date,
+): Reechelonnement {
+  const nombre = Math.max(1, Math.floor(n));
+  const aRedecouper = echeances.filter((e) => !echeanceIntouchable(e));
+  const total = Math.round(aRedecouper.reduce((s, e) => s + Number(e.montant), 0) * 100) / 100;
+
+  const part = Math.floor((total / nombre) * 100) / 100;
+  const reliquat = Math.round((total - part * nombre) * 100) / 100;
+  const dates = datesEcheancier(premiereDate, nombre);
+
+  return {
+    totalRedecoupe: total,
+    echeances: Array.from({ length: nombre }, (_, i) => ({
+      rang: i + 1,
+      montant: Math.round((part + (i === 0 ? reliquat : 0)) * 100) / 100,
+      date_prevue: dates[i],
+    })),
+  };
+}
+
+/**
+ * Peut-on rééchelonner cette cure, et sinon pourquoi ?
+ *
+ * La phrase revient à l'écran telle quelle : une thérapeute doit comprendre
+ * ce qui bloque sans avoir à deviner.
+ */
+export function refusDeReechelonner(args: {
+  modeReglement: string;
+  statutCure: string;
+  echeances: Echeance[];
+}): string | null {
+  if (args.statutCure === 'abandonne') {
+    return 'Cette cure est arrêtée : son échéancier ne se redécoupe plus.';
+  }
+  if (args.modeReglement.startsWith('alma')) {
+    return 'Réglée par Alma : le calendrier appartient à l’organisme de crédit, le changer ici ne changerait rien à ce qu’il prélève.';
+  }
+  if (args.modeReglement === 'inconnu') {
+    return 'Cure reprise du CRM : son mode de règlement n’est pas connu, et son échéancier ne vient pas de nous.';
+  }
+  if (args.echeances.filter((e) => !echeanceIntouchable(e)).length === 0) {
+    return 'Tout est réglé sur cette cure : il n’y a plus rien à redécouper.';
+  }
+  return null;
+}

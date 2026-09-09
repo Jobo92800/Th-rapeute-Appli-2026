@@ -34,46 +34,64 @@
       l'accès audio garde son compte là-bas.
 
   Tout est dans une transaction : si une seule ligne échoue, rien n'est fait.
+
+  PAS DE TABLE TEMPORAIRE, ET C'EST VOLONTAIRE. L'éditeur de Supabase
+  s'alarme dès qu'il voit un `CREATE TABLE`, même temporaire : il propose
+  d'y activer la sécurité par ligne, ce qui n'a aucun sens sur une table qui
+  vit trois instructions. Plutôt que d'apprendre à ignorer un avertissement
+  — l'habitude qui fait cliquer trop vite le jour où il est fondé —, on
+  répète la condition dans chaque instruction. Elle est déterministe, et les
+  suppressions vont du plus dépendant au moins dépendant.
 */
+
+-- La condition, la même partout : née dans la V2, créée aujourd'hui à Paris.
+-- (`CURRENT_DATE` seul travaille en UTC et raterait les fiches saisies
+--  entre minuit et deux heures du matin.)
 
 BEGIN;
 
 -- ---------------------------------------------------------------------------
 -- 0. La liste exacte de ce qui va partir. LISEZ-LA avant de laisser tourner.
 -- ---------------------------------------------------------------------------
-CREATE TEMP TABLE a_effacer ON COMMIT DROP AS
-SELECT id, prenom || ' ' || nom AS fiche, cree_le
-  FROM clientes
- WHERE origine = 'v2'
-   AND (cree_le AT TIME ZONE 'Europe/Paris')::date
-     = (now()    AT TIME ZONE 'Europe/Paris')::date;
-
-SELECT fiche, to_char(cree_le AT TIME ZONE 'Europe/Paris', 'HH24:MI') AS creee_a
-  FROM a_effacer ORDER BY cree_le;
+SELECT
+  prenom || ' ' || nom                                          AS fiche,
+  to_char(cree_le AT TIME ZONE 'Europe/Paris', 'HH24:MI')       AS creee_a
+FROM clientes
+WHERE origine = 'v2'
+  AND (cree_le AT TIME ZONE 'Europe/Paris')::date
+    = (now()   AT TIME ZONE 'Europe/Paris')::date
+ORDER BY cree_le;
 
 -- ---------------------------------------------------------------------------
 -- 1. Les mouvements de stock des contrats d'essai.
 --    Repérés maintenant : après le DELETE, plus rien ne les relie.
 -- ---------------------------------------------------------------------------
-CREATE TEMP TABLE mouvements_a_effacer ON COMMIT DROP AS
-SELECT m.id
-  FROM mouvements_stock m
-  JOIN programmes p  ON p.id = m.programme_id
-  JOIN a_effacer  c  ON c.id = p.cliente_id;
-
-DELETE FROM mouvements_stock
- WHERE id IN (SELECT id FROM mouvements_a_effacer);
+DELETE FROM mouvements_stock m
+ USING programmes p, clientes c
+ WHERE p.id = m.programme_id
+   AND c.id = p.cliente_id
+   AND c.origine = 'v2'
+   AND (c.cree_le AT TIME ZONE 'Europe/Paris')::date
+     = (now()     AT TIME ZONE 'Europe/Paris')::date;
 
 -- ---------------------------------------------------------------------------
 -- 2. La file de synchronisation Airtable.
 -- ---------------------------------------------------------------------------
 DELETE FROM airtable_sync
- WHERE entite_id IN (SELECT id FROM a_effacer);
+ WHERE entite_id IN (
+   SELECT id FROM clientes
+    WHERE origine = 'v2'
+      AND (cree_le AT TIME ZONE 'Europe/Paris')::date
+        = (now()   AT TIME ZONE 'Europe/Paris')::date
+ );
 
 -- ---------------------------------------------------------------------------
 -- 3. Les fiches. La cascade emporte tout le dossier.
 -- ---------------------------------------------------------------------------
-DELETE FROM clientes WHERE id IN (SELECT id FROM a_effacer);
+DELETE FROM clientes
+ WHERE origine = 'v2'
+   AND (cree_le AT TIME ZONE 'Europe/Paris')::date
+     = (now()   AT TIME ZONE 'Europe/Paris')::date;
 
 -- ---------------------------------------------------------------------------
 -- 4. Contrôle. `essais_du_jour` doit valoir 0 ; `reprises_du_crm` n'a pas

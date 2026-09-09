@@ -278,6 +278,26 @@ export async function situationsDuCentre(centreId: string | null): Promise<Situa
   return (data ?? []) as SituationReglement[];
 }
 
+/**
+ * Redécoupe ce qui reste dû sur une cure réglée au centre.
+ *
+ * Le calcul vient du domaine ; la base, elle, refait ses propres
+ * vérifications avant d'écrire — un écran peut se tromper, et la somme doit
+ * tomber au centime.
+ */
+export async function reechelonnerLesEcheances(
+  programmeId: string,
+  echeances: Array<{ montant: number; date_prevue: string }>,
+): Promise<void> {
+  const { error } = await supabase.rpc('reechelonner_les_echeances', {
+    p_programme_id: programmeId,
+    p_montants: echeances.map((e) => e.montant),
+    p_dates: echeances.map((e) => e.date_prevue),
+  });
+  if (error) throw error;
+  declencherSynchro();
+}
+
 export async function majEcheance(id: string, patch: Partial<Echeance>): Promise<void> {
   const { error } = await supabase.from('echeances').update(patch).eq('id', id);
   if (error) throw error;
