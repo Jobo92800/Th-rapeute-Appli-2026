@@ -187,6 +187,7 @@ export default function OngletProgramme({
         const enRetard = echeances
           .filter((e) => etatEcheance(e).etat === 'retard')
           .reduce((n, e) => n + Number(e.montant), 0);
+        const alma = p.mode_reglement.startsWith('alma');
 
         return (
           <section key={p.id} className="carte overflow-hidden">
@@ -308,15 +309,35 @@ export default function OngletProgramme({
                 <Wallet className="h-3.5 w-3.5" />
                 Échéancier
               </h3>
-              <p className="mt-1 text-xs text-ardoise-500">
-                La première échéance tombe le jour de la cure, puis une par mois. Les dates
-                restent modifiables, et le statut se choisit dans son menu, comme le moyen de
-                règlement.
-              </p>
+              {/*
+                CHEZ ALMA, L'ÉCHÉANCIER NE NOUS REGARDE PAS.
 
-              <Reechelonner programme={p} echeances={echeances} onFait={rafraichir} />
+                L'organisme a payé le centre à la signature ; les mensualités
+                qui suivent sont entre lui et la cliente. Les afficher ligne à
+                ligne, avec un statut à choisir et une date à corriger,
+                donnait à croire qu'il y avait là quelque chose à suivre —
+                douze lignes dont aucune n'appelle un geste. Elles restent en
+                base pour le contrat, qui doit les annoncer à la cliente.
+              */}
+              {alma ? (
+                <p className="mt-1 text-xs text-ardoise-500">
+                  Réglé par <b>Alma</b> en {echeances.length} fois, avancé au centre à la
+                  signature. Les mensualités sont prélevées par l’organisme : il n’y a rien à
+                  encaisser ni à relancer ici. Le contrat en porte le détail.
+                </p>
+              ) : (
+                <>
+                  <p className="mt-1 text-xs text-ardoise-500">
+                    La première échéance tombe le jour de la cure, puis une par mois. Les dates
+                    restent modifiables, et le statut se choisit dans son menu, comme le moyen de
+                    règlement.
+                  </p>
 
-              <div className="mt-3 space-y-1.5">
+                  <Reechelonner programme={p} echeances={echeances} onFait={rafraichir} />
+                </>
+              )}
+
+              <div className={`mt-3 space-y-1.5 ${alma ? 'hidden' : ''}`}>
                 {echeances.map((e) => {
                   const st = etatEcheance(e);
                   return (

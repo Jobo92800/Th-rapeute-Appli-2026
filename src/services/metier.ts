@@ -227,6 +227,7 @@ export async function creerProgramme(n: NouveauProgramme): Promise<Programme> {
       calendrier glisserait d'un cran.
     */
     const aujourdhui = new Date().toISOString().slice(0, 10);
+    const alma = n.modeReglement.startsWith('alma');
     const aReclamer = n.echeances.filter((e) => e.type !== 'bilan');
     const dates = datesEcheancier(new Date(), aReclamer.length);
     let rangDate = 0;
@@ -249,6 +250,33 @@ export async function creerProgramme(n: NouveauProgramme): Promise<Programme> {
             statut: 'paye' as const,
             date_reglement: aujourdhui,
             note: 'Réglé en ligne à la prise de rendez-vous',
+          };
+        }
+
+        /*
+          CHEZ ALMA, LE CENTRE EST PAYÉ À LA SIGNATURE.
+
+          C'est l'organisme qui avance l'argent et qui porte le risque : les
+          mensualités regardent la cliente et Alma, jamais le centre. Écrites
+          « à venir », elles faisaient réclamer chaque mois un argent déjà
+          reçu — sur l'écran du matin, dans les relances Airtable — et
+          sortaient du chiffre d'affaires encaissé, qui ne compte que le
+          payé. Elles naissent donc réglées, à la date de la signature.
+
+          On les garde quand même : le contrat annonce le calendrier à la
+          cliente, et c'est bien ce qu'elle va payer.
+        */
+        if (alma) {
+          return {
+            programme_id: programme.id,
+            type,
+            rang: ech.rang,
+            montant: ech.montant,
+            date_prevue: dates[rangDate++],
+            moyen: 'alma' as const,
+            statut: 'paye' as const,
+            date_reglement: aujourdhui,
+            note: 'Avancé par Alma à la signature',
           };
         }
 
