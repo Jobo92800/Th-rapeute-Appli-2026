@@ -222,6 +222,13 @@ export default function CureEtDevis({
   */
   const mensualitesEgales = methode === 'alma' && echeancier.n >= 10;
 
+  /*
+    Ce que la thérapeute tape sur le site d'Alma : le prix de la cure, sans
+    les frais — Alma les calcule lui-même — et sans le bilan déjà réglé en
+    ligne, qu'il n'a pas à financer.
+  */
+  const montantAFinancer = echeancier.montantARegler - echeancier.frais - dejaRegle;
+
   function ajuster(presta: Prestation, delta: number) {
     const actuelle = cure.find((l) => l.presta === presta)?.seances ?? 0;
     setAjusts((a) => ({ ...a, [presta]: Math.max(0, actuelle + delta) }));
@@ -594,21 +601,68 @@ export default function CureEtDevis({
                       ))}
                 </div>
 
-                <div className="mt-3 text-xs text-marine-200">
-                  Montant total : {formaterEuros(echeancier.montantARegler)}
-                  {echeancier.frais > 0 && (
-                    <> · dont {formaterEuros(echeancier.frais, 2)} de frais Alma</>
-                  )}
-                  {dejaRegle > 0 && (
-                    <span className="mt-0.5 block text-marine-300">
-                      dont {formaterEuros(dejaRegle)} déjà réglés en ligne · reste{' '}
-                      <b className="text-white">
-                        {formaterEuros(echeancier.montantARegler - dejaRegle)}
-                      </b>{' '}
-                      au centre
-                    </span>
-                  )}
-                </div>
+                {methode === 'alma' ? (
+                  /*
+                    DEUX MONTANTS, ET ILS NE SERVENT PAS À LA MÊME PERSONNE.
+
+                    Celui du haut est pour la thérapeute : c'est ce qu'elle
+                    tape sur le site d'Alma pour créer le paiement. Alma
+                    calcule ses frais dessus — saisir le total les ferait
+                    payer deux fois.
+
+                    Celui du bas est pour la cliente : ce qu'elle règlera en
+                    tout, frais compris.
+
+                    Les deux sont écrits au centime. « 2 114 € » arrondi
+                    cachait trente-huit centimes, et une cure saisie à un
+                    montant faux fait dériver toutes les mensualités.
+                  */
+                  <div className="mx-auto mt-4 max-w-xs space-y-2">
+                    <div className="rounded-xl border border-white/25 bg-white/10 px-3 py-2 text-left">
+                      <div className="text-[10px] font-semibold uppercase tracking-widest text-marine-300">
+                        À saisir sur Alma
+                      </div>
+                      <div className="chiffres mt-0.5 text-xl font-bold">
+                        {formaterEuros(montantAFinancer, 2)}
+                      </div>
+                      <div className="text-[11px] text-marine-200">
+                        le montant de la cure, sans les frais — Alma les ajoute lui-même
+                      </div>
+                    </div>
+
+                    <div className="px-3 text-[13px] text-marine-100">
+                      <div className="flex justify-between gap-3">
+                        <span>La cliente réglera en tout</span>
+                        <span className="chiffres font-semibold text-white">
+                          {formaterEuros(echeancier.montantARegler, 2)}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 flex justify-between gap-3 text-marine-300">
+                        <span>dont frais Alma</span>
+                        <span className="chiffres">{formaterEuros(echeancier.frais, 2)}</span>
+                      </div>
+                      {dejaRegle > 0 && (
+                        <div className="mt-0.5 flex justify-between gap-3 text-marine-300">
+                          <span>dont bilan déjà réglé en ligne</span>
+                          <span className="chiffres">{formaterEuros(dejaRegle, 2)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-3 text-xs text-marine-200">
+                    Montant total : {formaterEuros(echeancier.montantARegler)}
+                    {dejaRegle > 0 && (
+                      <span className="mt-0.5 block text-marine-300">
+                        dont {formaterEuros(dejaRegle)} déjà réglés en ligne · reste{' '}
+                        <b className="text-white">
+                          {formaterEuros(echeancier.montantARegler - dejaRegle)}
+                        </b>{' '}
+                        au centre
+                      </span>
+                    )}
+                  </div>
+                )}
               </>
             )}
 

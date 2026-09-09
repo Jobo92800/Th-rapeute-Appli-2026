@@ -498,4 +498,40 @@ export function controlerTarification() {
     minuscule.echeances.reduce((n, e) => n + e.montant, 0),
     minuscule.montantARegler,
   );
+
+  /*
+    LE MONTANT À SAISIR SUR LE SITE D'ALMA.
+
+    Alma demande le montant de la VENTE et calcule ses frais dessus. Saisir
+    le total les ferait payer deux fois, et toutes les mensualités
+    dériveraient. Ce contrôle fixe la soustraction que l'écran affiche à la
+    thérapeute : montant réglé − frais − bilan déjà payé en ligne.
+  */
+  section('Ce qu’on tape sur le site d’Alma');
+
+  const CURE_CAPTURE = { seances: 32, prixSeance: 59, options: 29 + 60, methode: 'alma' as const, n: 10 };
+
+  const sansBilan = construireEcheancierCure(CURE_CAPTURE);
+  egalEuros(
+    'le montant à financer est la cure, sans les frais',
+    sansBilan.montantARegler - sansBilan.frais,
+    32 * 59 + 89,
+  );
+
+  const avecBilan = construireEcheancierCure({ ...CURE_CAPTURE, bilanDejaRegle: 129 });
+  egalEuros(
+    'et le bilan déjà réglé en sort aussi — Alma ne le finance pas',
+    avecBilan.montantARegler - avecBilan.frais - 129,
+    32 * 59 + 89 - 129,
+  );
+  verifie(
+    'moins à financer, donc moins de frais',
+    avecBilan.frais < sansBilan.frais,
+    `${avecBilan.frais} contre ${sansBilan.frais}`,
+  );
+  egalEuros(
+    'et ce que la cliente règle reste la cure plus les frais',
+    avecBilan.montantARegler,
+    32 * 59 + 89 + avecBilan.frais,
+  );
 }
