@@ -5,6 +5,7 @@ import {
   Dices,
   Lock,
   Plus,
+  Shirt,
   X,
 } from 'lucide-react';
 import { differenceInCalendarDays, format } from 'date-fns';
@@ -56,6 +57,20 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
   const eligibles = programmes.filter((p) => p.programme.statut !== 'abandonne');
   const actif =
     eligibles.find((p) => p.programme.id === cureChoisie) ?? eligibles.at(-1) ?? null;
+
+  /*
+    La taille de tenue se cherche sur toutes les cures, pas seulement sur
+    celle qu'on regarde : elle n'est demandée qu'une fois, à la signature de
+    la cure où la tenue est vendue. Sur une cure suivante, guide et tenue
+    sont décochés — la cliente les a déjà — et la colonne reste vide, alors
+    que la taille, elle, n'a pas changé. On prend donc la plus récente qui
+    soit renseignée.
+  */
+  const tailleTenue =
+    programmes
+      .map((p) => p.programme.taille_tenue)
+      .filter(Boolean)
+      .at(-1) ?? null;
 
   const { data: seances = [] } = useQuery({
     queryKey: ['seances', actif?.programme.id],
@@ -260,6 +275,28 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
                   </span>
                 </button>
               ))}
+
+              {/*
+                La taille de tenue, à côté du bouton qui la concerne.
+
+                Elle est choisie une fois, dans la fenêtre de signature, et
+                dort ensuite dans l'onglet Contrat. Or c'est ici qu'on en a
+                besoin : la thérapeute sort la tenue au moment d'installer la
+                cliente sur l'I-Shape, et aller la chercher dans un autre
+                onglet fait perdre plus de temps que de demander sa taille à
+                la cliente — qui ne s'en souvient pas toujours.
+
+                Elle n'apparaît que si l'I-Shape est au programme : sur une
+                cure sans électrostimulation, la tenue ne dit rien.
+              */}
+              {tailleTenue && restantes.some((s) => s.technologie === 'ishape') && (
+                <span
+                  className={`inline-flex items-center gap-1.5 self-center rounded-full px-3 py-1.5 text-xs font-semibold ${couleurSoin('ishape').pastille}`}
+                >
+                  <Shirt className="h-3.5 w-3.5" />
+                  Tenue I-Shape · taille {tailleTenue}
+                </span>
+              )}
             </div>
           )}
 
