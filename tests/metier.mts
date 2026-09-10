@@ -17,6 +17,7 @@ import { finDeCure, libelleFinDeCure, niveauStock } from '../src/domain/stock.ts
 import {
   JOURS_AVANT_PREMIERE_ECHEANCE,
   datesEcheancier,
+  encaisseHorsFrais,
   datesEcheancierApresAcompte,
   echeanceIntouchable,
   reechelonner,
@@ -216,7 +217,24 @@ export function controlerMetier() {
     l'impriment « / ». Le contrat est parti quelque temps avec « 1 / 256,70 € »
     écrit dessus, sur un document que la cliente signe.
   */
-  egal('le total comprend les frais de financement', contrat.totalAmount, '1 256,70 €');
+  /*
+    LE CONTRAT DIT LE PRIX DE LA CURE, PAS LE COÛT DU CRÉDIT.
+
+    Ce document engage MAbeautyplus et la cliente sur une prestation. Les
+    frais Alma ne rémunèrent rien de ce que le centre vend : ils sont le
+    coût du crédit qu'elle contracte auprès de l'organisme, et ils figurent
+    sur le contrat qu'elle signe avec lui.
+  */
+  egal('chez Alma, le contrat annonce la cure seule', contrat.totalAmount, '1 180,00 €');
+
+  const contratCheques = construireContrat({
+    cliente,
+    centre,
+    programme: { ...programme, mode_reglement: 'centre_4x', frais_financement: 0 } as unknown as Programme,
+    lignes,
+    echeances,
+  });
+  egal('au centre, le total est le même — il n’y a pas de frais', contratCheques.totalAmount, '1 180,00 €');
   verifie(
     'aucune espace exotique dans un montant du contrat',
     !/[\u202f\u2009\u00a0\u2007]/.test(contrat.totalAmount),
@@ -266,6 +284,24 @@ export function controlerMetier() {
   );
   egal('un acompte seul ne fabrique pas d’échéance', datesEcheancierApresAcompte(LE_10, 1).length, 1);
   egal('et rien du tout reste rien du tout', datesEcheancierApresAcompte(LE_10, 0).length, 0);
+
+  /*
+    L'ENCAISSÉ DU CENTRE N'EST PAS CE QUE RÈGLE LA CLIENTE.
+
+    Défaut relevé par Jonathan le 10 septembre 2026 : sur une cure Alma à
+    1 269 €, l'onglet annonçait 1 357 € encaissés — la cure plus les 88,18 €
+    de frais, qui vont à l'organisme et que le centre ne reçoit jamais.
+  */
+  section('Les frais Alma ne sont pas du chiffre d’affaires du centre');
+
+  egalEuros('tout réglé : le centre a sa cure, pas les frais', encaisseHorsFrais(1357.18, 1269, 88.18), 1269);
+  egalEuros('rien réglé : rien encaissé', encaisseHorsFrais(0, 1269, 88.18), 0);
+  egalEuros('sans frais, rien ne change', encaisseHorsFrais(619, 619, 0), 619);
+  egalEuros('à moitié réglé, la moitié de la cure', encaisseHorsFrais(1357.18 / 2, 1269, 88.18), 634.5);
+  verifie(
+    'et jamais plus que la cure',
+    encaisseHorsFrais(1357.18, 1269, 88.18) <= 1269,
+  );
 
   section('Redécouper ce qui reste dû');
 

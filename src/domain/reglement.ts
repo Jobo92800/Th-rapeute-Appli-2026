@@ -145,6 +145,29 @@ export function datesEcheancier(depart: Date, nombre: number): string[] {
 }
 
 /**
+ * Ce que le CENTRE a encaissé sur une cure, frais de financement déduits.
+ *
+ * Chez Alma, les échéances portent ce que règle la cliente, frais compris —
+ * c'est bien ce qu'elle voit sur son relevé, et le contrat de crédit
+ * l'annonce ainsi. Mais ces frais ne rémunèrent aucune prestation du
+ * centre : ils sont le coût du crédit et ils vont à l'organisme. Les
+ * compter dans « Encaissé », c'était attribuer au centre un chiffre
+ * d'affaires qu'il n'a jamais reçu — 1 357 € affichés sur une cure à
+ * 1 269 €.
+ *
+ * On les retire au prorata de ce qui est réglé : tout payé, le centre a sa
+ * cure entière ; rien payé, il n'a rien. Les deux seuls cas qui existent,
+ * puisqu'une cure Alma est avancée d'un bloc à la signature.
+ *
+ * Sans frais — les chèques du centre — la fonction ne change rien.
+ */
+export function encaisseHorsFrais(paye: number, montantCure: number, frais: number): number {
+  const total = montantCure + frais;
+  if (frais <= 0 || total <= 0) return paye;
+  return Math.round(((paye * montantCure) / total) * 100) / 100;
+}
+
+/**
  * Le délai entre l'acompte et la première échéance, en jours.
  *
  * Une cliente qui verse un acompte n'a pas pu tout régler aujourd'hui : lui

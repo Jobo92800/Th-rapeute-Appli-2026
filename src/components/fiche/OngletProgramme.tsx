@@ -24,6 +24,7 @@ import {
   etatEcheance,
   reechelonner,
   refusDeReechelonner,
+  encaisseHorsFrais,
 } from '../../domain/reglement';
 import ModaleNouvelleCure from '../cure/ModaleNouvelleCure';
 import ModaleArretCure from '../cure/ModaleArretCure';
@@ -181,9 +182,16 @@ export default function OngletProgramme({
       {programmes.map(({ programme: p, lignes, echeances, suivi }) => {
         const totalPrevu = suivi.reduce((n, s) => n + s.seances_prevues, 0);
         const totalFait = suivi.reduce((n, s) => n + s.seances_faites, 0);
-        const encaisse = echeances
+        /*
+          Les frais Alma ne sont pas du chiffre d'affaires du centre : ils
+          vont à l'organisme qui avance le crédit. Comptés ici, ils lui
+          attribuaient de l'argent qu'il n'a jamais reçu.
+        */
+        const paye = echeances
           .filter((e) => e.statut === 'paye')
           .reduce((n, e) => n + Number(e.montant), 0);
+        const frais = Number(p.frais_financement);
+        const encaisse = encaisseHorsFrais(paye, Number(p.montant_total), frais);
         // Ce que l'échéancier réclame encore, et non « montant moins encaissé » :
         // après un avoir posé ou une échéance offerte, les deux divergent.
         const reste = resteAEncaisser(echeances);
@@ -250,7 +258,15 @@ export default function OngletProgramme({
 
             <div className="grid gap-px bg-ardoise-100 sm:grid-cols-2 lg:grid-cols-4">
               <Bloc libelle="Séances au programme" valeur={`${totalFait} / ${totalPrevu}`} />
-              <Bloc libelle="Encaissé" valeur={formaterEuros(encaisse)} />
+              <Bloc
+                libelle="Encaissé"
+                valeur={formaterEuros(encaisse)}
+                note={
+                  frais > 0
+                    ? `hors ${formaterEuros(frais, 2)} de frais Alma, à la charge de la cliente`
+                    : undefined
+                }
+              />
               <Bloc libelle="Reste à encaisser" valeur={formaterEuros(reste)} />
               <Bloc
                 libelle="En retard"
@@ -492,10 +508,13 @@ export default function OngletProgramme({
 function Bloc({
   libelle,
   valeur,
+  note,
   alerte = false,
 }: {
   libelle: string;
   valeur: string;
+  /** Une précision sous le chiffre, quand il en appelle une. */
+  note?: string;
   alerte?: boolean;
 }) {
   return (
@@ -508,6 +527,7 @@ function Bloc({
       >
         {valeur}
       </div>
+      {note && <div className="mt-0.5 text-2xs text-ardoise-500">{note}</div>}
     </div>
   );
 }

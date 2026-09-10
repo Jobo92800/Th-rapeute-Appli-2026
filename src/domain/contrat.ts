@@ -219,7 +219,25 @@ export function construireContrat(args: {
     offeredSessions,
     offeredLabel,
     activeServiceIds: [...new Set(activeServiceIds)],
-    totalAmount: euros(Number(programme.montant_total) + Number(programme.frais_financement)),
+    /*
+      LE CONTRAT DIT LE PRIX DE LA CURE, PAS LE COÛT DU CRÉDIT.
+
+      Ce document engage MAbeautyplus et la cliente sur une prestation et
+      son prix. Les frais Alma ne rémunèrent aucune prestation du centre :
+      ils sont le coût du crédit qu'elle contracte auprès d'un organisme, et
+      ils figurent sur le contrat qu'elle signe avec lui. Les faire
+      apparaître ici gonflerait le prix de la cure de quelque chose que le
+      centre ne vend pas et n'encaisse pas.
+
+      Ailleurs, ils comptent : « Montant Cure » dans Airtable porte ce
+      qu'elle règle en tout, frais compris, parce que c'est ce que les
+      relances doivent annoncer.
+    */
+    totalAmount: euros(
+      alma
+        ? Number(programme.montant_total)
+        : Number(programme.montant_total) + Number(programme.frais_financement),
+    ),
     installmentCount: alma ? suite.length : (acompte ? 1 : 0) + suite.length,
     bilanRegle: bilanRegle
       ? {
