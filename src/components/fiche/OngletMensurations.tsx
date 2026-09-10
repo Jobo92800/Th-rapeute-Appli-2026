@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { Fragment, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LineChart, Plus, Ruler } from 'lucide-react';
 import { format } from 'date-fns';
@@ -23,6 +23,26 @@ const MESURES = [
 ] as const;
 
 type CleMesure = (typeof MESURES)[number]['cle'];
+
+/**
+ * Les trois mesures qui se prennent des deux côtés. La thérapeute mesure un
+ * bras, puis l'autre : la saisie doit suivre le geste, un côté par colonne.
+ * Rangées dans le désordre, on relève le bras droit et on l'écrit à gauche.
+ */
+const MESURES_PAIRES = [
+  { partie: 'Bras', droite: 'bras_droit', gauche: 'bras_gauche' },
+  { partie: 'Cuisse', droite: 'cuisse_droite', gauche: 'cuisse_gauche' },
+  { partie: 'Mollet', droite: 'mollet_droit', gauche: 'mollet_gauche' },
+] as const satisfies ReadonlyArray<{ partie: string; droite: CleMesure; gauche: CleMesure }>;
+
+const CLES_PAIRES = new Set<string>(MESURES_PAIRES.flatMap((p) => [p.droite, p.gauche]));
+
+/** Celles qui n'ont qu'une valeur : le tronc. */
+const MESURES_CENTRALES = MESURES.filter((m) => !CLES_PAIRES.has(m.cle));
+
+function libelle(cle: CleMesure): string {
+  return MESURES.find((m) => m.cle === cle)?.libelle ?? cle;
+}
 
 export default function OngletMensurations({
   clienteId,
@@ -106,8 +126,8 @@ export default function OngletMensurations({
                 className="champ"
               />
             </div>
-            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {MESURES.map((m) => (
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {MESURES_CENTRALES.map((m) => (
                 <div key={m.cle}>
                   <label htmlFor={m.cle} className="etiquette">
                     {m.libelle}
@@ -122,6 +142,30 @@ export default function OngletMensurations({
                     placeholder="cm"
                   />
                 </div>
+              ))}
+            </div>
+
+            <div className="mt-5 grid max-w-2xl grid-cols-[4.5rem_1fr_1fr] items-center gap-x-3 gap-y-2">
+              <span />
+              <span className="etiquette mb-0">Côté droit</span>
+              <span className="etiquette mb-0">Côté gauche</span>
+              {MESURES_PAIRES.map((p) => (
+                <Fragment key={p.partie}>
+                  <span className="text-sm font-medium text-ardoise-700">{p.partie}</span>
+                  {[p.droite, p.gauche].map((cle) => (
+                    <input
+                      key={cle}
+                      id={cle}
+                      type="number"
+                      step="0.5"
+                      aria-label={libelle(cle)}
+                      value={valeurs[cle] ?? ''}
+                      onChange={(e) => setValeurs((v) => ({ ...v, [cle]: e.target.value }))}
+                      className="champ"
+                      placeholder="cm"
+                    />
+                  ))}
+                </Fragment>
               ))}
             </div>
             <button type="submit" disabled={ajouter.isPending} className="bouton-principal mt-4">
