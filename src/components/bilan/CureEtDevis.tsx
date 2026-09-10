@@ -26,6 +26,7 @@ import {
   LIBELLES_TECHNOLOGIE,
   construireEcheancierCure,
   formaterEuros,
+  formaterEurosJuste,
   type GrilleTarifaire,
   type ModeReglement,
   type Technologie,
@@ -573,7 +574,7 @@ export default function CureEtDevis({
                     aujourd'hui : le gros chiffre montre le premier versement
                     qui reste à faire.
                   */}
-                  {formaterEuros(premierARegler?.montant ?? 0, 2)}
+                  {formaterEurosJuste(premierARegler?.montant ?? 0)}
                   {/* « /mois » ne vaut que quand les mensualités le sont vraiment. */}
                   {mensualitesEgales && <span className="text-xl font-semibold"> /mois</span>}
                 </div>
@@ -595,7 +596,7 @@ export default function CureEtDevis({
                         </span>
                         <span className="chiffres font-semibold text-white">
                           {e.type === 'bilan' ? '− ' : ''}
-                          {formaterEuros(e.montant, 2)}
+                          {formaterEurosJuste(e.montant)}
                         </span>
                       </div>
                       ))}

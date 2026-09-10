@@ -22,6 +22,7 @@ import {
   montantAcompte,
   fraisAlma,
   tauxFraisAlma,
+  formaterEurosJuste,
 } from '../src/domain/tarification.ts';
 
 const GRILLE: GrilleTarifaire = {
@@ -456,6 +457,52 @@ export function controlerTarification() {
     CURE,
   );
 
+  /*
+    LES ÉCHÉANCES RESTENT RONDES.
+
+    Le défaut relevé par Jonathan le 10 septembre 2026, sur sa capture : les
+    129 € du bilan étaient étalés sur les quatre chèques, qui devenaient tous
+    faux — 460,98 € puis 403,34 € trois fois. On n'écrit pas un chèque de
+    403,34 € devant une cliente.
+
+    Ce qui est déjà versé se retire de la PREMIÈRE échéance, après le
+    découpage, pas avant. Les suivantes ne bougent pas d'un centime : ce sont
+    les mêmes qu'une cliente qui n'aurait rien réglé en ligne.
+  */
+  section('Le bilan déjà réglé ne sort que de la première échéance');
+
+  const CURE_ECRAN = {
+    seances: 29, prixSeance: 59, options: 89, methode: 'centre' as const, n: 4,
+  };
+  const rondes = construireEcheancierCure(CURE_ECRAN);
+  const rognees = construireEcheancierCure({ ...CURE_ECRAN, bilanDejaRegle: 129 });
+
+  const suite = (e: typeof rondes) => e.echeances.filter((x) => x.type === 'echeance').map((x) => x.montant);
+
+  egal('sans bilan réglé : 561 · 413 · 413 · 413', suite(rondes).join(' · '), '561 · 413 · 413 · 413');
+  egal('avec : la première baisse de 129, les autres ne bougent pas', suite(rognees).join(' · '), '432 · 413 · 413 · 413');
+  verifie(
+    'aucune échéance à virgule',
+    suite(rognees).every((m) => Number.isInteger(m)),
+    suite(rognees).join(' · '),
+  );
+  egalEuros('et le compte retombe sur la cure', rognees.echeances.reduce((n, e) => n + e.montant, 0), 1800);
+
+  section('Un montant s’écrit au plus juste');
+
+  egal('un chèque rond se lit sans les zéros', formaterEurosJuste(413), '413 €');
+  egal('une mensualité Alma garde ses centimes', formaterEurosJuste(403.34), '403,34 €');
+  /*
+    Au-dessus de mille, le français sépare les milliers par une espace fine
+    insécable — celle qui s'imprime « / » dans un PDF. On la remplace ici
+    pour comparer, comme `pourPdf` le fait avant d'écrire.
+  */
+  egal(
+    'et rien n’est jamais arrondi à l’affichage',
+    formaterEurosJuste(2114.38).replace(/[\u202f\u2009\u00a0]/g, ' '),
+    '2 114,38 €',
+  );
+
   section('Bilan réglé et acompte se cumulent sans se recouvrir');
 
   const lesDeux = construireEcheancierCure({
@@ -492,7 +539,16 @@ export function controlerTarification() {
     seances: 1, prixSeance: 59, options: 0, methode: 'centre', n: 1,
     bilanDejaRegle: 129,
   });
-  egalEuros('rien de négatif', Math.min(...minuscule.echeances.map((e) => e.montant)), 0);
+  verifie(
+    'rien de négatif',
+    minuscule.echeances.every((e) => e.montant >= 0),
+    minuscule.echeances.map((e) => e.montant).join(' · '),
+  );
+  verifie(
+    'et aucun chèque de zéro euro',
+    minuscule.echeances.every((e) => e.montant > 0),
+    minuscule.echeances.map((e) => `${e.type ?? 'echeance'} ${e.montant}`).join(' · '),
+  );
   egalEuros(
     'et le compte tombe juste',
     minuscule.echeances.reduce((n, e) => n + e.montant, 0),

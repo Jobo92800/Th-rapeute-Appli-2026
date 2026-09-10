@@ -352,6 +352,18 @@ export function formaterEuros(n: number, decimales = 0): string {
   );
 }
 
+/**
+ * Un montant écrit au plus juste : les centimes seulement quand il y en a.
+ *
+ * Les chèques du centre tombent ronds — « 413 € » se lit d'un coup, quand
+ * « 413,00 € » demande de vérifier les deux zéros. Les mensualités Alma,
+ * elles, ont presque toujours des centimes et les gardent : on n'arrondit
+ * jamais rien ici, on n'écrit que ce qui existe.
+ */
+export function formaterEurosJuste(n: number): string {
+  return formaterEuros(n, Number.isInteger(arrondir(n)) ? 0 : 2);
+}
+
 
 // ---------------------------------------------------------------------------
 // L'échéancier tel qu'il se négocie au comptoir
@@ -379,6 +391,43 @@ export function repartirSeances(total: number, n: number): number[] {
   const base = Math.floor(total / n);
   const reste = total - base * n;
   return Array.from({ length: n }, (_, i) => base + (i < reste ? 1 : 0));
+}
+
+/**
+ * Le découpage d'une cure entière : un nombre entier de séances par
+ * échéance, le guide et la tenue sur la première — la cliente repart avec.
+ * Le reliquat d'arrondi tombe là aussi.
+ */
+function decouperLaCure(
+  seances: number,
+  montantDesSeances: number,
+  options: number,
+  n: number,
+): number[] {
+  if (n <= 1) return [arrondir(montantDesSeances + options)];
+
+  const parts = repartirSeances(seances, n);
+  const parPart = parts.map((s) => arrondir((montantDesSeances * s) / Math.max(1, seances)));
+  const ecart = arrondir(montantDesSeances - parPart.reduce((a, b) => a + b, 0));
+
+  return parPart.map((m, i) => arrondir(m + (i === 0 ? options + ecart : 0)));
+}
+
+/**
+ * Retire d'un échéancier ce qui a déjà été versé, en partant de la
+ * première échéance. Une échéance entièrement couverte disparaît : un
+ * chèque de 0 € n'est pas un chèque.
+ */
+function imputerEnTete(montants: number[], verse: number): number[] {
+  let reste = verse;
+
+  return montants
+    .map((m) => {
+      const pris = Math.min(m, reste);
+      reste = arrondir(reste - pris);
+      return arrondir(m - pris);
+    })
+    .filter((m) => m > 0);
 }
 
 /**
@@ -443,65 +492,44 @@ export function construireEcheancierCure(args: {
   if (methode === 'centre') {
     const n = Math.max(1, Math.min(4, args.n));
 
-    /*
-      Un versement en tête — acompte, bilan déjà réglé, ou les deux — retire
-      sa part du montant à répartir. Le reste suit les séances comme
-      d'habitude, à ceci près que le guide et la tenue ne sont plus portés
-      par la première échéance : le début du parcours est déjà chargé,
-      inutile d'en rajouter.
-    */
     const acompte = arrondir(Math.max(0, Math.min(args.acompte ?? 0, base - dejaRegle)));
 
-    if (acompte > 0 || dejaRegle > 0) {
-      const reste = arrondir(base - acompte - dejaRegle);
-      const parts = repartirSeances(seances, n);
-      const parPart = parts.map((s) => arrondir((reste * s) / Math.max(1, seances)));
-      const ecart = arrondir(reste - parPart.reduce((a, b) => a + b, 0));
-
-      return {
-        methode,
-        n,
-        mode,
-        frais: 0,
-        montantARegler: base,
-        echeances: [
-          ...ligneBilan,
-          ...(acompte > 0 ? [{ rang: 1, montant: acompte, type: 'acompte' as const }] : []),
-          ...parPart.map((m, i) => ({
-            rang: i + 1,
-            montant: arrondir(m + (i === 0 ? ecart : 0)),
-            type: 'echeance' as const,
-          })),
-        ],
-      };
-    }
-
-    if (n === 1) {
-      return {
-        methode,
-        n: 1,
-        mode: 'comptant',
-        frais: 0,
-        montantARegler: base,
-        echeances: [{ rang: 1, montant: base }],
-      };
-    }
-
     /*
-      On répartit les séances, pas les euros : chaque échéance correspond à
-      un nombre entier de séances, ce qui s'explique devant la cliente. Le
-      reliquat d'arrondi tombe sur la première, avec le guide et la tenue.
+      On découpe d'abord la cure entière, comme si rien n'avait été versé :
+      un nombre entier de séances par échéance, le guide et la tenue sur la
+      première. Ce découpage-là tombe rond, puisque le prix d'une séance
+      l'est.
+
+      Ce qui a déjà été versé — bilan réglé en ligne, acompte, ou les deux —
+      se retire ENSUITE, sur la première échéance, et déborde sur les
+      suivantes s'il la dépasse.
+
+      L'ordre compte, et c'est tout l'objet de ce bloc. Retirer d'abord puis
+      répartir le reste étalait les 129 € du bilan sur les quatre chèques et
+      les rendait tous faux : 460,98 puis 403,34 trois fois. Aucune
+      thérapeute n'écrit un chèque de 403,34 € devant une cliente. En
+      retirant après, les échéances suivantes gardent leur montant rond et
+      seule la première change — c'est aussi ce qui s'explique le mieux :
+      « vous avez déjà réglé 129 €, ils viennent en moins du premier
+      chèque ».
     */
-    const parts = repartirSeances(seances, n);
-    const parPart = parts.map((s) => arrondir((montantDesSeances * s) / Math.max(1, seances)));
-    const ecart = arrondir(montantDesSeances - parPart.reduce((a, b) => a + b, 0));
+    const montants = imputerEnTete(
+      decouperLaCure(seances, montantDesSeances, options, n),
+      arrondir(dejaRegle + acompte),
+    );
 
-    const echeances = parPart.map((m, i) => ({
-      rang: i + 1,
-      montant: arrondir(m + (i === 0 ? options + ecart : 0)),
-    }));
-
-    return { methode, n, mode, frais: 0, montantARegler: base, echeances };
+    return {
+      methode,
+      n,
+      mode: n === 1 && dejaRegle === 0 && acompte === 0 ? 'comptant' : mode,
+      frais: 0,
+      montantARegler: base,
+      echeances: [
+        ...ligneBilan,
+        ...(acompte > 0 ? [{ rang: 1, montant: acompte, type: 'acompte' as const }] : []),
+        ...montants.map((m, i) => ({ rang: i + 1, montant: m, type: 'echeance' as const })),
+      ],
+    };
   }
 
   const n = ECHEANCES_ALMA.includes(args.n) ? args.n : 4;

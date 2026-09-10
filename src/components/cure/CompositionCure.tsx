@@ -10,6 +10,7 @@ import {
   calculerMontant,
   construireEcheancierCure,
   formaterEuros,
+  formaterEurosJuste,
   prixUnitaireParDefaut,
   type GrilleTarifaire,
   type ModeReglement,
@@ -321,7 +322,7 @@ export default function CompositionCure({
               </strong>
               , soit{' '}
               <strong className="font-semibold">
-                {formaterEuros(echeancier.echeances[1].montant, 2)}
+                {formaterEurosJuste(echeancier.echeances[1].montant)}
               </strong>{' '}
               par mois
             </p>
@@ -424,7 +425,7 @@ export default function CompositionCure({
                   {e.rang === 1 ? 'ère' : 'ème'}
                 </div>
                 <div className="chiffres text-sm font-bold text-ardoise-900">
-                  {formaterEuros(e.montant, 2)}
+                  {formaterEurosJuste(e.montant)}
                 </div>
               </div>
             ))}

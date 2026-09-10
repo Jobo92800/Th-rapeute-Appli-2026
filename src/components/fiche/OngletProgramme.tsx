@@ -12,7 +12,11 @@ import {
   reechelonnerLesEcheances,
 } from '../../services/metier';
 import type { ProgrammeComplet } from '../../services/metier';
-import { LIBELLES_TECHNOLOGIE, formaterEuros } from '../../domain/tarification';
+import {
+  LIBELLES_TECHNOLOGIE,
+  formaterEuros,
+  formaterEurosJuste,
+} from '../../domain/tarification';
 import {
   STATUTS_SAISISSABLES,
   TEINTE_STATUT,
@@ -354,7 +358,7 @@ export default function OngletProgramme({
                       </span>
 
                       <span className="chiffres w-24 shrink-0 text-base font-bold text-ardoise-900">
-                        {formaterEuros(Number(e.montant), 2)}
+                        {formaterEurosJuste(Number(e.montant))}
                       </span>
 
                       <input
@@ -620,7 +624,7 @@ function Reechelonner({
               Échéance {e.rang} · {format(new Date(e.date_prevue), 'd MMM yyyy', { locale: fr })}
             </span>
             <span className="chiffres font-semibold text-ardoise-900">
-              {formaterEuros(e.montant, 2)}
+              {formaterEurosJuste(e.montant)}
             </span>
           </li>
         ))}
