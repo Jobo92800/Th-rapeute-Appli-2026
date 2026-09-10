@@ -545,7 +545,7 @@ dans le dépôt, c'est se garantir qu'un jour les deux diffèrent.
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
 
-Migrations passées jusqu'à **049** incluse, fonction Edge `gerer-les-comptes` déployée et vérifiée de bout en bout, `synchro-airtable` redéployée,
+Migrations passées jusqu'à **053** incluse, fonction Edge `gerer-les-comptes` déployée et vérifiée de bout en bout, `synchro-airtable` redéployée,
 et les deux champs du récapitulatif créés dans Airtable. Vérifié le
 5 septembre 2026 depuis l'extérieur : `renvoyer_au_crm`,
 `est_destinataire`, `a_ecrit_le_message`, `envoyer_annonce` et
@@ -554,6 +554,14 @@ publique — elles existent donc, et elles sont fermées. Les colonnes
 `clientes.sante` et `sante_maj_le` (046) répondent, elles, sur un
 `select=` — le contrôle passe par un témoin, une colonne inventée qui doit
 être annoncée absente, sans quoi le test ne prouve rien.
+
+Vérifié le 10 septembre 2026, même méthode : `etat_des_comptes` (048) et
+`reechelonner_les_echeances` (052) répondent « permission denied » — elles
+existent et elles sont fermées ; `bilans.bioportrait_pdf` et
+`bioportrait_depose_le` (050) répondent sur un `select=`, contre le témoin
+d'une colonne inventée. La **053** ne se vérifie pas de l'extérieur : c'est
+un `UPDATE` de données, sans objet nouveau à interroger. Le contrôle est
+`supabase/diagnostics/alma_encaisse.sql`, qui doit renvoyer zéro ligne.
 
 Seule la **041** reste incertaine : `ALTER DEFAULT PRIVILEGES` ne se voit
 pas de l'extérieur, et toutes les commandes livrées depuis portent leur
@@ -566,9 +574,12 @@ La fermeture des commandes (040) a été **vérifiée des deux côtés** le
 avec la clé de service, continue de répondre `{"traitees":0,"echecs":0}` ;
 et l'application connectée fonctionne normalement.
 
-Deux diagnostics, dans `supabase/diagnostics/`, ne modifient rien et se
-relancent à volonté : `controle_coherence.sql` (quinze vérifications) et
-`qui_est_en_retard.sql` (les impayés, nom par nom).
+Les diagnostics, dans `supabase/diagnostics/`, ne modifient rien et se
+relancent à volonté : `controle_coherence.sql` (quinze vérifications),
+`qui_est_en_retard.sql` (les impayés, nom par nom),
+`qui_peut_se_connecter.sql`, `fiches_de_test.sql` et
+`alma_encaisse.sql` — celui-là doit rendre `encore_dues = 0`, sans quoi une
+cure Alma réclame encore un argent déjà reçu.
 
 Les migrations SQL se collent dans l'éditeur SQL de Supabase, dans l'ordre
 des numéros. Elles sont rejouables sans risque.
