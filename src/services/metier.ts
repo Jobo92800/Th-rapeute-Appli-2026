@@ -18,7 +18,11 @@ import type {
   VenteComplement,
 } from '../types/db';
 import type { GrilleTarifaire } from '../domain/tarification';
-import { datesEcheancier, type SituationReglement } from '../domain/reglement';
+import {
+  datesEcheancier,
+  datesEcheancierApresAcompte,
+  type SituationReglement,
+} from '../domain/reglement';
 
 // ---------------------------------------------------------------------------
 // Tarifs et barème
@@ -229,7 +233,17 @@ export async function creerProgramme(n: NouveauProgramme): Promise<Programme> {
     const aujourdhui = new Date().toISOString().slice(0, 10);
     const alma = n.modeReglement.startsWith('alma');
     const aReclamer = n.echeances.filter((e) => e.type !== 'bilan');
-    const dates = datesEcheancier(new Date(), aReclamer.length);
+
+    /*
+      Avec un acompte, la première échéance ne se réclame pas un mois plus
+      tard : elle glisse de quinze jours seulement. Le reste du calendrier ne
+      bouge pas.
+    */
+    const aujourdHui = new Date();
+    const dates =
+      aReclamer[0]?.type === 'acompte'
+        ? datesEcheancierApresAcompte(aujourdHui, aReclamer.length)
+        : datesEcheancier(aujourdHui, aReclamer.length);
     let rangDate = 0;
 
     const { error: e } = await supabase.from('echeances').insert(

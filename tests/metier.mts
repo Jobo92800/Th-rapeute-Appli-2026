@@ -15,6 +15,9 @@ import {
 } from '../src/domain/parrainage.ts';
 import { finDeCure, libelleFinDeCure, niveauStock } from '../src/domain/stock.ts';
 import {
+  JOURS_AVANT_PREMIERE_ECHEANCE,
+  datesEcheancier,
+  datesEcheancierApresAcompte,
   echeanceIntouchable,
   reechelonner,
   refusDeReechelonner,
@@ -232,6 +235,38 @@ export function controlerMetier() {
     total ne doit pas bouger d'un centime, et ce qui a été réglé ne doit
     jamais être touché.
   */
+  /*
+    LE CALENDRIER QUAND IL Y A UN ACOMPTE.
+
+    Demande de Jonathan, le 10 septembre 2026 : une cliente qui verse un
+    acompte ne doit pas attendre un mois entier avant sa première échéance —
+    quinze jours au plus. Le reste du calendrier ne bouge pas : le 10 de
+    chaque mois reste le 10 de chaque mois.
+  */
+  section('L’acompte rapproche la première échéance, et elle seule');
+
+  const LE_10 = new Date('2026-09-10T09:00:00Z');
+
+  egal(
+    'sans acompte : le jour même, puis une par mois',
+    datesEcheancier(LE_10, 5).join(' · '),
+    '2026-09-10 · 2026-10-10 · 2026-11-10 · 2026-12-10 · 2027-01-10',
+  );
+  egal(
+    'avec acompte : quinze jours, puis le calendrier de la cure',
+    datesEcheancierApresAcompte(LE_10, 5).join(' · '),
+    '2026-09-10 · 2026-09-25 · 2026-10-10 · 2026-11-10 · 2026-12-10',
+  );
+  egal('l’acompte garde le jour de la cure', datesEcheancierApresAcompte(LE_10, 5)[0], '2026-09-10');
+  verifie(
+    'et la première échéance ne dépasse jamais quinze jours',
+    (new Date(datesEcheancierApresAcompte(LE_10, 5)[1]).getTime() - new Date('2026-09-10').getTime()) /
+      86400000 <=
+      JOURS_AVANT_PREMIERE_ECHEANCE,
+  );
+  egal('un acompte seul ne fabrique pas d’échéance', datesEcheancierApresAcompte(LE_10, 1).length, 1);
+  egal('et rien du tout reste rien du tout', datesEcheancierApresAcompte(LE_10, 0).length, 0);
+
   section('Redécouper ce qui reste dû');
 
   const ech = (

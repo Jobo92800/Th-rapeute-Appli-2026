@@ -332,9 +332,11 @@ export default function OngletProgramme({
               ) : (
                 <>
                   <p className="mt-1 text-xs text-ardoise-500">
-                    La première échéance tombe le jour de la cure, puis une par mois. Les dates
-                    restent modifiables, et le statut se choisit dans son menu, comme le moyen de
-                    règlement.
+                    {echeances.some((e) => e.type === 'acompte')
+                      ? "L’acompte est versé le jour de la cure, la première échéance quinze jours plus tard, puis une par mois."
+                      : 'La première échéance tombe le jour de la cure, puis une par mois.'}{' '}
+                    Les dates restent modifiables, et le statut se choisit dans son menu, comme le
+                    moyen de règlement.
                   </p>
 
                   <Reechelonner programme={p} echeances={echeances} onFait={rafraichir} />

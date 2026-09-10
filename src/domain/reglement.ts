@@ -6,7 +6,7 @@
   cocher quoi que ce soit.
 */
 
-import { addMonths, differenceInCalendarDays } from 'date-fns';
+import { addDays, addMonths, differenceInCalendarDays } from 'date-fns';
 import type { Echeance, StatutEcheance } from '../types/db';
 
 export type EtatEcheance = 'paye' | 'donne' | 'annule' | 'retard' | 'aujourdhui' | 'a_venir';
@@ -142,6 +142,36 @@ export function datesEcheancier(depart: Date, nombre: number): string[] {
   return Array.from({ length: nombre }, (_, i) =>
     addMonths(depart, i).toISOString().slice(0, 10),
   );
+}
+
+/**
+ * Le délai entre l'acompte et la première échéance, en jours.
+ *
+ * Une cliente qui verse un acompte n'a pas pu tout régler aujourd'hui : lui
+ * réclamer le premier chèque dans la foulée n'aurait pas de sens, et
+ * attendre un mois entier laisse partir la seule qui, par définition, ne
+ * pouvait pas payer. Quinze jours.
+ */
+export const JOURS_AVANT_PREMIERE_ECHEANCE = 15;
+
+/**
+ * Le calendrier quand un acompte est versé le jour de la cure. `nombre`
+ * compte l'acompte, et la date rendue en tête est la sienne.
+ *
+ * Le calendrier de la cure ne bouge pas : les échéances gardent le rythme
+ * mensuel qu'elles auraient eu sans acompte — le 10 de chaque mois reste le
+ * 10 de chaque mois. Seule la première glisse, de quinze jours, parce
+ * qu'elle serait tombée le jour même, en même temps que l'acompte.
+ */
+export function datesEcheancierApresAcompte(depart: Date, nombre: number): string[] {
+  if (nombre <= 0) return [];
+
+  const cure = datesEcheancier(depart, nombre - 1);
+  if (cure.length > 0) {
+    cure[0] = addDays(depart, JOURS_AVANT_PREMIERE_ECHEANCE).toISOString().slice(0, 10);
+  }
+
+  return [depart.toISOString().slice(0, 10), ...cure];
 }
 
 // ---------------------------------------------------------------------------
