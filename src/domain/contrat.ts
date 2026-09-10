@@ -78,6 +78,22 @@ export interface ContractData {
    */
   bilanRegle: ContractInstallment | null;
   installments: ContractInstallment[];
+  /**
+   * Réglée par Alma, donc **sans échéancier au contrat**.
+   *
+   * Deux contrats se signent ce jour-là, et ils ne disent pas la même
+   * chose. Celui-ci engage le centre et la cliente sur une prestation et
+   * sur un prix. Le calendrier des prélèvements, lui, appartient au contrat
+   * de crédit qu'elle signe avec Alma : c'est lui qui fait foi, c'est lui
+   * qu'elle recevra, et c'est Alma qui prélèvera.
+   *
+   * Recopier ce calendrier ici, c'était promettre deux fois la même chose
+   * dans deux documents qui peuvent diverger — un report de prélèvement
+   * accordé par Alma, et le contrat du centre devient faux.
+   */
+  almaSansEcheancier: boolean;
+  /** « 10 fois par carte via Alma », quand c'est le cas. */
+  almaLibelle: string;
 }
 
 /** Les lignes du contrat, dans l'ordre où elles figurent à l'article 1. */
@@ -158,6 +174,13 @@ export function construireContrat(args: {
     .map((l) => CONSENTEMENT_PAR_TECHNOLOGIE[l.technologie])
     .filter((id): id is string => Boolean(id));
 
+  /*
+    Chez Alma, le contrat de prestation dit le prix et s'arrête là : le
+    calendrier des prélèvements est celui du contrat de crédit qu'elle signe
+    avec l'organisme.
+  */
+  const alma = programme.mode_reglement.startsWith('alma');
+
   const acompte = echeances.find((e) => e.type === 'acompte') ?? null;
   const bilanRegle = echeances.find((e) => e.type === 'bilan') ?? null;
   const suite = echeances
@@ -197,7 +220,7 @@ export function construireContrat(args: {
     offeredLabel,
     activeServiceIds: [...new Set(activeServiceIds)],
     totalAmount: euros(Number(programme.montant_total) + Number(programme.frais_financement)),
-    installmentCount: (acompte ? 1 : 0) + suite.length,
+    installmentCount: alma ? suite.length : (acompte ? 1 : 0) + suite.length,
     bilanRegle: bilanRegle
       ? {
           label: 'Bilan réglé en ligne',
@@ -214,12 +237,16 @@ export function construireContrat(args: {
           method: LIBELLE_MOYEN[acompte.moyen ?? ''] ?? '',
         }
       : null,
-    installments: suite.map((e, i) => ({
-      label: `Échéance ${i + 1}`,
-      amount: euros(Number(e.montant)),
-      date: jour(e.date_prevue),
-      method: LIBELLE_MOYEN[e.moyen ?? ''] ?? '',
-    })),
+    installments: alma
+      ? []
+      : suite.map((e, i) => ({
+          label: `Échéance ${i + 1}`,
+          amount: euros(Number(e.montant)),
+          date: jour(e.date_prevue),
+          method: LIBELLE_MOYEN[e.moyen ?? ''] ?? '',
+        })),
+    almaSansEcheancier: alma,
+    almaLibelle: alma ? `${suite.length} fois par carte, via Alma` : '',
   };
 }
 

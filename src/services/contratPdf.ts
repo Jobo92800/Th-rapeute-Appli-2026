@@ -241,6 +241,8 @@ export async function generateSignedContractPdf(
 
   // Payment schedule box — estimate height first
   const installmentLines = (data.deposit ? 1 : 0) + (data.bilanRegle ? 1 : 0) + data.installments.length;
+  // Chez Alma, le bloc ne porte que le montant : il se resserre d'autant.
+  const hauteurMontantSeul = 22;
   const boxEstH = 9 + LINE_H + 1 + installmentLines * LINE_H + 6;
   y = ensureSpace(doc, y, boxEstH);
 
@@ -252,7 +254,14 @@ export async function generateSignedContractPdf(
   */
   const lignesReglement =
     data.installments.length + (data.deposit ? 1 : 0) + (data.bilanRegle ? 1 : 0);
-  const hauteurBloc = 18 + lignesReglement * LINE_H + 4;
+  /*
+    Le bilan réglé en ligne reste affiché, Alma comprise : le montant total
+    le contient, alors qu'Alma ne le financera pas. Sans cette ligne, la
+    cliente lirait un total dont 129 € ne seraient prélevés nulle part.
+  */
+  const hauteurBloc = data.almaSansEcheancier
+    ? hauteurMontantSeul + (data.bilanRegle ? LINE_H : 0)
+    : 18 + lignesReglement * LINE_H + 4;
   y = ensureSpace(doc, y, hauteurBloc + 4);
   const boxStartY = y;
   encadre(doc, y, hauteurBloc);
@@ -265,7 +274,16 @@ export async function generateSignedContractPdf(
   police(doc, 8, 'normal');
   couleur(doc, GRIS);
   doc.text(
-    `Règlement établi en ${data.installmentCount} échéance${data.installmentCount > 1 ? 's' : ''}`,
+    /*
+      Chez Alma, le contrat dit le mode et s'arrête là. Le calendrier des
+      prélèvements appartient au contrat de crédit qu'elle signe avec
+      l'organisme : c'est lui qui fait foi, et le recopier ici reviendrait à
+      promettre deux fois la même chose dans deux documents qui peuvent
+      diverger — un report accordé par Alma, et celui-ci devient faux.
+    */
+    data.almaSansEcheancier
+      ? data.almaLibelle
+      : `Règlement établi en ${data.installmentCount} échéance${data.installmentCount > 1 ? 's' : ''}`,
     A4_W - MARGIN - 5,
     y + 8,
     { align: 'right' },
