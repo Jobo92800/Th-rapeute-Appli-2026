@@ -120,10 +120,16 @@ export default function TableauDeBord() {
           </p>
         </div>
 
-        <Link to="/reprise-crm" className="bouton-discret">
-          <Download className="h-4 w-4" />
-          Reprendre les fiches du CRM
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link to="/reprise-crm" className="bouton-discret">
+            <Download className="h-4 w-4" />
+            Reprendre les fiches du CRM
+          </Link>
+          <Link to="/reprise-historique" className="bouton-discret" title="Les pesées, mensurations et notes de l'ancienne application">
+            <Download className="h-4 w-4" />
+            Reprendre l’historique
+          </Link>
+        </div>
       </header>
 
       <div className="flex flex-wrap gap-3">

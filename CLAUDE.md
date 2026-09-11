@@ -279,8 +279,30 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   compte d'abord et n'écrit qu'après confirmation. Reprend l'identité, les
   coordonnées et une cure par montant Airtable. Le reste — séances,
   échéanciers, bilans, mensurations — n'est pas dans Airtable.
-- Migration éventuelle de l'historique Firestore (séances, mensurations,
-  bilans de la V1).
+- **Reprise de l'historique de l'ancienne application** : écran
+  `/reprise-historique` (direction), fonction Edge `importer-firebase`,
+  migration 058. L'ancienne application (Bolt) gardait tout dans un
+  **Firebase, projet `mabeauty-plus-crm`** — avec un tiret ; il existe un
+  homonyme `mabeautyplus-crm` qui ne contient que des essais de fin 2024.
+  Son Supabase (`kzrmayhfkqclbqhztqku`, hors du compte) ne porte que le
+  stock et les contrats. Dedans : 2 436 clientes, **20 251 pesées** (une
+  par séance de luxo : date, poids, commentaire, parfois un numéro de
+  cure), 14 054 séances des autres soins, 2 580 mensurations, 311 fiches
+  de notes, 31 exceptions cure. Décidé avec Jonathan le 11 septembre 2026 :
+  on reprend **les pesées seulement** (pas les séances I-Shape, presso,
+  Advance Lift ni des soins abandonnés), **pour les clientes qui ont une
+  cure dans la V2** (653 sur 712), plus mensurations, notes et exceptions.
+  Le rapprochement se fait par **téléphone normalisé, à défaut nom +
+  prénom, un candidat unique ou rien** : 1 810 + 153 sur 2 436. Une pesée
+  va sur la cure V2 de son numéro, sans numéro sur la première, numéro
+  trop grand sur la dernière. Chaque ligne reprise porte `origine =
+  'import_v1'` et son `v1_id` Firebase, unique — relancer ne double rien ;
+  une séance reprise se clôture sans Mission Déclic. La clé de compte de
+  service est le secret `FIREBASE_SERVICE_ACCOUNT` ; le fichier local
+  `firebase-v1-prod.json` est ignoré de git. Le projet Firebase était en
+  plan gratuit et **épuisait ses 50 000 lectures par jour** — l'ancienne
+  application se bloquait le soir ; Jonathan l'a passé en Blaze le
+  11 septembre 2026.
 - Le dépôt est **public** : il contient le questionnaire BioPortrait, les 60
   Missions Déclic, les textes de contrat et la grille tarifaire. À repasser
   en privé.
@@ -555,9 +577,10 @@ partir de `public/guide.html`, qui fait seule référence. Le garder en double
 dans le dépôt, c'est se garantir qu'un jour les deux diffèrent.
 
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
-`AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`.
+`AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`,
+`FIREBASE_SERVICE_ACCOUNT`.
 
-Migrations passées jusqu'à **056** incluse (la 054 et la 057 sont écrites, à passer), fonction Edge `gerer-les-comptes` déployée et vérifiée de bout en bout, `synchro-airtable` redéployée,
+Migrations passées jusqu'à **056** incluse (la 054, la 057 et la 058 sont écrites, à passer), fonction Edge `gerer-les-comptes` déployée et vérifiée de bout en bout, `synchro-airtable` redéployée,
 et les deux champs du récapitulatif créés dans Airtable. Vérifié le
 5 septembre 2026 depuis l'extérieur : `renvoyer_au_crm`,
 `est_destinataire`, `a_ecrit_le_message`, `envoyer_annonce` et

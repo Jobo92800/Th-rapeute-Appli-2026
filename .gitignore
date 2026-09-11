@@ -7,3 +7,4 @@ dist
 supabase/.temp/
 .env.v1
 firebase-v1.json
+firebase-v1-prod.json
