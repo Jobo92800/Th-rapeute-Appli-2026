@@ -65,6 +65,25 @@ export async function lireBaremeActif(): Promise<{ version: number; bareme: Bare
   return { version: data.version, bareme: data.contenu as Bareme };
 }
 
+/**
+ * Le barème d'une version donnée — celle qu'un bilan a retenue.
+ *
+ * Les réponses d'un bilan sont indexées sur les étapes de SON barème : relire
+ * un bilan de la version 2 avec le barème 3 décalerait toutes les questions
+ * d'un cran et ferait dire à la cliente ce qu'elle n'a pas dit.
+ */
+export async function lireBareme(version: number): Promise<Bareme> {
+  const { data, error } = await supabase
+    .from('bareme_empreinte')
+    .select('contenu')
+    .eq('version', version)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error(`Le barème version ${version} est introuvable.`);
+  return data.contenu as Bareme;
+}
+
 // ---------------------------------------------------------------------------
 // Bilans
 // ---------------------------------------------------------------------------

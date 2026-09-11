@@ -5,7 +5,7 @@
 
 import { section, verifie, egal, egalEuros } from './harnais.mts';
 import { baremeLivre } from './prescription.mts';
-import { calculerBioPortrait, choix, scoresMaximum } from '../src/domain/bioportrait.ts';
+import { calculerBioPortrait, choix, relireLesReponses, scoresMaximum } from '../src/domain/bioportrait.ts';
 import {
   PLAFOND_SEANCES,
   SEANCES_PAR_FILLEULE,
@@ -74,6 +74,35 @@ export function controlerMetier() {
       i === 0 ? true : chargee.pourcentages[chargee.profilsTries[i - 1]] >= chargee.pourcentages[a],
     ),
   );
+
+  /*
+    RELIRE CE QU'ELLE A RÉPONDU.
+
+    Le bouton « Mes réponses » de la fiche : chaque question posée, avec le
+    libellé choisi. Ni l'InBody — ce ne sont pas ses réponses — ni les
+    écrans de service.
+  */
+  section('Relire les réponses du questionnaire');
+
+  const questions = bareme.STEPS
+    .map((e, i) => ({ e, i }))
+    .filter(({ e }) => e.phase === 'client' && e.o);
+  const radio = questions.find(({ e }) => e.type === 'radio')!;
+  const relues = relireLesReponses(bareme, { [radio.i]: 1, [iMulti]: [0, 2] }, null);
+  const ligneRadio = relues.find((r) => r.question === radio.e.t)!;
+
+  egal('autant de lignes que de questions posées', relues.length, questions.length);
+  egal('les questions gardent l’ordre du questionnaire', relues[0].question, questions[0].e.t);
+  egal('le libellé choisi, en toutes lettres', ligneRadio.reponses, [radio.e.o![1][0]]);
+  verifie('le thème vient du barème', ligneRadio.theme.length > 0, ligneRadio.theme);
+  const ligneMulti = relues.find((r) => r.question === bareme.STEPS[iMulti].t);
+  egal('une question à cases rend toutes les cases', ligneMulti?.reponses.length, 2);
+  verifie('une question sans réponse reste vide, pas absente', relues.some((r) => r.reponses.length === 0));
+  verifie(
+    'aucune mesure InBody parmi les réponses',
+    !relues.some((r) => bareme.STEPS.some((e) => e.phase === 'analyse' && e.t === r.question)),
+  );
+  egal('un barème vide ne rend rien', relireLesReponses({ ...bareme, STEPS: [] }, {}, null), []);
 
   section('Le parrainage');
 

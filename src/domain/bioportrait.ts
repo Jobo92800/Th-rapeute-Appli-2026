@@ -274,3 +274,65 @@ export function etapesInbody(bareme: Bareme): number[] {
     .filter(({ e }) => e.phase === 'analyse')
     .map(({ i }) => i);
 }
+
+// ---------------------------------------------------------------------------
+// Relire ce que la cliente a répondu
+// ---------------------------------------------------------------------------
+
+export interface ReponseLue {
+  /** Le thème de la question, tel que le barème le nomme. */
+  theme: string;
+  question: string;
+  /**
+   * Ce qu'elle a choisi, en toutes lettres. Plusieurs entrées pour une
+   * question à cases ; vide si elle n'a pas répondu.
+   */
+  reponses: string[];
+  /** Pour le curseur : la position, et ce qu'il y a à chaque bout. */
+  curseur?: { valeur: number; gauche: string; droite: string };
+}
+
+/**
+ * Les réponses d'un bilan, question par question, dans l'ordre où elles ont
+ * été posées.
+ *
+ * On relit le questionnaire tel qu'il était CE JOUR-LÀ : les réponses sont
+ * indexées sur les étapes de leur propre barème, et une version plus récente
+ * en déplace. Les mesures InBody n'y sont pas — ce ne sont pas des réponses
+ * de la cliente — ni le texte libre, qui a déjà sa place sur la fiche.
+ */
+export function relireLesReponses(
+  bareme: Bareme,
+  reponses: Reponses,
+  curseur: number | null,
+): ReponseLue[] {
+  const lues: ReponseLue[] = [];
+
+  bareme.STEPS.forEach((etape, index) => {
+    if (etape.phase !== 'client') return;
+    const theme = bareme.CAT?.[etape.cat ?? '']?.[0] ?? '';
+
+    if (EST_QUESTION.includes(etape.type)) {
+      const options = etape.o ?? [];
+      lues.push({
+        theme,
+        question: etape.t ?? '',
+        reponses: choix(reponses, index)
+          .map((i) => options[i]?.[0])
+          .filter((l): l is string => typeof l === 'string'),
+      });
+      return;
+    }
+
+    if (etape.type === 'slider' && curseur != null) {
+      lues.push({
+        theme,
+        question: etape.t ?? '',
+        reponses: [],
+        curseur: { valeur: curseur, gauche: etape.left ?? '', droite: etape.right ?? '' },
+      });
+    }
+  });
+
+  return lues;
+}

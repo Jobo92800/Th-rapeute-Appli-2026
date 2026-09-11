@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { texteErreur } from '../../lib/erreurs';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Download, Loader2, Mail, Sparkles } from 'lucide-react';
+import { Download, ListChecks, Loader2, Mail, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { redeposerBioPortrait, renvoyerRecap } from '../../services/recap';
 import { laCliente, pronom } from '../../domain/civilite';
@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { bilansDeLaCliente, lireBaremeActif } from '../../services/metier';
 import { SEUIL_PRESENCE, type Axe, AXES_PROFIL, AXES_TERRAIN } from '../../domain/bioportrait';
+import ReponsesDuBilan from './ReponsesDuBilan';
 
 export default function OngletBioPortrait({
   clienteId,
@@ -27,6 +28,13 @@ export default function OngletBioPortrait({
     aujourd'hui, pas ce qu'elle était il y a un an.
   */
   const [bilanRegarde, setBilanRegarde] = useState<string | null>(null);
+  /*
+    La carte des réponses. Fermée par défaut : le BioPortrait est la
+    synthèse, les vingt-huit réponses sont le détail qu'on ouvre quand un
+    profil surprend. Elle se referme au changement de bilan — les réponses
+    d'un autre jour sous le même bouton tromperaient.
+  */
+  const [reponsesOuvertes, setReponsesOuvertes] = useState(false);
 
   const { data: bilans = [], isLoading } = useQuery({
     queryKey: ['bilans', clienteId],
@@ -92,7 +100,10 @@ export default function OngletBioPortrait({
                 <button
                   key={b.id}
                   type="button"
-                  onClick={() => setBilanRegarde(b.id)}
+                  onClick={() => {
+                    setBilanRegarde(b.id);
+                    setReponsesOuvertes(false);
+                  }}
                   aria-pressed={actif}
                   className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
                     actif
@@ -110,11 +121,24 @@ export default function OngletBioPortrait({
           <span />
         )}
 
-        <Link to={`/bilan?cliente=${clienteId}`} className="bouton-discret">
-          <Sparkles className="h-4 w-4" />
-          Refaire le point
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setReponsesOuvertes((o) => !o)}
+            aria-pressed={reponsesOuvertes}
+            className="bouton-discret"
+          >
+            <ListChecks className="h-4 w-4" />
+            Mes réponses
+          </button>
+          <Link to={`/bilan?cliente=${clienteId}`} className="bouton-discret">
+            <Sparkles className="h-4 w-4" />
+            Refaire le point
+          </Link>
+        </div>
       </div>
+
+      {reponsesOuvertes && <ReponsesDuBilan bilan={bilan} onFermer={() => setReponsesOuvertes(false)} />}
 
       <section className="carte px-6 py-7 text-center">
         <p className="text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
