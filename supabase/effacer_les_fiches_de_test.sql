@@ -1,90 +1,69 @@
 /*
-  MAbeautyplus V2 — Effacer les fiches nées dans la V2
+  MAbeautyplus V2 — Effacer les fiches de test nommément
 
   ⚠️  IRRÉVERSIBLE. Aucune corbeille, aucun retour arrière.
 
-  À NE LANCER QU'APRÈS avoir lu `diagnostics/fiches_de_test.sql` et vérifié
-  qu'aucune ligne « ⚠️ À REGARDER » ne correspond à une vraie cliente.
+  Le ménage « essais du jour » ne voit que les fiches créées aujourd'hui.
+  Celui-ci vise des fiches précises, quel que soit leur âge :
 
-  UNE FICHE EST ÉPARGNÉE : « jonathan Schwartz test », l'essai en cours du
-  6 septembre 2026. Elle est protégée deux fois — par son identifiant et par
-  son nom. Un seul des deux suffit à la sauver : si l'identifiant avait été
-  mal recopié, le nom la retiendrait quand même. Quand cet essai sera fini,
-  supprimez-la depuis sa fiche, le geste existe (direction, avec le nom à
-  retaper).
+    — toute fiche née dans la V2 dont le nom ou le prénom contient « test ».
 
-  CE QUI PART : les autres fiches dont `origine = 'v2'`, avec tout leur
-  dossier — bilans, cures, échéances, séances, mensurations, contrats,
-  consentements, notes, ventes, avoirs. Les clés étrangères sont en CASCADE :
-  rien ne reste orphelin côté cliente.
+  Rien d'autre : une vraie cliente ne s'efface pas par script.
 
-  CE QUI RESTE : les fiches `import_v1`, venues du CRM, et tout ce qui ne
-  dépend pas d'une cliente — centres, thérapeutes, produits, tarifs,
-  barèmes, Missions Déclic, messages internes.
+  Tout leur dossier part avec elles — bilans, cures, échéances, séances,
+  contrats, avoirs — par la cascade des clés étrangères. Les mouvements de
+  stock nés de leurs contrats et leurs tâches Airtable en file sont
+  retirés aussi, la cascade ne le fait pas.
 
-  DEUX MÉNAGES QUE LA CASCADE NE FAIT PAS, et qu'on fait ici :
-
-    — les mouvements de stock nés d'un contrat de test (guide et tenue
-      sortis à la signature). Leur `programme_id` est en SET NULL : ils
-      survivraient à la suppression et fausseraient le rayon d'autant.
-      On les repère avant d'effacer les clientes, pendant qu'on peut
-      encore remonter jusqu'à elles.
-
-    — les tâches Airtable en file pour ces fiches. Sans ça, la synchro
-      passerait sa vie à essayer de mettre à jour des fiches disparues.
+  CE QUE CE SCRIPT NE FAIT PAS : leurs copies dans AIRTABLE, à supprimer
+  depuis le CRM, et leurs comptes dans MON PARCOURS.
 
   Tout est dans une transaction : si une seule ligne échoue, rien n'est fait.
+  Le premier tableau liste ce qui va partir — LISEZ-LE.
 */
 
 BEGIN;
 
--- ---------------------------------------------------------------------------
--- 0. La liste exacte de ce qui va partir. Lisez-la avant de laisser tourner :
---    « jonathan Schwartz test » ne doit PAS y figurer.
--- ---------------------------------------------------------------------------
-CREATE TEMP TABLE a_effacer ON COMMIT DROP AS
-SELECT id, prenom || ' ' || nom AS fiche, cree_le::date AS creee_le
-  FROM clientes
- WHERE origine = 'v2'
-   AND id <> 'dd9863de-4cd8-40fe-9f74-d74d4aa436d8'
-   AND lower(nom) NOT LIKE '%schwartz%';
-
-SELECT * FROM a_effacer ORDER BY creee_le;
-
--- ---------------------------------------------------------------------------
--- 1. Les mouvements de stock des contrats de test.
---    Repérés MAINTENANT : après le DELETE, plus rien ne les relie.
--- ---------------------------------------------------------------------------
-CREATE TEMP TABLE mouvements_a_effacer ON COMMIT DROP AS
-SELECT m.id
-  FROM mouvements_stock m
-  JOIN programmes p ON p.id = m.programme_id
-  JOIN a_effacer c ON c.id = p.cliente_id;
-
-DELETE FROM mouvements_stock
- WHERE id IN (SELECT id FROM mouvements_a_effacer);
-
--- ---------------------------------------------------------------------------
--- 2. La file de synchronisation Airtable.
--- ---------------------------------------------------------------------------
-DELETE FROM airtable_sync
- WHERE entite_id IN (SELECT id FROM a_effacer);
-
--- ---------------------------------------------------------------------------
--- 3. Les fiches. La cascade emporte tout le dossier.
--- ---------------------------------------------------------------------------
-DELETE FROM clientes WHERE id IN (SELECT id FROM a_effacer);
-
--- ---------------------------------------------------------------------------
--- 4. Contrôle. `essais_restants` doit valoir 1 — jonathan Schwartz test —
---    et `reprises_du_crm` votre nombre de fiches importées, inchangé.
--- ---------------------------------------------------------------------------
+-- 0. La liste exacte de ce qui va partir.
 SELECT
-  COUNT(*) FILTER (WHERE origine = 'v2')         AS essais_restants,
-  COUNT(*) FILTER (WHERE origine = 'import_v1')  AS reprises_du_crm
-FROM clientes;
+  prenom || ' ' || nom                                    AS fiche,
+  to_char(cree_le AT TIME ZONE 'Europe/Paris', 'DD/MM')   AS creee_le,
+  airtable_record_id                                      AS airtable,
+  (SELECT COUNT(*) FROM programmes p WHERE p.cliente_id = c.id) AS cures
+FROM clientes c
+WHERE origine = 'v2'
+  AND (nom ILIKE '%test%' OR prenom ILIKE '%test%')
+ORDER BY cree_le;
 
-SELECT prenom || ' ' || nom AS essai_conserve
-  FROM clientes WHERE origine = 'v2';
+-- 1. Les mouvements de stock de leurs contrats.
+DELETE FROM mouvements_stock m
+ USING programmes p, clientes c
+ WHERE p.id = m.programme_id
+   AND c.id = p.cliente_id
+   AND c.origine = 'v2'
+   AND (c.nom ILIKE '%test%' OR c.prenom ILIKE '%test%');
+
+-- 2. Leurs tâches Airtable en file.
+DELETE FROM airtable_sync
+ WHERE entite_id IN (
+   SELECT id FROM clientes
+    WHERE origine = 'v2'
+      AND (nom ILIKE '%test%' OR prenom ILIKE '%test%')
+ );
+
+-- 3. Les fiches. La cascade emporte le dossier.
+DELETE FROM clientes
+ WHERE origine = 'v2'
+   AND (nom ILIKE '%test%' OR prenom ILIKE '%test%');
+
+-- 4. Contrôle : `restantes` doit valoir 0.
+SELECT
+  COUNT(*) FILTER (
+    WHERE origine = 'v2'
+      AND (nom ILIKE '%test%' OR prenom ILIKE '%test%')
+  )                                             AS restantes,
+  COUNT(*) FILTER (WHERE origine = 'v2')        AS fiches_v2,
+  COUNT(*) FILTER (WHERE origine = 'import_v1') AS reprises_du_crm
+FROM clientes;
 
 COMMIT;

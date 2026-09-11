@@ -434,6 +434,16 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   escamotait alors une partie, sans erreur visible pour qui ne regarde pas
   la console. Une clé se prend sur un identifiant, jamais sur un texte
   affiché — et deux centres peuvent employer deux personnes du même prénom.
+- **Arrêter une cure Alma créée par erreur fabrique un avoir du montant
+  entier.** Une cure Alma naît encaissée (053) : l'arrêt fait « encaissé
+  moins consommé », et si elle n'a jamais existé chez Alma, l'avoir qui en
+  sort est faux — 1 282,87 € sur la fiche d'Alice Fabre le 10 septembre
+  2026, frais Alma compris puisque les échéances les portent. Une cure
+  ajoutée par erreur ne s'arrête pas, elle se **supprime** avec ce qu'elle a
+  laissé — avoir, sorties de stock, contrat — voir
+  `supabase/corriger_alice_fabre.sql` pour le modèle. Et dans Airtable,
+  « Montant cure N » d'une cure supprimée ne se vide pas tout seul : la
+  synchro n'écrit que les cures qui existent.
 - **Doublons Airtable.** Le parcours du bilan enchaîne trois écritures ;
   sans verrou, trois synchros parallèles créaient trois fiches. Réglé par
   `reclamer_taches_airtable` (SKIP LOCKED), un verrou par cliente et un
