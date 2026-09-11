@@ -5,3 +5,5 @@ dist
 *.local
 .DS_Store
 supabase/.temp/
+.env.v1
+firebase-v1.json
