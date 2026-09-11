@@ -6,6 +6,8 @@
 import { readFileSync } from 'node:fs';
 import { section, verifie, egal, egalEuros } from './harnais.mts';
 import { construireEcheancierCure } from '../src/domain/tarification.ts';
+import { reechelonner } from '../src/domain/reglement.ts';
+import type { Echeance } from '../src/types/db.ts';
 import { construireRecapAntiAge } from '../src/domain/recapitulatif.ts';
 import {
   calculerAntiAge,
@@ -155,6 +157,18 @@ export function controlerAntiAge() {
   const alma = construireEcheancierCure({ seances: 10, prixSeance: 85, options: 0, methode: 'alma', n: 10 });
   verifie('chez Alma, des frais comme pour les autres cures', alma.frais > 0);
   egalEuros('et la cure vaut toujours 850 € hors frais', alma.montantARegler - alma.frais, 850);
+
+  section('Le redécoupage garde les séances entières');
+
+  const dues = [255, 170, 170, 170].map((montant, i) => ({
+    id: `e${i}`, programme_id: 'p', rang: i + 1, type: 'echeance', montant,
+    date_prevue: `2026-1${i}-10`, statut: 'a_venir', moyen: null, date_reglement: null, note: '',
+  })) as unknown as Echeance[];
+  const enDeux = reechelonner(dues, 2, new Date('2026-10-10'), 85);
+  egal('765 € dus, en deux : 5 et 4 séances', enDeux.echeances.map((e) => e.montant), [425, 340]);
+  verifie('toujours des multiples de 85', enDeux.echeances.every((e) => e.montant % 85 === 0));
+  const sansUnite = reechelonner(dues, 2, new Date('2026-10-10'));
+  egal('sans unité, la règle d’avant : en parts égales', sansUnite.echeances.map((e) => e.montant), [382.5, 382.5]);
 
   section('Le document du Bio-Portrait Anti-Âge');
 

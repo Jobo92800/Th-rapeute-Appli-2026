@@ -32,7 +32,7 @@ import CarteAvoir, { BoutonAvoir } from '../cure/CarteAvoir';
 import { resteAEncaisser } from '../../domain/avoir';
 import { rouvrirCure } from '../../services/avoirs';
 import { useSession } from '../../lib/session';
-import type { Cliente, Echeance, Programme, StatutEcheance } from '../../types/db';
+import type { Cliente, Echeance, LigneProgramme, Programme, StatutEcheance } from '../../types/db';
 
 const LIBELLE_MODE: Record<string, string> = {
   comptant: 'Comptant',
@@ -355,7 +355,7 @@ export default function OngletProgramme({
                     moyen de règlement.
                   </p>
 
-                  <Reechelonner programme={p} echeances={echeances} onFait={rafraichir} />
+                  <Reechelonner programme={p} lignes={lignes} echeances={echeances} onFait={rafraichir} />
                 </>
               )}
 
@@ -545,10 +545,12 @@ function Bloc({
  */
 function Reechelonner({
   programme,
+  lignes,
   echeances,
   onFait,
 }: {
   programme: Programme;
+  lignes: LigneProgramme[];
   echeances: Echeance[];
   onFait: () => void;
 }) {
@@ -578,10 +580,20 @@ function Reechelonner({
     .filter((d): d is string => Boolean(d))
     .sort()[0];
 
+  /*
+    Une cure d'Advance Lift se redécoupe en séances entières — des multiples
+    de 85 € — comme à la signature. Le prix unitaire est celui figé sur la
+    ligne de la cure, jamais un nombre écrit ici.
+  */
+  const unite = lignes.length > 0 && lignes.every((l) => l.technologie === 'advance_lift')
+    ? Number(lignes[0].prix_unitaire)
+    : undefined;
+
   const apercu = reechelonner(
     echeances,
     n,
     premiereDate ? new Date(premiereDate) : new Date(),
+    unite,
   );
 
   async function appliquer() {

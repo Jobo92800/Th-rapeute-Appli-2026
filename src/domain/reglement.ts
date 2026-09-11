@@ -7,6 +7,7 @@
 */
 
 import { addDays, addMonths, differenceInCalendarDays } from 'date-fns';
+import { repartirSeances } from './tarification';
 import type { Echeance, StatutEcheance } from '../types/db';
 
 export type EtatEcheance = 'paye' | 'donne' | 'annule' | 'retard' | 'aujourdhui' | 'a_venir';
@@ -300,14 +301,39 @@ export function reechelonner(
   echeances: Echeance[],
   n: number,
   premiereDate: Date,
+  /**
+   * Le prix d'une séance, quand chaque chèque doit couvrir un nombre entier
+   * de séances — la règle de l'Advance Lift, « des multiples de 85 € ». Sans
+   * lui, on redécoupe en parts égales au centime.
+   */
+  unite?: number,
 ): Reechelonnement {
   const nombre = Math.max(1, Math.floor(n));
   const aRedecouper = echeances.filter((e) => !echeanceIntouchable(e));
   const total = Math.round(aRedecouper.reduce((s, e) => s + Number(e.montant), 0) * 100) / 100;
+  const dates = datesEcheancier(premiereDate, nombre);
+
+  if (unite && unite > 0 && total >= unite) {
+    /*
+      En séances entières : tant de séances restent dues, réparties comme à
+      la signature — les premières échéances prennent le reste de la
+      division. Ce qui ne fait pas une séance entière tombe sur la première.
+    */
+    const seances = Math.floor(total / unite);
+    const parts = repartirSeances(seances, nombre);
+    const reliquat = Math.round((total - seances * unite) * 100) / 100;
+    return {
+      totalRedecoupe: total,
+      echeances: parts.map((k, i) => ({
+        rang: i + 1,
+        montant: Math.round((k * unite + (i === 0 ? reliquat : 0)) * 100) / 100,
+        date_prevue: dates[i],
+      })),
+    };
+  }
 
   const part = Math.floor((total / nombre) * 100) / 100;
   const reliquat = Math.round((total - part * nombre) * 100) / 100;
-  const dates = datesEcheancier(premiereDate, nombre);
 
   return {
     totalRedecoupe: total,
