@@ -280,6 +280,8 @@ export function etapesInbody(bareme: Bareme): number[] {
 // ---------------------------------------------------------------------------
 
 export interface ReponseLue {
+  /** Le code du thème dans le barème (`elig`, `alim`…) : l'écran y lit ses couleurs. */
+  cle: string;
   /** Le thème de la question, tel que le barème le nomme. */
   theme: string;
   question: string;
@@ -310,11 +312,13 @@ export function relireLesReponses(
 
   bareme.STEPS.forEach((etape, index) => {
     if (etape.phase !== 'client') return;
-    const theme = bareme.CAT?.[etape.cat ?? '']?.[0] ?? '';
+    const cle = etape.cat ?? '';
+    const theme = bareme.CAT?.[cle]?.[0] ?? '';
 
     if (EST_QUESTION.includes(etape.type)) {
       const options = etape.o ?? [];
       lues.push({
+        cle,
         theme,
         question: etape.t ?? '',
         reponses: choix(reponses, index)
@@ -326,6 +330,7 @@ export function relireLesReponses(
 
     if (etape.type === 'slider' && curseur != null) {
       lues.push({
+        cle,
         theme,
         question: etape.t ?? '',
         reponses: [],

@@ -88,7 +88,13 @@ export default function Comptes() {
     const cle = c.centre_nom ?? 'Direction';
     parCentre.set(cle, [...(parCentre.get(cle) ?? []), c]);
   }
-  const enPanne = comptes.filter((c) => c.diagnostic !== 'ok' && c.actif);
+  /*
+    « Sans compte » n'est pas une panne : c'est une personne qui figure dans
+    les menus — pour être nommée sur une fiche, une séance — et se connecte
+    avec le compte direction. Flora, au Crès. La ranger parmi les pannes
+    finirait par faire créer un compte de trop.
+  */
+  const enPanne = comptes.filter((c) => c.diagnostic !== 'ok' && c.diagnostic !== 'sans_compte' && c.actif);
 
   return (
     <div className="space-y-6">
@@ -192,6 +198,11 @@ export default function Comptes() {
                           <CheckCircle2 className="h-3.5 w-3.5" />
                           Peut se connecter
                         </span>
+                      ) : c.diagnostic === 'sans_compte' ? (
+                        <span className="text-ardoise-500">
+                          Pas de compte à elle — figure dans les menus, se connecte avec le compte
+                          direction.
+                        </span>
                       ) : (
                         <span className="text-amber-800">{c.diagnostic}</span>
                       )}
@@ -207,7 +218,9 @@ export default function Comptes() {
                             ? 'Remettez-la en service avant de lui redonner un mot de passe.'
                             : c.a_un_compte
                               ? undefined
-                              : 'Cette personne n’a pas encore de compte de connexion.'
+                              : c.diagnostic === 'sans_compte'
+                                ? 'Pas de compte à elle : elle se connecte avec le compte direction.'
+                                : 'Cette personne n’a pas encore de compte de connexion.'
                         }
                       >
                         <KeyRound className="h-4 w-4" />
