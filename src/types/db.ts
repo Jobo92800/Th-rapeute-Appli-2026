@@ -191,7 +191,7 @@ export type ModeReglement =
   | '4x_maison'
   | '10x_alma'
   | 'inconnu';
-export type Technologie = 'luxo' | 'relax' | 'ishape' | 'presso' | 'dome';
+export type Technologie = 'luxo' | 'relax' | 'ishape' | 'presso' | 'dome' | 'advance_lift';
 
 export type TailleTenue = 'S' | 'M' | 'L' | 'XL';
 

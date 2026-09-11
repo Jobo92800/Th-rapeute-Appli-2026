@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useVilleAutomatique } from '../lib/villeAutomatique';
-import ChoixDeVille from '../components/ChoixDeVille';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -39,22 +38,14 @@ import { depouiller } from '../domain/prescription';
 import QuestionBioPortrait from '../components/bilan/QuestionBioPortrait';
 import Progression from '../components/bilan/Progression';
 import CureEtDevis, { type PrescriptionValidee } from '../components/bilan/CureEtDevis';
+import {
+  CONTACT_VIDE,
+  FormulaireCoordonnees,
+  coordonneesPourLaFiche,
+  type Contact,
+} from '../components/bilan/Coordonnees';
 
 type Vue = 'accueil' | 'intro' | 'questions' | 'restitution' | 'devis' | 'fini';
-
-/** L'âge se calcule : on ne le demande pas deux fois. */
-function ageDepuis(naissance: string): string {
-  if (!naissance) return '';
-  const d = new Date(naissance);
-  if (Number.isNaN(d.getTime())) return '';
-
-  const maintenant = new Date();
-  let age = maintenant.getFullYear() - d.getFullYear();
-  const m = maintenant.getMonth() - d.getMonth();
-  if (m < 0 || (m === 0 && maintenant.getDate() < d.getDate())) age--;
-
-  return age > 0 && age < 120 ? String(age) : '';
-}
 
 /*
   Une proposition qui ne propose rien.
@@ -74,19 +65,6 @@ const PROPOSITION_VIDE: PrescriptionValidee = {
   modeReglement: 'inconnu',
   frais: 0,
   echeances: [],
-};
-
-const CONTACT_VIDE = {
-  civilite: 'Mme' as 'Mme' | 'M.',
-  date_naissance: '',
-  prenom: '',
-  nom: '',
-  email: '',
-  telephone: '',
-  adresse: '',
-  code_postal: '',
-  ville: '',
-  age: '',
 };
 
 export default function NouveauBilan() {
@@ -129,7 +107,7 @@ export default function NouveauBilan() {
   const [reponses, setReponses] = useState<Reponses>({});
   const [curseur, setCurseur] = useState(50);
   const [texte, setTexte] = useState('');
-  const [contact, setContact] = useState({ ...CONTACT_VIDE });
+  const [contact, setContact] = useState<Contact>({ ...CONTACT_VIDE });
 
   /*
     Les coordonnées de la fiche viennent garnir le formulaire une fois
@@ -296,18 +274,7 @@ export default function NouveauBilan() {
 
     setEnregistrement(true);
     try {
-      const coordonnees = {
-        civilite: contact.civilite,
-        prenom: contact.prenom.trim(),
-        nom: contact.nom.trim(),
-        email: contact.email || null,
-        telephone: contact.telephone || null,
-        date_naissance: contact.date_naissance || null,
-        age: contact.age ? Number(contact.age) : null,
-        adresse: contact.adresse || null,
-        code_postal: contact.code_postal || null,
-        ville: contact.ville || null,
-      };
+      const coordonnees = coordonneesPourLaFiche(contact);
 
       /*
         Une fiche déjà là est mise à jour, jamais dupliquée. On ne touche ni
@@ -503,43 +470,7 @@ export default function NouveauBilan() {
           <div className="mt-8 text-left">
             <div className="surtitre mb-3">Ses coordonnées</div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <span className="etiquette">Civilité</span>
-                <div className="flex gap-2">
-                  {(['Mme', 'M.'] as const).map((civ) => (
-                    <button
-                      key={civ}
-                      type="button"
-                      onClick={() => setContact((c) => ({ ...c, civilite: civ }))}
-                      aria-pressed={contact.civilite === civ}
-                      className={`flex-1 rounded-xl border-[1.5px] px-3 py-2.5 text-sm font-semibold transition-colors ${
-                        contact.civilite === civ
-                          ? 'border-marine-500 bg-marine-500 text-white'
-                          : 'border-ardoise-200 bg-white text-ardoise-700 hover:border-marine-300'
-                      }`}
-                    >
-                      {civ === 'Mme' ? 'Madame' : 'Monsieur'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <ChampContact id="a_prenom" libelle="Prénom" v={contact.prenom} on={(v) => setContact((c) => ({ ...c, prenom: v }))} />
-              <ChampContact id="a_nom" libelle="Nom" v={contact.nom} on={(v) => setContact((c) => ({ ...c, nom: v }))} />
-              <ChampContact id="a_naissance" libelle="Date de naissance" type="date" v={contact.date_naissance} on={(v) => setContact((c) => ({ ...c, date_naissance: v, age: ageDepuis(v) || c.age }))} />
-              <ChampContact id="a_age" libelle="Âge" type="number" v={contact.age} on={(v) => setContact((c) => ({ ...c, age: v }))} />
-              <ChampContact id="a_tel" libelle="Téléphone" type="tel" v={contact.telephone} on={(v) => setContact((c) => ({ ...c, telephone: v }))} />
-              <ChampContact id="a_mail" libelle="Email" type="email" v={contact.email} on={(v) => setContact((c) => ({ ...c, email: v }))} />
-              <div className="sm:col-span-2">
-                <ChampContact id="a_adr" libelle="Adresse" v={contact.adresse} on={(v) => setContact((c) => ({ ...c, adresse: v }))} />
-              </div>
-              <ChampContact id="a_cp" libelle="Code postal" v={contact.code_postal} on={(v) => setContact((c) => ({ ...c, code_postal: v }))} />
-              <div>
-                <ChampContact id="a_ville" libelle="Ville" v={contact.ville} on={(v) => setContact((c) => ({ ...c, ville: v }))} />
-                <ChoixDeVille propositions={villes.propositions} onChoisir={villes.choisir} />
-              </div>
-            </div>
+            <FormulaireCoordonnees contact={contact} setContact={setContact} villes={villes} prefixe="a" />
           </div>
 
           <button
@@ -854,40 +785,8 @@ export default function NouveauBilan() {
             <p className="mt-1 text-sm text-ardoise-500">
               Ces coordonnées créeront sa fiche.
             </p>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div>
-                <span className="etiquette">Civilité</span>
-                <div className="flex gap-2">
-                  {(['Mme', 'M.'] as const).map((civ) => (
-                    <button
-                      key={civ}
-                      type="button"
-                      onClick={() => setContact((c) => ({ ...c, civilite: civ }))}
-                      aria-pressed={contact.civilite === civ}
-                      className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
-                        contact.civilite === civ
-                          ? 'border-marine-600 bg-marine-600 text-white'
-                          : 'border-ardoise-300 bg-white text-ardoise-700 hover:border-marine-400'
-                      }`}
-                    >
-                      {civ === 'Mme' ? 'Madame' : 'Monsieur'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <ChampContact id="c_nom" libelle="Nom" v={contact.nom} on={(v) => setContact((c) => ({ ...c, nom: v }))} />
-              <ChampContact id="c_prenom" libelle="Prénom" v={contact.prenom} on={(v) => setContact((c) => ({ ...c, prenom: v }))} />
-              <ChampContact id="c_tel" libelle="Téléphone" type="tel" v={contact.telephone} on={(v) => setContact((c) => ({ ...c, telephone: v }))} />
-              <ChampContact id="c_mail" libelle="Email" type="email" v={contact.email} on={(v) => setContact((c) => ({ ...c, email: v }))} />
-              <div className="sm:col-span-2">
-                <ChampContact id="c_adr" libelle="Adresse" v={contact.adresse} on={(v) => setContact((c) => ({ ...c, adresse: v }))} />
-              </div>
-              <ChampContact id="c_cp" libelle="Code postal" v={contact.code_postal} on={(v) => setContact((c) => ({ ...c, code_postal: v }))} />
-              <div>
-                <ChampContact id="c_ville" libelle="Ville" v={contact.ville} on={(v) => setContact((c) => ({ ...c, ville: v }))} />
-                <ChoixDeVille propositions={villes.propositions} onChoisir={villes.choisir} />
-              </div>
-              <ChampContact id="c_age" libelle="Âge" type="number" v={contact.age} on={(v) => setContact((c) => ({ ...c, age: v }))} />
+            <div className="mt-5">
+              <FormulaireCoordonnees contact={contact} setContact={setContact} villes={villes} prefixe="c" />
             </div>
           </>
         )}
@@ -924,29 +823,6 @@ export default function NouveauBilan() {
           Enregistrement…
         </p>
       )}
-    </div>
-  );
-}
-
-function ChampContact({
-  id,
-  libelle,
-  v,
-  on,
-  type = 'text',
-}: {
-  id: string;
-  libelle: string;
-  v: string;
-  on: (v: string) => void;
-  type?: string;
-}) {
-  return (
-    <div>
-      <label htmlFor={id} className="etiquette">
-        {libelle}
-      </label>
-      <input id={id} type={type} value={v} onChange={(e) => on(e.target.value)} className="champ" />
     </div>
   );
 }

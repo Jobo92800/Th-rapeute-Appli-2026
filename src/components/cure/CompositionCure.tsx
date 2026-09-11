@@ -91,6 +91,9 @@ export default function CompositionCure({
     ishape: seancesInitiales?.ishape ?? 0,
     presso: seancesInitiales?.presso ?? 0,
     dome: seancesInitiales?.dome ?? 0,
+    // Une cure suivante se compose parmi les soins de la perte de poids ;
+    // l'anti-âge a son propre bilan, et sa cure naît de là.
+    advance_lift: seancesInitiales?.advance_lift ?? 0,
   });
   const [methode, setMethode] = useState<'centre' | 'alma'>('centre');
   const [nEcheances, setNEcheances] = useState(4);

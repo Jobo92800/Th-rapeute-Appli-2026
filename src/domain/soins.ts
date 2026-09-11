@@ -53,6 +53,16 @@ export const COULEURS_SOIN: Record<Technologie, CouleurSoin> = {
     bord: 'border-l-sky-500',
     pastille: 'bg-sky-100 text-sky-800',
   },
+  /*
+    L'Advance Lift, le soin de l'anti-âge : rose, la teinte du terrain sur le
+    BioPortrait. Il ne se mélange jamais aux soins de la perte de poids dans
+    une même cure, mais une cliente peut avoir les deux sur sa fiche.
+  */
+  advance_lift: {
+    texte: 'text-rose-700',
+    bord: 'border-l-rose-500',
+    pastille: 'bg-rose-100 text-rose-800',
+  },
   /* Le Dôme n'est plus prescrit : il reste lisible sur les cures passées. */
   dome: {
     texte: 'text-ardoise-600',

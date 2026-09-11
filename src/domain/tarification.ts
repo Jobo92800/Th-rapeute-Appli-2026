@@ -16,7 +16,7 @@
   de sa validation, pour que les cures passées ne changent jamais de prix.
 */
 
-export type Technologie = 'luxo' | 'ishape' | 'presso' | 'dome' | 'relax';
+export type Technologie = 'luxo' | 'ishape' | 'presso' | 'dome' | 'relax' | 'advance_lift';
 
 export const LIBELLES_TECHNOLOGIE: Record<Technologie, string> = {
   luxo: 'Luxothérapie Perte de poids',
@@ -24,6 +24,8 @@ export const LIBELLES_TECHNOLOGIE: Record<Technologie, string> = {
   ishape: 'I-Shape · électrostimulation',
   presso: 'Pressodynamie',
   dome: 'Dôme',
+  /* Le soin du Bio-Portrait Anti-Âge, au Grau-du-Roi. 85 € la séance, ni guide ni tenue. */
+  advance_lift: 'Advance Lift',
 };
 
 export interface LigneProgramme {
@@ -39,6 +41,8 @@ export interface GrilleTarifaire {
   tenue: number;
   bilan: number;
   dome: number;
+  /** La séance d'Advance Lift — le soin de l'anti-âge. */
+  advance_lift: number;
   /** Une boîte de compléments, vendue à part de la cure. */
   complement: number;
 }
@@ -80,7 +84,9 @@ export function calculerMontant(
 
 /** Prix unitaire par défaut d'une technologie, selon la grille en vigueur. */
 export function prixUnitaireParDefaut(techno: Technologie, grille: GrilleTarifaire): number {
-  return techno === 'dome' ? grille.dome : grille.seance;
+  if (techno === 'dome') return grille.dome;
+  if (techno === 'advance_lift') return grille.advance_lift;
+  return grille.seance;
 }
 
 // ---------------------------------------------------------------------------

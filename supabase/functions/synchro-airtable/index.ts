@@ -36,6 +36,7 @@ const LIBELLE_TECHNO: Record<string, string> = {
   ishape: 'I-Shape',
   presso: 'Pressodynamie',
   dome: 'Dôme',
+  advance_lift: 'Advance Lift',
 };
 
 /*

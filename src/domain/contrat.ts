@@ -103,6 +103,7 @@ const LIGNES_CONTRAT: Array<{ label: string; technologies: Technologie[] }> = [
   { label: 'Luxothérapie Relaxation', technologies: ['relax'] },
   { label: 'Pressodynamie', technologies: ['presso'] },
   { label: 'Dôme', technologies: ['dome'] },
+  { label: 'Advance Lift', technologies: ['advance_lift'] },
 ];
 
 /** Technologie → consentement à faire signer. Le Dôme n'en a pas. */
