@@ -370,9 +370,16 @@ export function genererRecapPdf(d: DonneesRecap): jsPDF {
   if (d.echeances.length > 1) {
     police(doc, 8.5, 'normal');
     couleur(doc, [191, 230, 230]);
-    const texteEcheances = d.echeances
-      .map((e, i) => `${i === 0 ? '1re' : `${e.rang}e`} : ${euros(Number(e.montant))}`)
-      .join('   ·   ');
+    /*
+      L'acompte se nomme, et les échéances se numérotent après lui : un
+      acompte de rang 1 suivi d'une échéance de rang 1 écrivait « 1re · 1e ».
+    */
+    const acompte = d.echeances.filter((e) => e.type === 'acompte');
+    const suite = d.echeances.filter((e) => e.type !== 'acompte');
+    const texteEcheances = [
+      ...acompte.map((e) => `Acompte : ${euros(Number(e.montant))}`),
+      ...suite.map((e, i) => `${i === 0 ? '1re' : `${i + 1}e`} : ${euros(Number(e.montant))}`),
+    ].join('   ·   ');
     ecrire(doc, texteEcheances, MARGE + 6, y + 33);
   }
 

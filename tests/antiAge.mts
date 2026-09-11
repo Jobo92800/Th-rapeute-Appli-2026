@@ -4,7 +4,9 @@
 */
 
 import { readFileSync } from 'node:fs';
-import { section, verifie, egal } from './harnais.mts';
+import { section, verifie, egal, egalEuros } from './harnais.mts';
+import { construireEcheancierCure } from '../src/domain/tarification.ts';
+import { construireRecapAntiAge } from '../src/domain/recapitulatif.ts';
 import {
   calculerAntiAge,
   questionsAPoser,
@@ -122,4 +124,71 @@ export function controlerAntiAge() {
   egal('la première question, avec son libellé', relues[0].reponses, ['L’ovale du visage']);
   egal('la sous-question rend toutes ses cases', relues.find((r) => r.code === 'Q10b')?.reponses, ['Peelings', 'Laser']);
   verifie('les questions sans réponse restent là, vides', relues.some((r) => r.reponses.length === 0));
+
+  /*
+    LA CURE D'ADVANCE LIFT.
+
+    85 € la séance, ni guide ni tenue. Par chèques, « des multiples de 85 € » :
+    chaque chèque couvre un nombre entier de séances. L'acompte vaut une
+    séance. Alma fonctionne comme pour la perte de poids.
+  */
+  section('La cure d’Advance Lift se règle par séances entières');
+
+  const dix = construireEcheancierCure({ seances: 10, prixSeance: 85, options: 0, methode: 'centre', n: 4 });
+  egalEuros('dix séances : 850 €', dix.montantARegler, 850);
+  verifie(
+    'chaque chèque est un multiple de 85 €',
+    dix.echeances.every((e) => e.montant % 85 === 0),
+    dix.echeances.map((e) => e.montant).join(' · '),
+  );
+  egal('en quatre chèques : 3 · 3 · 2 · 2 séances', dix.echeances.map((e) => e.montant / 85), [3, 3, 2, 2]);
+
+  const avecAcompte = construireEcheancierCure({ seances: 10, prixSeance: 85, options: 0, methode: 'centre', n: 4, acompte: 85 });
+  egal('l’acompte est une séance, en tête', avecAcompte.echeances[0], { rang: 1, montant: 85, type: 'acompte' });
+  verifie(
+    'et le reste se répartit encore en séances entières',
+    avecAcompte.echeances.filter((e) => e.type === 'echeance').every((e) => e.montant % 85 === 0),
+    avecAcompte.echeances.map((e) => e.montant).join(' · '),
+  );
+  egalEuros('sans rien perdre', avecAcompte.echeances.reduce((n, e) => n + e.montant, 0), 850);
+
+  const alma = construireEcheancierCure({ seances: 10, prixSeance: 85, options: 0, methode: 'alma', n: 10 });
+  verifie('chez Alma, des frais comme pour les autres cures', alma.frais > 0);
+  egalEuros('et la cure vaut toujours 850 € hors frais', alma.montantARegler - alma.frais, 850);
+
+  section('Le document du Bio-Portrait Anti-Âge');
+
+  const donnees = construireRecapAntiAge({
+    bareme,
+    resultat: fermete,
+    proposition: {
+      lignes: [{ technologie: 'advance_lift', seances: 10, prixUnitaire: 85 }],
+      guide: false, tenue: false, prixGuide: 0, prixTenue: 0,
+      montantTotal: 850, modeReglement: 'centre_4x', frais: 0,
+      echeances: dix.echeances,
+    },
+    cliente: { civilite: 'Mme', prenom: 'Camille', nom: 'Durand' },
+    centre: { nom: 'Le Grau-du-Roi', adresse: '', codePostal: '30240', ville: 'Le Grau-du-Roi', telephone: '', email: '' },
+    dateBilan: '2026-09-11',
+  });
+  egal('le profil porte le nom du document', donnees.profil.nom, 'Fermeté & Ovale');
+  egal('et son texte cliente, mot pour mot', donnees.profil.texte, bareme.PROFILS.fermete_ovale.texte);
+  egal('les besoins tiennent lieu d’impacts', donnees.profil.impacts, bareme.PROFILS.fermete_ovale.besoins);
+  egal('pas de pourcentage : ce sont des points', donnees.profil.pourcentage, null);
+  egal('ni InBody, ni axes secondaires', [donnees.inbody.length, donnees.aussiPresents.length], [0, 0]);
+  egal('la cure : dix séances d’Advance Lift', donnees.soins, [{ libelle: 'Advance Lift', seances: 10 }]);
+  egal('sans guide ni tenue', donnees.options, []);
+  egal('les mots du document sont ceux de l’anti-âge', donnees.libelles.titreProfil, 'Votre profil anti-âge');
+  verifie('avec la mention légale', Boolean(donnees.libelles.mention?.includes('diagnostic médical')));
+  egal('et les priorités en toutes lettres', donnees.libelles.priorites?.[0], 'Fermeté');
+
+  const mixteDoc = construireRecapAntiAge({
+    bareme, resultat: mixte,
+    proposition: { lignes: [], guide: false, tenue: false, prixGuide: 0, prixTenue: 0, montantTotal: 0, modeReglement: 'inconnu', frais: 0, echeances: [] },
+    cliente: { civilite: 'Mme', prenom: 'C', nom: 'D' },
+    centre: { nom: '', adresse: '', codePostal: '', ville: '', telephone: '', email: '' },
+    dateBilan: '2026-09-11',
+  });
+  egal('un terrain mixte se présente comme un seul', mixteDoc.terrain.nom, 'Hydratation / Fin / Fragilisé');
+  verifie('avec les besoins des deux, sans doublon', new Set(mixteDoc.terrain.impacts).size === mixteDoc.terrain.impacts.length);
 }

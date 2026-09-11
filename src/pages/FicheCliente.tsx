@@ -106,8 +106,15 @@ export default function FicheCliente() {
     refetchInterval: 30_000,
   });
 
+  /*
+    Le profil qui oriente la Mission Déclic est celui du BioPortrait de la
+    perte de poids — un Bio-Portrait Anti-Âge passé depuis n'y change rien :
+    ses profils ne parlent pas des mêmes choses.
+  */
   const profilDominant =
-    (bilans.find((b) => b.statut === 'termine')?.profil_dominant as AxeProfil | null) ?? null;
+    (bilans.find((b) => b.statut === 'termine' && b.famille !== 'anti_age')?.profil_dominant as
+      | AxeProfil
+      | null) ?? null;
 
   // Créer une fiche demande de savoir dans quel centre. La consulter, non :
   // la direction peut ouvrir n'importe quelle fiche depuis la vue d'ensemble.

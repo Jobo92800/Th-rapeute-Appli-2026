@@ -116,7 +116,7 @@ export interface DonneesRecap {
   /** Ce que la cliente règle, frais de financement compris. */
   montantRegle: number;
   reglement: string;
-  echeances: Array<{ rang: number; montant: number }>;
+  echeances: Array<{ rang: number; montant: number; type?: string }>;
   inclus: Array<{ titre: string; detail: string }>;
   libelles: LibellesRecap;
 }

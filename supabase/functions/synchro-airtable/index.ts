@@ -83,6 +83,26 @@ const NOM_TERRAIN: Record<string, string> = {
   T5: 'Digestif',
 };
 
+/*
+  Le Bio-Portrait Anti-Âge, au Grau-du-Roi, écrit dans les mêmes champs
+  « Profil Empreinte » / « Terrain Empreinte » : un seul endroit dans le CRM
+  pour lire ce qu'un bilan a dit d'une personne. Les listes de choix
+  s'agrandissent toutes seules — l'écriture passe en typecast.
+*/
+const NOM_PROFIL_ANTI_AGE: Record<string, string> = {
+  fermete_ovale: 'Fermeté & Ovale',
+  rides_densite: 'Rides & Densité',
+  hydratation_qualite: 'Hydratation & Qualité',
+  global: 'Anti-Âge Global',
+};
+
+const NOM_TERRAIN_ANTI_AGE: Record<string, string> = {
+  hydratation: 'Hydratation',
+  sensible: 'Sensible / Réactif',
+  dense: 'Dense / Épaissi',
+  fin: 'Fin / Fragilisé',
+};
+
 /** Champs pièces jointes de la table Clients. */
 const CHAMP_CONTRAT = 'fldxJHrZBuFN75wMr';
 /*
@@ -574,8 +594,11 @@ Deno.serve(async (req: Request) => {
     if (!b?.cliente_id) return null;
 
     const champs: Record<string, unknown> = { 'Date bilan': b.date_bilan };
-    if (b.profil_dominant) champs['Profil Empreinte'] = NOM_PROFIL[b.profil_dominant];
-    if (b.terrain_dominant) champs['Terrain Empreinte'] = NOM_TERRAIN[b.terrain_dominant];
+    const antiAge = b.famille === 'anti_age';
+    const profils = antiAge ? NOM_PROFIL_ANTI_AGE : NOM_PROFIL;
+    const terrains = antiAge ? NOM_TERRAIN_ANTI_AGE : NOM_TERRAIN;
+    if (b.profil_dominant) champs['Profil Empreinte'] = profils[b.profil_dominant] ?? b.profil_dominant;
+    if (b.terrain_dominant) champs['Terrain Empreinte'] = terrains[b.terrain_dominant] ?? b.terrain_dominant;
 
     // Le bilan seul n'est facturé que si la cliente ne démarre pas.
     if (b.facturation === 'facture') champs['Bilan seul'] = Number(b.montant_facture) || 0;
@@ -621,7 +644,8 @@ Deno.serve(async (req: Request) => {
       Électrostimulation: Boolean(p.electro),
       'Mode de règlement': LIBELLE_MODE[p.mode_reglement] ?? p.mode_reglement,
       'Statut programme': LIBELLE_STATUT[p.statut] ?? p.statut,
-      Soins: 'Perte de poids',
+      /* Ce que la cure soigne : la perte de poids, ou l'anti-âge — l'Advance Lift ne se mélange pas aux autres. */
+      Soins: utiles.some((l) => l.technologie === 'advance_lift') ? 'Anti-âge' : 'Perte de poids',
     };
 
     if (p.date_validation) champs['Date validation'] = p.date_validation;

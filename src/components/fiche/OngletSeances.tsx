@@ -143,7 +143,12 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
         clienteId,
         centreId,
         technologie,
-        jeuCode: choix.jeu?.code ?? null,
+        /*
+          Pas de Mission Déclic sur l'Advance Lift : c'est une règle de la
+          perte de poids — un exercice par venue pour ancrer le changement.
+          L'anti-âge se suit au commentaire.
+        */
+        jeuCode: technologie === 'advance_lift' ? null : (choix.jeu?.code ?? null),
       });
       setEnCours(s);
     } catch {
@@ -186,6 +191,8 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
   }
 
   const restantes = actif.suivi.filter((s) => s.seances_restantes > 0);
+  /* Une cure d'Advance Lift : ni Mission Déclic, ni pesée — un suivi au commentaire. */
+  const cureAntiAge = actif.suivi.length > 0 && actif.suivi.every((s) => s.technologie === 'advance_lift');
 
   return (
     <div className="space-y-5">
@@ -300,7 +307,7 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
             </div>
           )}
 
-          {choix.jeu && restantes.length > 0 && (
+          {!cureAntiAge && choix.jeu && restantes.length > 0 && (
             <div className="border-t border-ardoise-100 bg-marine-50/60 px-5 py-3">
               <p className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest text-marine-700">
                 <Dices className="h-3.5 w-3.5" />
@@ -317,7 +324,7 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
         </section>
       )}
 
-      <CourbePoids seances={seances.filter((s) => s.cloturee)} />
+      {!cureAntiAge && <CourbePoids seances={seances.filter((s) => s.cloturee)} />}
 
       {/* Historique ------------------------------------------------------ */}
       <section className="carte">
@@ -437,7 +444,13 @@ function SeanceEnCours({
   const [jeuFait, setJeuFait] = useState(false);
   const [reponseJeu, setReponseJeu] = useState('');
 
-  const bloque = Boolean(jeu) && !jeuFait;
+  /*
+    L'Advance Lift se clôture sur un commentaire : pas de Mission Déclic à
+    valider, pas de poids à relever. Le suivi, c'est ce que la thérapeute
+    observe sur la peau d'une séance à l'autre.
+  */
+  const antiAge = seance.technologie === 'advance_lift';
+  const bloque = !antiAge && Boolean(jeu) && !jeuFait;
 
   return (
     <section className="carte overflow-hidden ring-2 ring-marine-500">
@@ -455,7 +468,7 @@ function SeanceEnCours({
       </div>
 
       {/* La Mission Déclic du jour, imposée */}
-      {jeu ? (
+      {antiAge ? null : jeu ? (
         <div className="border-b border-ardoise-100 bg-marine-50/60 p-5">
           <p className="text-2xs font-semibold uppercase tracking-widest text-marine-700">
             Mission Déclic obligatoire de la séance · {LIBELLES_PHASE[phase]}
@@ -544,32 +557,48 @@ function SeanceEnCours({
       )}
 
       {/* Relevés de la séance */}
-      <div className="grid gap-4 p-5 sm:grid-cols-3">
-        <div>
-          <label htmlFor="poids" className="etiquette">
-            Poids (kg)
-          </label>
-          <input
-            id="poids"
-            type="number"
-            step="0.1"
-            value={poids}
-            onChange={(e) => setPoids(e.target.value)}
-            className="champ"
-          />
-        </div>
-        <div className="sm:col-span-2">
+      {antiAge ? (
+        <div className="p-5">
           <label htmlFor="comm" className="etiquette">
-            Commentaire
+            Ce que vous observez
           </label>
-          <input
+          <textarea
             id="comm"
+            rows={3}
             value={commentaire}
             onChange={(e) => setCommentaire(e.target.value)}
-            className="champ"
+            className="champ resize-y"
+            placeholder="L’état de la peau, la zone travaillée, ce qui a changé depuis la dernière fois…"
           />
         </div>
-      </div>
+      ) : (
+        <div className="grid gap-4 p-5 sm:grid-cols-3">
+          <div>
+            <label htmlFor="poids" className="etiquette">
+              Poids (kg)
+            </label>
+            <input
+              id="poids"
+              type="number"
+              step="0.1"
+              value={poids}
+              onChange={(e) => setPoids(e.target.value)}
+              className="champ"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label htmlFor="comm" className="etiquette">
+              Commentaire
+            </label>
+            <input
+              id="comm"
+              value={commentaire}
+              onChange={(e) => setCommentaire(e.target.value)}
+              className="champ"
+            />
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ardoise-100 px-5 py-4">
         <label className="flex cursor-pointer items-center gap-2 text-sm text-ardoise-600">
@@ -592,11 +621,11 @@ function SeanceEnCours({
           <button
             onClick={() =>
               onCloturer({
-                poids: poids ? Number(poids) : null,
+                poids: !antiAge && poids ? Number(poids) : null,
                 commentaire,
                 photo_prise: photo,
-                jeu_valide: jeuFait,
-                jeu_reponse: reponseJeu ? { reponse: reponseJeu } : {},
+                jeu_valide: antiAge ? false : jeuFait,
+                jeu_reponse: !antiAge && reponseJeu ? { reponse: reponseJeu } : {},
               })
             }
             disabled={bloque}
