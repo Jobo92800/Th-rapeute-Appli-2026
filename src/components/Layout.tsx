@@ -16,11 +16,18 @@ import { useQuery } from '@tanstack/react-query';
 import { messagesEnAttente } from '../services/messages';
 import { TOUS_LES_CENTRES, useSession } from '../lib/session';
 import MonMotDePasse from './MonMotDePasse';
+import { CENTRE_ANTI_AGE } from '../domain/antiAge';
 
 const LIENS = [
   { to: '/', libelle: 'Accueil', icone: LayoutDashboard, exact: true, direction: false },
   { to: '/clientes', libelle: 'Clientes', icone: Users, exact: false, direction: false },
   { to: '/bilan', libelle: 'Nouveau bilan', icone: Sparkles, exact: false, direction: false },
+  /*
+    Le Bio-Portrait Anti-Âge : au Grau-du-Roi seulement, le seul centre qui
+    tient l'Advance Lift. Le lien n'apparaît que là — et sur « Tous les
+    centres », où la page demandera de choisir.
+  */
+  { to: '/bilan-anti-age', libelle: 'Bilan anti-âge', icone: Sparkles, exact: false, direction: false, centre: CENTRE_ANTI_AGE },
   { to: '/stock', libelle: 'Stock', icone: Package, exact: false, direction: true },
   { to: '/messages', libelle: 'Messages', icone: MessageSquare, exact: false, direction: false },
   // Les chiffres ne concernent pas les thérapeutes : le lien ne leur est
@@ -52,7 +59,11 @@ export default function Layout({ children }: { children: ReactNode }) {
   });
   const aLire =
     (enAttente?.annonces_non_lues ?? 0) + (enAttente?.signalements_a_traiter ?? 0);
-  const liens = LIENS.filter((l) => !l.direction || role === 'direction');
+  const liens = LIENS.filter(
+    (l) =>
+      (!l.direction || role === 'direction') &&
+      (!('centre' in l) || tousCentres || centre?.id === l.centre),
+  );
 
   return (
     <div className="flex min-h-screen">

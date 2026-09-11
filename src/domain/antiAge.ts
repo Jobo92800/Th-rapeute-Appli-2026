@@ -13,6 +13,9 @@
   Spécification de Jonathan du 11 septembre 2026.
 */
 
+/** Le seul centre qui tient l'Advance Lift : le bilan ne se propose que là. */
+export const CENTRE_ANTI_AGE = 'grau-du-roi';
+
 export type AxeAntiAge = 'fermete' | 'rides' | 'hydratation' | 'densite';
 export type ProfilAntiAge = 'fermete_ovale' | 'rides_densite' | 'hydratation_qualite' | 'global';
 export type TerrainAntiAge = 'hydratation' | 'sensible' | 'dense' | 'fin';

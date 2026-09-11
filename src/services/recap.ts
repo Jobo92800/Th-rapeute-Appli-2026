@@ -10,7 +10,7 @@
 
 import { supabase } from '../lib/supabase';
 import type { Bareme, BioPortrait, MesureInbody } from '../domain/bioportrait';
-import { construireRecap, type Proposition } from '../domain/recapitulatif';
+import { construireRecap, type DonneesRecap, type Proposition } from '../domain/recapitulatif';
 import { bioPortraitEnBase64, recapEnBase64 } from './recapPdf';
 import type { Centre } from '../types/db';
 
@@ -111,6 +111,31 @@ export async function rangerBioPortrait(args: {
   const { error } = await supabase.rpc('ranger_bioportrait', {
     p_bilan_id: args.bilanId,
     p_pdf: bioPortraitEnBase64(donnees),
+  });
+  if (error) throw error;
+}
+
+/**
+ * Les deux mêmes gestes, pour un document déjà assemblé.
+ *
+ * Le Bio-Portrait Anti-Âge assemble ses données autrement (pas d'InBody,
+ * pas de pourcentages, ses propres textes) mais dépose les mêmes PDF aux
+ * mêmes endroits : la fiche Airtable, champ « BioPortrait » pour le
+ * document gardé, « Récapitulatif BioPortrait » pour celui qui part par
+ * mail.
+ */
+export async function rangerDocumentBioPortrait(bilanId: string, donnees: DonneesRecap): Promise<void> {
+  const { error } = await supabase.rpc('ranger_bioportrait', {
+    p_bilan_id: bilanId,
+    p_pdf: bioPortraitEnBase64(donnees),
+  });
+  if (error) throw error;
+}
+
+export async function envoyerDocumentRecap(bilanId: string, donnees: DonneesRecap): Promise<void> {
+  const { error } = await supabase.rpc('demander_recap', {
+    p_bilan_id: bilanId,
+    p_pdf: recapEnBase64(donnees),
   });
   if (error) throw error;
 }

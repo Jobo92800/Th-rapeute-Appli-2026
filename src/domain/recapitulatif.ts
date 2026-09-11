@@ -11,6 +11,7 @@
 */
 
 import { SEUIL_PRESENCE, type Axe, type Bareme, type BioPortrait, type MesureInbody } from './bioportrait';
+import type { BaremeAntiAge, BioPortraitAntiAge } from './antiAge';
 import { LIBELLES_TECHNOLOGIE, formaterEuros } from './tarification';
 import type { ModeReglement, Technologie } from '../types/db';
 
@@ -34,10 +35,51 @@ export interface Proposition {
 export interface AxeRecap {
   nom: string;
   signature: string;
-  pourcentage: number;
+  /** Absent pour l'anti-âge : ses scores sont des points, pas des parts d'un tout. */
+  pourcentage: number | null;
   texte: string;
   impacts: string[];
 }
+
+/**
+ * Les mots du document, selon le bilan dont il est né. Le BioPortrait de la
+ * perte de poids parle de profil comportemental et de terrain
+ * physiologique ; le Bio-Portrait Anti-Âge de profil anti-âge et de terrain
+ * cutané. La page est la même, les intitulés non.
+ */
+export interface LibellesRecap {
+  titreDocument: string;
+  nomDuBilan: string;
+  titreProfil: string;
+  etiquetteProfil: string;
+  titreTerrain: string;
+  etiquetteTerrain: string;
+  impacts: string;
+  /** Une mention à imprimer en bas de la page du diagnostic, s'il y en a une. */
+  mention?: string;
+  /** « Vos priorités : Fermeté · Densité », s'il y en a. */
+  priorites?: string[];
+}
+
+export const LIBELLES_PERTE_DE_POIDS: LibellesRecap = {
+  titreDocument: 'Diagnostic BioPortrait',
+  nomDuBilan: 'BioPortrait',
+  titreProfil: 'Votre profil comportemental',
+  etiquetteProfil: 'Qui vous êtes aujourd’hui',
+  titreTerrain: 'Votre terrain physiologique',
+  etiquetteTerrain: 'Ce que révèle votre corps',
+  impacts: 'Ce que cela change chez vous',
+};
+
+export const LIBELLES_ANTI_AGE: LibellesRecap = {
+  titreDocument: 'Bio-Portrait Anti-Âge',
+  nomDuBilan: 'Bio-Portrait Anti-Âge',
+  titreProfil: 'Votre profil anti-âge',
+  etiquetteProfil: 'Ce dont votre peau a besoin',
+  titreTerrain: 'Votre terrain cutané',
+  etiquetteTerrain: 'Comment votre peau réagit',
+  impacts: 'Vos besoins',
+};
 
 export interface DonneesRecap {
   civilite: string;
@@ -76,6 +118,7 @@ export interface DonneesRecap {
   reglement: string;
   echeances: Array<{ rang: number; montant: number }>;
   inclus: Array<{ titre: string; detail: string }>;
+  libelles: LibellesRecap;
 }
 
 /**
@@ -185,6 +228,85 @@ export function construireRecap(args: {
       titre: sansBalises(i.t),
       detail: sansBalises(i.d),
     })),
+    libelles: LIBELLES_PERTE_DE_POIDS,
+  };
+}
+
+/**
+ * Le même document, pour un Bio-Portrait Anti-Âge.
+ *
+ * Profil et terrain viennent du barème anti-âge, avec les textes cliente du
+ * document ; les « impacts » sont les besoins ; pas de pourcentage, pas
+ * d'InBody, pas d'axes secondaires. La cure est celle que la thérapeute a
+ * composée — de l'Advance Lift, autant de séances qu'elle a dit.
+ */
+export function construireRecapAntiAge(args: {
+  bareme: BaremeAntiAge;
+  resultat: BioPortraitAntiAge;
+  proposition: Proposition;
+  cliente: { civilite: string; prenom: string; nom: string };
+  centre: DonneesRecap['centre'];
+  dateBilan: string;
+}): DonneesRecap {
+  const { bareme, resultat: r, proposition: p } = args;
+  const profil = bareme.PROFILS[r.profil];
+
+  /*
+    Un terrain mixte se présente comme un seul : les noms réunis, les textes
+    à la suite, les besoins mis ensemble sans doublon. Le document ne fait
+    pas deux cartes pour une égalité.
+  */
+  const terrains = r.terrains.map((t) => bareme.TERRAINS[t]);
+  const terrain: AxeRecap =
+    terrains.length === 0
+      ? {
+          nom: 'Aucun terrain particulier',
+          signature: 'Ni sensibilité, ni tiraillement, ni fragilité, ni épaississement signalés.',
+          pourcentage: null,
+          texte: 'Vos réponses ne signalent aucune réactivité particulière de la peau.',
+          impacts: [],
+        }
+      : {
+          nom: terrains.map((t) => t.nom).join(' / '),
+          signature: terrains.map((t) => t.caracteristiques).join(' '),
+          pourcentage: null,
+          texte: terrains.map((t) => t.texte).join(' '),
+          impacts: [...new Set(terrains.flatMap((t) => t.besoins))],
+        };
+
+  const soins = p.lignes
+    .filter((l) => l.seances > 0)
+    .map((l) => ({ libelle: LIBELLES_TECHNOLOGIE[l.technologie] ?? l.technologie, seances: l.seances }));
+
+  return {
+    civilite: args.cliente.civilite,
+    prenom: args.cliente.prenom,
+    nom: args.cliente.nom,
+    dateBilan: args.dateBilan,
+    centre: args.centre,
+    profil: {
+      nom: profil.nom,
+      signature: profil.signes,
+      pourcentage: null,
+      texte: profil.texte,
+      impacts: profil.besoins,
+    },
+    terrain,
+    aussiPresents: [],
+    inbody: [],
+    soins,
+    options: [],
+    totalSeances: soins.reduce((n, s) => n + s.seances, 0),
+    montantTotal: Number(p.montantTotal),
+    montantRegle: Number(p.montantTotal) + Number(p.frais),
+    reglement: LIBELLE_REGLEMENT[p.modeReglement] ?? 'À définir ensemble',
+    echeances: p.echeances.filter((e) => e.type !== 'bilan'),
+    inclus: [],
+    libelles: {
+      ...LIBELLES_ANTI_AGE,
+      mention: bareme.MENTION,
+      priorites: r.priorites.map((a) => bareme.AXES[a]),
+    },
   };
 }
 

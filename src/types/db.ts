@@ -148,6 +148,11 @@ export interface Bilan {
   therapeute_id: string | null;
   date_bilan: string;
   statut: StatutBilan;
+  /**
+   * De quel questionnaire le bilan est né. `bareme_version` se lit dans la
+   * table de sa famille : `bareme_empreinte` ou `bareme_anti_age`.
+   */
+  famille: 'perte_de_poids' | 'anti_age';
   bareme_version: number;
   reponses: Record<string, number>;
   curseur: number;

@@ -139,6 +139,7 @@ function carteAxe(
   etiquette: string,
   axe: DonneesRecap['profil'],
   y: number,
+  etiquetteImpacts: string,
 ): number {
   const hautDeCarte = y;
 
@@ -154,20 +155,25 @@ function carteAxe(
   couleur(doc, GRIS);
   ecrire(doc, axe.signature, MARGE + 5, y + 20.5);
 
-  police(doc, 20, 'bold');
-  couleur(doc, TEAL_SOMBRE);
-  ecrire(doc, `${axe.pourcentage} %`, A4_W - MARGE - 5, y + 16, { align: 'right' });
+  /* Pas de pourcentage pour l'anti-âge : ses scores sont des points, pas des parts. */
+  if (axe.pourcentage != null) {
+    police(doc, 20, 'bold');
+    couleur(doc, TEAL_SOMBRE);
+    ecrire(doc, `${axe.pourcentage} %`, A4_W - MARGE - 5, y + 16, { align: 'right' });
+  }
 
   let curseur = y + 28;
   police(doc, 9, 'normal');
   couleur(doc, ENCRE);
   curseur = paragraphe(doc, axe.texte, MARGE + 5, curseur, LARGEUR - 10, 4.8);
 
-  curseur += 2;
-  police(doc, 7, 'bold');
-  couleur(doc, GRIS);
-  ecrire(doc, 'CE QUE CELA CHANGE CHEZ VOUS', MARGE + 5, curseur);
-  curseur += 5;
+  if (axe.impacts.length > 0) {
+    curseur += 2;
+    police(doc, 7, 'bold');
+    couleur(doc, GRIS);
+    ecrire(doc, etiquetteImpacts.toUpperCase(), MARGE + 5, curseur);
+    curseur += 5;
+  }
 
   police(doc, 9, 'normal');
   couleur(doc, ENCRE);
@@ -220,7 +226,8 @@ function ligneTableau(
   reçus tous les deux le verrait.
 */
 function pageBioPortrait(doc: Doc, d: DonneesRecap): void {
-  bandeau(doc, 'Diagnostic BioPortrait', d.dateBilan);
+  const l = d.libelles;
+  bandeau(doc, l.titreDocument, d.dateBilan);
 
   let y = 44;
   police(doc, 22, 'normal');
@@ -228,7 +235,7 @@ function pageBioPortrait(doc: Doc, d: DonneesRecap): void {
   ecrire(doc, 'Votre ', MARGE, y);
   const largeurVotre = doc.getTextWidth('Votre ');
   police(doc, 22, 'bold');
-  ecrire(doc, 'BioPortrait', MARGE + largeurVotre, y);
+  ecrire(doc, l.nomDuBilan, MARGE + largeurVotre, y);
 
   y += 8;
   police(doc, 10, 'normal');
@@ -243,11 +250,17 @@ function pageBioPortrait(doc: Doc, d: DonneesRecap): void {
   ecrire(doc, `${d.profil.nom}  ×  ${d.terrain.nom}`, A4_W / 2, y + 1.5, { align: 'center' });
 
   y += 16;
-  y = sousTitre(doc, 'Votre profil comportemental', y);
-  y = carteAxe(doc, 'Qui vous êtes aujourd’hui', d.profil, y);
+  if (l.priorites && l.priorites.length > 0) {
+    police(doc, 9, 'normal');
+    couleur(doc, GRIS);
+    ecrire(doc, `Vos priorités : ${l.priorites.join('  ·  ')}`, A4_W / 2, y - 6, { align: 'center' });
+    y += 4;
+  }
+  y = sousTitre(doc, l.titreProfil, y);
+  y = carteAxe(doc, l.etiquetteProfil, d.profil, y, l.impacts);
 
-  y = sousTitre(doc, 'Votre terrain physiologique', y);
-  y = carteAxe(doc, 'Ce que révèle votre corps', d.terrain, y);
+  y = sousTitre(doc, l.titreTerrain, y);
+  y = carteAxe(doc, l.etiquetteTerrain, d.terrain, y, l.impacts);
 
   if (d.aussiPresents.length > 0 && y < BAS - 20) {
     y = sousTitre(doc, 'Aussi présent chez vous', y);
@@ -278,6 +291,13 @@ function pageBioPortrait(doc: Doc, d: DonneesRecap): void {
     }
   }
 
+  /* La mention du document anti-âge : pas un diagnostic médical. */
+  if (l.mention && y < BAS - 10) {
+    police(doc, 7.5, 'italic');
+    couleur(doc, GRIS);
+    paragraphe(doc, l.mention, MARGE, Math.max(y + 4, BAS - 12), LARGEUR, 3.8);
+  }
+
   pied(doc, d, 1);
 }
 
@@ -290,6 +310,7 @@ export function genererRecapPdf(d: DonneesRecap): jsPDF {
   // Page 2 — ce que nous vous proposons
   // =========================================================================
 
+  const l2 = d.libelles;
   doc.addPage();
   bandeau(doc, 'Votre programme sur mesure', d.dateBilan);
 
@@ -306,7 +327,7 @@ export function genererRecapPdf(d: DonneesRecap): jsPDF {
   couleur(doc, GRIS);
   y = paragraphe(
     doc,
-    'Construite à partir de votre BioPortrait : chaque soin répond à ce que votre bilan a montré.',
+    `Construite à partir de votre ${l2.nomDuBilan} : chaque soin répond à ce que votre bilan a montré.`,
     MARGE,
     y,
     LARGEUR,
@@ -357,7 +378,7 @@ export function genererRecapPdf(d: DonneesRecap): jsPDF {
 
   y += (d.echeances.length > 1 ? 40 : 28) + 10;
 
-  y = sousTitre(doc, 'Et tout ce qui est compris', y);
+  if (d.inclus.length > 0) y = sousTitre(doc, 'Et tout ce qui est compris', y);
   for (const i of d.inclus) {
     if (y > BAS - 12) break;
     police(doc, 9.5, 'bold');

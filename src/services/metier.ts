@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import type { Bareme } from '../domain/bioportrait';
+import type { BaremeAntiAge } from '../domain/antiAge';
 import type {
   Bilan,
   Consentement,
@@ -83,6 +84,31 @@ export async function lireBareme(version: number): Promise<Bareme> {
   if (error) throw error;
   if (!data) throw new Error(`Le barème version ${version} est introuvable.`);
   return data.contenu as Bareme;
+}
+
+/** Le Bio-Portrait Anti-Âge actif — le questionnaire du Grau-du-Roi. */
+export async function lireBaremeAntiAgeActif(): Promise<{ version: number; bareme: BaremeAntiAge }> {
+  const { data, error } = await supabase
+    .from('bareme_anti_age')
+    .select('version, contenu')
+    .eq('actif', true)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error('Aucun barème anti-âge actif : la migration 056 a-t-elle été exécutée ?');
+  return { version: data.version, bareme: data.contenu as BaremeAntiAge };
+}
+
+export async function lireBaremeAntiAge(version: number): Promise<BaremeAntiAge> {
+  const { data, error } = await supabase
+    .from('bareme_anti_age')
+    .select('contenu')
+    .eq('version', version)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error(`Le barème anti-âge version ${version} est introuvable.`);
+  return data.contenu as BaremeAntiAge;
 }
 
 // ---------------------------------------------------------------------------
