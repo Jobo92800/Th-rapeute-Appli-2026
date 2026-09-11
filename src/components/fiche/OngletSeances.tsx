@@ -190,7 +190,22 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
     );
   }
 
-  const restantes = actif.suivi.filter((s) => s.seances_restantes > 0);
+  /*
+    Une cure reprise du CRM ne sait pas toujours combien de séances elle
+    comptait : Airtable ne le disait pas, l'ancienne application parfois.
+    Elle doit pourtant continuer — la cliente vient, on démarre sa séance.
+    On propose donc les soins de la perte de poids quoi qu'il en soit :
+    avec le compteur quand la ligne existe, sans compteur sinon. Un « Toutes
+    les séances ont été réalisées » sur une cure dont on ignore la taille
+    serait un mensonge qui bloque le comptoir.
+  */
+  const cureReprise = actif.programme.origine === 'import_v1';
+  const restantes: Array<{ technologie: Technologie; seances_restantes: number | null }> = cureReprise
+    ? (['luxo', 'relax', 'ishape', 'presso'] as Technologie[]).map((t) => {
+        const suivi = actif.suivi.find((s) => s.technologie === t);
+        return { technologie: t, seances_restantes: suivi ? suivi.seances_restantes : null };
+      })
+    : actif.suivi.filter((s) => s.seances_restantes > 0);
   /* Une cure d'Advance Lift : ni Mission Déclic, ni pesée — un suivi au commentaire. */
   const cureAntiAge = actif.suivi.length > 0 && actif.suivi.every((s) => s.technologie === 'advance_lift');
 
@@ -278,7 +293,11 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
                     {LIBELLES_TECHNOLOGIE[s.technologie]}
                   </span>
                   <span className="chiffres ml-1 rounded bg-ardoise-100 px-1.5 py-0.5 text-2xs font-semibold text-ardoise-600">
-                    {s.seances_restantes} restantes
+                    {s.seances_restantes == null
+                      ? 'reprise du CRM'
+                      : s.seances_restantes > 0
+                        ? `${s.seances_restantes} restantes`
+                        : 'au-delà du prévu'}
                   </span>
                 </button>
               ))}

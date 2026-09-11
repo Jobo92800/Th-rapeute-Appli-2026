@@ -5,7 +5,7 @@ export interface RapportHistorique {
   firebase: { clientes: number; pesees: number; mensurations: number; fiches_de_notes: number; exceptions: number };
   v2: { fiches_avec_cure: number };
   rapprochement: { par_telephone: number; par_nom: number; ambigues: number; sans_fiche_ou_sans_cure: number };
-  a_reprendre: { clientes_reliees: number; seances: number; mensurations: number; notes: number; exceptions: number };
+  a_reprendre: { clientes_reliees: number; seances: number; mensurations: number; notes: number; exceptions: number; cures_avec_nombre_de_seances: number };
   laisse_de_cote: {
     pesees_lues: number;
     pesees_sans_fiche: number;
@@ -14,7 +14,7 @@ export interface RapportHistorique {
     mensurations_sans_fiche: number;
   };
   ambigues: string[];
-  ecrit: { seances: number; mensurations: number; notes: number; exceptions: number };
+  ecrit: { seances: number; mensurations: number; notes: number; exceptions: number; cures_avec_nombre_de_seances: number };
   erreurs: string[];
 }
 

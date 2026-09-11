@@ -232,12 +232,13 @@ Deno.serve(async (req) => {
 
     // --- Firebase -----------------------------------------------------------
     const jeton = await jetonFirebase(cle);
-    const [clientsV1, pesees, mensurationsV1, notesV1, exceptionsV1] = await Promise.all([
+    const [clientsV1, pesees, mensurationsV1, notesV1, exceptionsV1, objectifsV1] = await Promise.all([
       lireCollection(cle.project_id, jeton, 'clients'),
       lireCollection(cle.project_id, jeton, 'measurements'),
       lireCollection(cle.project_id, jeton, 'mensurations'),
       lireCollection(cle.project_id, jeton, 'client-notes'),
       lireCollection(cle.project_id, jeton, 'client-exceptions'),
+      lireCollection(cle.project_id, jeton, 'objectives'),
     ]);
 
     // --- Relier chaque cliente V1 à une fiche V2 ----------------------------
@@ -367,6 +368,38 @@ Deno.serve(async (req) => {
       });
     }
 
+    // --- Le nombre de séances prévues, pour que la cure puisse continuer ----
+    /*
+      Airtable ne connaissait pas le nombre de séances d'une cure ; l'ancienne
+      application, si — `objectives.sessionCount`, un document par cliente,
+      pour la cure en cours à l'époque. On en fait la ligne de luxothérapie
+      de sa DERNIÈRE cure V2, avec au moins autant de séances prévues que de
+      pesées qu'on y pose : sans ça, la fiche annoncerait « toutes les
+      séances réalisées » sur une cure dont la cliente n'a fait que la
+      moitié. L'écran sait de toute façon continuer une cure reprise sans
+      cette ligne ; elle n'apporte que le compteur.
+    */
+    const peseesParCure = new Map<string, number>();
+    for (const se of seances) {
+      const k = String(se.programme_id);
+      peseesParCure.set(k, (peseesParCure.get(k) ?? 0) + 1);
+    }
+    const lignes: Array<Record<string, unknown>> = [];
+    for (const o of objectifsV1) {
+      const fiche = lien.get(o.id);
+      if (!fiche) continue;
+      const prevu = Number(o.sessionCount);
+      if (!Number.isFinite(prevu) || prevu <= 0) continue;
+      const cures = curesParCliente.get(fiche.id)!;
+      const derniere = cures[cures.length - 1];
+      lignes.push({
+        programme_id: derniere.id,
+        technologie: 'luxo',
+        seances_prevues: Math.max(prevu, peseesParCure.get(derniere.id) ?? 0),
+        prix_unitaire: 0,
+      });
+    }
+
     // --- Les exceptions cure : seulement si la fiche n'en a pas ------------
     const exceptions: Array<{ id: string; exception_cure: string }> = [];
     for (const d of exceptionsV1) {
@@ -394,10 +427,11 @@ Deno.serve(async (req) => {
         mensurations: mensurations.length,
         notes: notes.length,
         exceptions: exceptions.length,
+        cures_avec_nombre_de_seances: lignes.length,
       },
       laisse_de_cote: { ...stats, mensurations_sans_fiche: mensurationsSansFiche },
       ambigues,
-      ecrit: { seances: 0, mensurations: 0, notes: 0, exceptions: 0 },
+      ecrit: { seances: 0, mensurations: 0, notes: 0, exceptions: 0, cures_avec_nombre_de_seances: 0 },
       erreurs: [] as string[],
     };
 
@@ -421,6 +455,15 @@ Deno.serve(async (req) => {
       const { error } = await db.from('notes_cliente').upsert(lot, { onConflict: 'v1_id', ignoreDuplicates: true });
       if (error) rapport.erreurs.push(`Notes ${i + 1}–${i + lot.length} : ${error.message}`);
       else rapport.ecrit.notes += lot.length;
+    }
+    /* Une ligne déjà là — cure composée à la main depuis — ne se touche pas. */
+    for (let i = 0; i < lignes.length; i += 500) {
+      const lot = lignes.slice(i, i + 500);
+      const { error } = await db
+        .from('programme_lignes')
+        .upsert(lot, { onConflict: 'programme_id,technologie', ignoreDuplicates: true });
+      if (error) rapport.erreurs.push(`Séances prévues ${i + 1}–${i + lot.length} : ${error.message}`);
+      else rapport.ecrit.cures_avec_nombre_de_seances += lot.length;
     }
     for (const e of exceptions) {
       const { error } = await db.from('clientes').update({ exception_cure: e.exception_cure }).eq('id', e.id);

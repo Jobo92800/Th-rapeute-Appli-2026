@@ -66,6 +66,7 @@ export default function ImportFirebase() {
           </li>
           <li><strong>Les mensurations</strong>, les onze mesures, datées.</li>
           <li><strong>Les notes</strong>, signées « Ancienne application », et <strong>l’exception cure</strong> quand la fiche n’en a pas déjà une.</li>
+          <li><strong>Le nombre de séances de la cure</strong>, quand l’ancienne application le connaissait : c’est lui qui fait le compteur de séances restantes.</li>
         </ul>
         <h2 className="mt-4 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">Ce qui reste de côté</h2>
         <ul className="mt-2 list-disc space-y-1 pl-5">
@@ -100,6 +101,7 @@ export default function ImportFirebase() {
             <Tuile libelle={fait ? 'Mensurations écrites' : 'Mensurations'} valeur={fait ? rapport.ecrit.mensurations : rapport.a_reprendre.mensurations} />
             <Tuile libelle={fait ? 'Notes écrites' : 'Notes'} valeur={fait ? rapport.ecrit.notes : rapport.a_reprendre.notes} />
             <Tuile libelle={fait ? 'Exceptions cure écrites' : 'Exceptions cure'} valeur={fait ? rapport.ecrit.exceptions : rapport.a_reprendre.exceptions} />
+            <Tuile libelle="Cures avec nombre de séances" valeur={fait ? rapport.ecrit.cures_avec_nombre_de_seances : rapport.a_reprendre.cures_avec_nombre_de_seances} detail="le compteur de séances restantes, quand l’ancienne appli le connaissait" />
             <Tuile libelle="Pesées sans fiche ici" valeur={rapport.laisse_de_cote.pesees_sans_fiche} detail="clientes sans cure dans la V2, ou introuvables" />
             <Tuile libelle="Clientes ambiguës" valeur={rapport.rapprochement.ambigues} detail="deux fiches possibles : laissées de côté" />
           </div>
