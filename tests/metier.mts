@@ -269,6 +269,20 @@ export function controlerMetier() {
     !/[\u202f\u2009\u00a0\u2007]/.test(contrat.totalAmount),
     JSON.stringify(contrat.totalAmount),
   );
+  /*
+    Le soin visage du Grau-du-Roi a son propre consentement — ultrasons et
+    radiofréquence —, repris au mot près du document « Soin visage ». Une
+    cure d'Advance Lift le fait signer, et lui seul.
+  */
+  const contratAntiAge = construireContrat({
+    cliente, centre,
+    programme: { ...programme, mode_reglement: 'centre_4x', frais_financement: 0 } as unknown as Programme,
+    lignes: [{ technologie: 'advance_lift', seances_prevues: 10, seances_offertes: 0, prix_unitaire: 85 }] as unknown as LigneProgramme[],
+    echeances,
+  });
+  egal('une cure d’Advance Lift fait signer le consentement Soin visage, et lui seul', contratAntiAge.activeServiceIds, ['advance-lift']);
+  verifie('et le liste à l’article 1', contratAntiAge.careItems.some((c) => c.label === 'Advance Lift' && c.sessions === 10 && c.checked));
+
   verifie(
     'la Relaxation ne fait pas signer un consentement de plus',
     contrat.activeServiceIds.filter((s) => s === 'luxo-pdp').length === 1,

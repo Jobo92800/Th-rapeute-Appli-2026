@@ -300,6 +300,63 @@ export function generateMesojetVisageConsent(ctx: ConsentContext): string {
   return doc.output('datauristring').split(',')[1];
 }
 
+// ─── SOIN VISAGE (Advance Lift / Duo Lift) ────────────────────────────────────
+
+/**
+ * Le consentement du Bio-Portrait Anti-Âge, au Grau-du-Roi : ultrasons et
+ * radiofréquence (AdvanceLift® et DuoLift®). Le texte est celui du document
+ * « GRAU-DU-ROI - Soin visage », repris au mot près — c'est un engagement
+ * signé, pas une plaquette.
+ */
+export function generateSoinVisageConsent(ctx: ConsentContext): string {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+  let y = header(doc, 'Consentement mutuel - Soin visage', ctx.clientName, ctx.date);
+
+  y = para(doc,
+    'Certifie avoir été informé(e) concernant les soins par Ultrasons et Radiofréquence (AdvanceLift® et DuoLift®) auxquels je vais me soumettre dans le but d\'un traitement du visage. Les ultrasons permettent la réactivation et l\'amélioration de la microcirculation, le drainage des toxines et favorisent la production de fibroblastes. La radiofréquence permet la stimulation de la sécrétion de collagène, un raffermissement et un lissage de la peau.',
+    y);
+
+  y = para(doc,
+    'Il est recommandé de réaliser une cure de base de 6 à 8 séances, 1 à 2 fois par semaine afin de garantir les meilleurs résultats.',
+    y);
+
+  y = para(doc,
+    'Comme pour tout soin du visage, une bonne hygiène de vie et un entretien quotidien de la peau sont vivement recommandés afin d\'optimiser les résultats.\nPour une réussite optimale de la cure, je m\'engage à respecter les recommandations et conseils des thérapeutes, ainsi qu\'à respecter le rythme des rendez-vous fixés pour les séances.',
+    y);
+
+  y = para(doc,
+    'Je suis informé(e) que parfois les résultats sont inférieurs à ceux attendus et cela ne me donne droit à la possibilité d\'être remboursé(e) du montant crédité.',
+    y) + 2;
+
+  y = sectionTitle(doc, 'Les contre-indications aux soins du visage :', y);
+  y = para(doc, 'Il est interdit d\'effectuer les soins du visage en cas de :', y);
+  y = bullets(doc, [
+    'Douleur, blessure, infection, maladie cutanée sur la zone de traitement',
+    'Epilepsie',
+    'Pacemaker',
+    'Plaques métalliques, fils d\'or, prothèses sur la zone de traitement',
+    'Présence ou suite de cancer',
+    'Insuffisance cardiaque et veineuse, tension artérielle élevée',
+    'Problèmes thyroïdiens pour les soins du cou',
+    'Couperose, hypervascularisation pour les traitements à la radiofréquence',
+    'Après toute intervention chirurgicale de moins de 6 mois',
+    'Médicaments anti-inflammatoires',
+  ], y);
+
+  y = para(doc, 'Selon les cas, un certificat médical écrit pourra être demandé par le centre de soins.', y) + 2;
+
+  imageRightSection(doc,
+    'Signature, nom et prénom du/de la client(e)',
+    [
+      'J\'autorise la prise de photographies avant/après et leur utilisation interne, une fois anonymisées, à des fins de présentation par les thérapeutes du centre MAbeautyplus.',
+      'J\'autorise la diffusion de ces photographies sur les réseaux sociaux du centre MAbeautyplus.',
+    ],
+    ctx.photoChecked, ctx.signatureDataUrl, y);
+
+  footer(doc);
+  return doc.output('datauristring').split(',')[1];
+}
+
 // ─── PRESSODYNAMIE ────────────────────────────────────────────────────────────
 export function generatePressoConsent(ctx: ConsentContext): string {
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
@@ -532,7 +589,7 @@ const CONSENT_GENERATORS: Record<string, (ctx: ConsentContext) => string> = {
   'adipologie':   generateMesojetCorpsConsent,
   'cavitalyse':   generateMesojetCorpsConsent,
   'meso-visage':  generateMesojetVisageConsent,
-  'advance-lift': generateMesojetVisageConsent,
+  'advance-lift': generateSoinVisageConsent,
   'presso':       generatePressoConsent,
   'ishape':       generateIShapeConsent,
   'luxo-meno':    generateLuxoMenopauseConsent,
@@ -545,7 +602,7 @@ const CONSENT_FILENAMES: Record<string, string> = {
   'adipologie':   'Consentement_Mesojet_Corps',
   'cavitalyse':   'Consentement_Mesojet_Corps',
   'meso-visage':  'Consentement_Mesojet_Visage',
-  'advance-lift': 'Consentement_Mesojet_Visage',
+  'advance-lift': 'Consentement_Soin_Visage',
   'presso':       'Consentement_Pressodynamie',
   'ishape':       'Consentement_IShape',
   'luxo-meno':    'Consentement_Luxo_Menopause',

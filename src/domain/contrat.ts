@@ -116,6 +116,8 @@ export const CONSENTEMENT_PAR_TECHNOLOGIE: Partial<Record<Technologie, string>> 
   relax: 'luxo-pdp',
   ishape: 'ishape',
   presso: 'presso',
+  /* Le soin visage du Grau-du-Roi : ultrasons et radiofréquence, son propre consentement. */
+  advance_lift: 'advance-lift',
 };
 
 const LIBELLE_MOYEN: Record<string, string> = {
