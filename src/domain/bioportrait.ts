@@ -30,7 +30,7 @@ export type TypeEtape =
   | 'transition';
 
 /** Les quatre prestations que le questionnaire peut recommander. */
-export type Prestation = 'LUXO' | 'RELAX' | 'ISHAPE' | 'PRESSO';
+export type Prestation = 'LUXO' | 'RELAX' | 'ISHAPE' | 'PRESSO' | 'DOME';
 
 /**
  * Ce qu'une réponse dit d'un soin :

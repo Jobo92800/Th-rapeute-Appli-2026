@@ -87,7 +87,7 @@ export function controlerPrescription() {
   section('Une cliente sans particularité');
 
   const neutre = depouiller(bareme, {});
-  egal('aucun point', neutre.points, { LUXO: 0, RELAX: 0, ISHAPE: 0, PRESSO: 0 });
+  egal('aucun point', neutre.points, { LUXO: 0, RELAX: 0, ISHAPE: 0, PRESSO: 0, DOME: 0 });
   egal('aucune contre-indication', neutre.contreIndications, {});
 
   const cureNeutre = prescrire(bareme, neutre);
@@ -365,4 +365,21 @@ export function controlerPrescription() {
     'aucune mesure ne sort sans nom',
     releve.every((m) => m.libelle.trim().length > 0),
   );
+
+  /*
+    LE DÔME, AU GRAU-DU-ROI SEULEMENT.
+
+    Jamais prescrit par le bilan — aucune question ne lui donne de points —,
+    il s'ajoute à la main sous « Modifier », là où il se tient. Ailleurs,
+    il n'apparaît même pas parmi les soins ajoutables.
+  */
+  section('Le Dôme ne vient que par la main, et qu’au Grau-du-Roi');
+
+  const chargeeDome = prescrire(bareme, neutre);
+  verifie('un bilan ne prescrit jamais le Dôme', !chargeeDome.some((l) => l.presta === 'DOME'));
+  verifie('sans le Dôme, la liste des soins ajoutables l’ignore', !prestationsAjoutables(neutre, chargeeDome).includes('DOME'));
+  verifie('avec, il s’y trouve', prestationsAjoutables(neutre, chargeeDome, true).includes('DOME'));
+  egal('ajouté, il démarre à son premier palier, marqué « Ajouté »', ligneAjoutee(neutre, 'DOME'), {
+    presta: 'DOME', niveau: 'prop', seances: 6, contreIndication: null, ajoute: true,
+  });
 }

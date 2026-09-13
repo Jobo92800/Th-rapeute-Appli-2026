@@ -81,6 +81,8 @@ const PALIERS_DEFAUT: Record<Prestation, PalierPrestation[]> = {
     { min: 3, s: 6, l: 'prop' },
     { min: 5, s: 12, l: 'fort' },
   ],
+  /* Jamais prescrit : le Dôme n'entre dans une cure qu'à la main. */
+  DOME: [{ min: 0, s: 0, l: null }],
 };
 
 /**
@@ -89,7 +91,7 @@ const PALIERS_DEFAUT: Record<Prestation, PalierPrestation[]> = {
  * « avis médical » — c'est pour ça qu'on ne remplace que dans un sens.
  */
 export function depouiller(bareme: Bareme, reponses: Reponses): Depouillement {
-  const points = { LUXO: 0, RELAX: 0, ISHAPE: 0, PRESSO: 0 } as Record<Prestation, number>;
+  const points = { LUXO: 0, RELAX: 0, ISHAPE: 0, PRESSO: 0, DOME: 0 } as Record<Prestation, number>;
   const contreIndications: Partial<Record<Prestation, ContreIndication>> = {};
   let engagement: Depouillement['engagement'] = 'MID';
   let scoreInbody: number | null = null;
@@ -218,6 +220,8 @@ export const PALIERS_SEANCES: Record<Prestation, number[]> = {
   RELAX: [5, 10],
   ISHAPE: [6, 10, 12, 15, 20],
   PRESSO: [6, 10, 12],
+  /* Le Dôme, ajouté à la main au Grau-du-Roi : les mêmes paliers que l'I-Shape, faute de règle écrite. */
+  DOME: [6, 10, 12, 15, 20],
 };
 
 /** Ce qu'on ne descend jamais : le premier palier de la prestation. */
@@ -356,9 +360,15 @@ export function seancesALAjout(presta: Prestation): number {
 export function prestationsAjoutables(
   d: Depouillement,
   cure: LignePrescrite[],
+  /**
+   * Le Dôme s'ajoute aussi, mais seulement là où il se tient — le
+   * Grau-du-Roi. Aucun bilan ne le prescrit : il n'entre que par ici.
+   */
+  avecDome = false,
 ): Prestation[] {
   const presentes = new Set(cure.map((l) => l.presta));
-  return PRESTATIONS_CURE.filter(
+  const candidates = avecDome ? [...PRESTATIONS_CURE, 'DOME' as Prestation] : PRESTATIONS_CURE;
+  return candidates.filter(
     (p) => !presentes.has(p) && d.contreIndications[p] !== 'rem',
   );
 }

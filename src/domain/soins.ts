@@ -23,6 +23,17 @@
 
 import type { Technologie } from './tarification';
 
+/**
+ * Le Dôme ne se tient qu'au Grau-du-Roi. Il n'est jamais prescrit par un
+ * bilan : la thérapeute l'ajoute à la main, sous « Modifier », à 59 € la
+ * séance comme les autres. Ailleurs, il n'apparaît nulle part.
+ */
+export const CENTRES_AVEC_DOME = ['grau-du-roi'];
+
+export function domeDisponible(centreId: string | null | undefined): boolean {
+  return Boolean(centreId) && CENTRES_AVEC_DOME.includes(centreId!);
+}
+
 export interface CouleurSoin {
   /** Le nom du soin, dans sa teinte. */
   texte: string;

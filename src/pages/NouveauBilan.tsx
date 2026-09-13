@@ -35,6 +35,7 @@ import {
 } from '../domain/bioportrait';
 import Restitution from '../components/bilan/Restitution';
 import { depouiller } from '../domain/prescription';
+import { domeDisponible } from '../domain/soins';
 import QuestionBioPortrait from '../components/bilan/QuestionBioPortrait';
 import Progression from '../components/bilan/Progression';
 import CureEtDevis, { type PrescriptionValidee } from '../components/bilan/CureEtDevis';
@@ -670,6 +671,7 @@ export default function NouveauBilan() {
         depouillement={depouiller(bareme, reponses)}
         grille={grille}
         prenom={prenomAffiche}
+        avecDome={domeDisponible(centre.id)}
         enregistrement={enregistrement}
         onRetour={() => setVue('restitution')}
         // « Bilan seul » envoie le récapitulatif : il n'y a plus qu'un

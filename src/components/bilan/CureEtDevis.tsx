@@ -51,6 +51,7 @@ const TECHNO: Record<Prestation, Technologie> = {
   RELAX: 'relax',
   ISHAPE: 'ishape',
   PRESSO: 'presso',
+  DOME: 'dome',
 };
 
 const COULEUR_NIVEAU: Record<string, string> = {
@@ -64,6 +65,8 @@ interface Props {
   depouillement: Depouillement;
   grille: GrilleTarifaire;
   prenom: string;
+  /** Le Dôme se propose à l'ajout — au Grau-du-Roi seulement. */
+  avecDome?: boolean;
   enregistrement: boolean;
   onRetour: () => void;
   /**
@@ -92,6 +95,7 @@ export default function CureEtDevis({
   depouillement,
   grille,
   prenom,
+  avecDome = false,
   enregistrement,
   onRetour,
   onBilanSeul,
@@ -155,7 +159,10 @@ export default function CureEtDevis({
     );
   }, [base, formule, ajusts, ajoutes, depouillement]);
 
-  const ajoutables = useMemo(() => prestationsAjoutables(depouillement, cure), [depouillement, cure]);
+  const ajoutables = useMemo(
+    () => prestationsAjoutables(depouillement, cure, avecDome),
+    [depouillement, cure, avecDome],
+  );
 
   const retenues = lignesRetenues(cure);
   const totalSeances = retenues.reduce((n, l) => n + l.seances, 0);
@@ -802,7 +809,7 @@ export default function CureEtDevis({
                 key={l.presta}
                 className="border-b border-dashed border-ardoise-200 py-1.5 last:border-0"
               >
-                {bareme.PRESTA?.[l.presta]?.n} — {l.seances} séances
+                {bareme.PRESTA?.[l.presta]?.n ?? LIBELLES_TECHNOLOGIE[TECHNO[l.presta]]} — {l.seances} séances
               </div>
             ))}
             {luxo && (
