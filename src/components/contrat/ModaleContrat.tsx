@@ -83,7 +83,13 @@ export default function ModaleContrat({
   const [photos, setPhotos] = useState(true);
   const [signatureVide, setSignatureVide] = useState(true);
   const [enCours, setEnCours] = useState(false);
-  const [parcoursAudio, setParcoursAudio] = useState<CodeParcours | null>('B');
+  /*
+    Le parcours audio accompagne la perte de poids — ses contenus parlent
+    d'alimentation et de rythme, pas de peau. Une cure d'Advance Lift ne le
+    propose donc pas : ni bloc dans la fenêtre, ni compte créé.
+  */
+  const cureAntiAge = lignes.length > 0 && lignes.every((l) => l.technologie === 'advance_lift');
+  const [parcoursAudio, setParcoursAudio] = useState<CodeParcours | null>(cureAntiAge ? null : 'B');
   const [tailleTenue, setTailleTenue] = useState<TailleTenue | null>(programme.taille_tenue ?? null);
   const [motDePasse, setMotDePasse] = useState('');
 
@@ -467,7 +473,8 @@ export default function ModaleContrat({
             </section>
           )}
 
-          {/* Parcours audio --------------------------------------------- */}
+          {/* Parcours audio — pas pour l'anti-âge --------------------------- */}
+          {!cureAntiAge && (
           <section>
             <h3 className="mb-2 flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
               <Headphones className="h-3.5 w-3.5" />
@@ -541,6 +548,7 @@ export default function ModaleContrat({
               </p>
             )}
           </section>
+          )}
 
           {/* Signature -------------------------------------------------- */}
           <section>
