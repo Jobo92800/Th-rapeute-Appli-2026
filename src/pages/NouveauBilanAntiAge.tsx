@@ -384,6 +384,7 @@ export default function NouveauBilanAntiAge() {
         bareme={bareme}
         resultat={resultat}
         prenom={prenomAffiche}
+        reponses={reponses}
         onRetour={() => {
           setVue('questions');
           setEtape(questions.length - 1);

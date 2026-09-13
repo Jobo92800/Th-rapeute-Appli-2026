@@ -1,10 +1,13 @@
-import { ArrowRight, Check, ChevronLeft } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, Check, ChevronLeft, ListChecks, X } from 'lucide-react';
 import {
   AXES_ANTI_AGE,
   TERRAINS_ANTI_AGE,
   nomDuTerrain,
+  relireLesReponsesAntiAge,
   type BaremeAntiAge,
   type BioPortraitAntiAge,
+  type ReponsesAntiAge,
 } from '../../domain/antiAge';
 
 /*
@@ -20,6 +23,7 @@ export default function RestitutionAntiAge({
   bareme,
   resultat,
   prenom,
+  reponses,
   onRetour,
   onSuite,
   onEnregistrerSeulement,
@@ -28,6 +32,7 @@ export default function RestitutionAntiAge({
   bareme: BaremeAntiAge;
   resultat: BioPortraitAntiAge;
   prenom: string;
+  reponses: ReponsesAntiAge;
   onRetour: () => void;
   onSuite: () => void;
   onEnregistrerSeulement?: () => void;
@@ -35,6 +40,8 @@ export default function RestitutionAntiAge({
 }) {
   const profil = bareme.PROFILS[resultat.profil];
   const terrainNom = nomDuTerrain(bareme, resultat.terrains);
+  const [reponsesOuvertes, setReponsesOuvertes] = useState(false);
+  const relues = relireLesReponsesAntiAge(bareme, reponses);
   const maxProfil = Math.max(1, ...AXES_ANTI_AGE.map((a) => resultat.scores[a]));
   const maxTerrain = Math.max(1, ...TERRAINS_ANTI_AGE.map((t) => resultat.scoresTerrain[t]));
 
@@ -58,7 +65,44 @@ export default function RestitutionAntiAge({
             {resultat.priorites.map((a) => bareme.AXES[a]).join(' · ')}
           </p>
         )}
+        <button type="button" onClick={() => setReponsesOuvertes((o) => !o)} aria-pressed={reponsesOuvertes} className="bouton-discret mt-5">
+          <ListChecks className="h-4 w-4" />
+          Mes réponses
+        </button>
       </header>
+
+      {reponsesOuvertes && (
+        <section className="carte">
+          <div className="flex items-start justify-between gap-3 border-b border-ardoise-100 px-5 py-3.5">
+            <div>
+              <h2 className="text-sm font-semibold text-ardoise-900">Ses réponses au questionnaire</h2>
+              <p className="text-xs text-ardoise-500">Telles qu’elles viennent d’être données</p>
+            </div>
+            <button type="button" onClick={() => setReponsesOuvertes(false)} className="bouton-discret text-xs" aria-label="Fermer">
+              <X className="h-4 w-4" />
+              Fermer
+            </button>
+          </div>
+          <dl className="p-4 sm:columns-2 sm:gap-4">
+            {relues.map((r) => (
+              <div key={r.code} className="mb-3 break-inside-avoid">
+                <dt className="text-[13px] leading-snug text-ardoise-600">{r.question}</dt>
+                <dd className="mt-1.5 flex flex-wrap gap-1.5">
+                  {r.reponses.length === 0 ? (
+                    <span className="text-xs text-ardoise-400">Sans réponse</span>
+                  ) : (
+                    r.reponses.map((rep) => (
+                      <span key={rep} className="inline-block rounded-full bg-rose-100 px-2.5 py-1 text-[13px] font-semibold leading-tight text-rose-800">
+                        {rep}
+                      </span>
+                    ))
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
 
       <section className="carte overflow-hidden">
         <div className="border-b border-ardoise-100 px-5 py-3.5">

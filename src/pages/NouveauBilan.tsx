@@ -636,6 +636,8 @@ export default function NouveauBilan() {
         prenom={prenomAffiche}
         synthese={phraseSynthese(bareme, bioportrait)}
         mesures={mesuresInbody(bareme, reponses)}
+        reponses={reponses}
+        curseur={curseur}
         onRetour={() => {
           setVue('questions');
           setEtape(steps.length - 1);

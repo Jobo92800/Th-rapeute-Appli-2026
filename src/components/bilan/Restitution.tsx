@@ -1,10 +1,14 @@
-import { ArrowRight, Check, ChevronLeft } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, Check, ChevronLeft, ListChecks, X } from 'lucide-react';
+import { CorpsDesReponses } from '../fiche/ReponsesDuBilan';
 import {
   SEUIL_PRESENCE,
+  relireLesReponses,
   type Axe,
   type Bareme,
   type BioPortrait,
   type MesureInbody,
+  type Reponses,
 } from '../../domain/bioportrait';
 
 interface Props {
@@ -13,6 +17,14 @@ interface Props {
   prenom: string;
   synthese: string;
   mesures: MesureInbody[];
+  /**
+   * Ce qu'elle vient de répondre, pour la carte « Mes réponses ». Le
+   * BioPortrait se lit ici pour la première fois, devant la cliente : c'est
+   * le moment où un profil surprend, et où on veut retrouver ce qui l'a
+   * produit sans quitter l'écran.
+   */
+  reponses: Reponses;
+  curseur: number | null;
   onRetour: () => void;
   onSuite: () => void;
   /**
@@ -37,12 +49,19 @@ export default function Restitution({
   prenom,
   synthese,
   mesures,
+  reponses,
+  curseur,
   onRetour,
   onSuite,
   onEnregistrerSeulement,
   enregistrement,
 }: Props) {
   const { profilDominant: dp, terrainDominant: dt, pourcentages } = bioportrait;
+  const [reponsesOuvertes, setReponsesOuvertes] = useState(false);
+  const couleurs = (cle: string) => {
+    const c = bareme.CAT?.[cle];
+    return c ? { fond: c[1], encre: c[2] } : { fond: '#EEF2F2', encre: '#3A5556' };
+  };
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -59,7 +78,32 @@ export default function Restitution({
           <span className="text-rose-600">{bareme.AX[dt].name}</span>
         </p>
         <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-ardoise-600">{synthese}</p>
+        <button
+          type="button"
+          onClick={() => setReponsesOuvertes((o) => !o)}
+          aria-pressed={reponsesOuvertes}
+          className="bouton-discret mt-5"
+        >
+          <ListChecks className="h-4 w-4" />
+          Mes réponses
+        </button>
       </header>
+
+      {reponsesOuvertes && (
+        <section className="carte">
+          <div className="flex items-start justify-between gap-3 border-b border-ardoise-100 px-5 py-3.5">
+            <div>
+              <h2 className="text-sm font-semibold text-ardoise-900">Ses réponses au questionnaire</h2>
+              <p className="text-xs text-ardoise-500">Telles qu’elles viennent d’être données</p>
+            </div>
+            <button type="button" onClick={() => setReponsesOuvertes(false)} className="bouton-discret text-xs" aria-label="Fermer">
+              <X className="h-4 w-4" />
+              Fermer
+            </button>
+          </div>
+          <CorpsDesReponses lues={relireLesReponses(bareme, reponses, curseur)} couleurs={couleurs} />
+        </section>
+      )}
 
       {mesures.length > 0 && (
         <section className="carte p-5">
