@@ -154,7 +154,7 @@ Deno.serve(async (req: Request) => {
     demande que le CRM soit nettoyé aussi. Séparée du dépilage de la file :
     la ligne locale a déjà disparu, il ne reste que l'identifiant Airtable.
   */
-  let corpsRequete: { action?: string; recordId?: string } = {};
+  let corpsRequete: { action?: string; recordId?: string; numero?: number } = {};
   try {
     corpsRequete = await req.json();
   } catch {
@@ -179,6 +179,38 @@ Deno.serve(async (req: Request) => {
     }
 
     return json({ supprimee: true });
+  }
+
+  /*
+    Vider « Montant cure N » après la suppression d'une cure.
+
+    La synchro n'écrit que les cures qui existent : une cure effacée ne
+    passe plus par la file, et son montant resterait dans le CRM pour
+    toujours — c'est ce qui est arrivé à « Montant cure 2 » d'Alice Fabre.
+    Comme la suppression d'une fiche, c'est un appel direct, hors file.
+  */
+  if (corpsRequete.action === 'vider_montant_cure') {
+    const recordId = corpsRequete.recordId;
+    const numero = Number(corpsRequete.numero);
+    if (!recordId || !Number.isInteger(numero) || numero < 1) {
+      return json({ error: 'recordId ou numero manquant.' }, 400);
+    }
+
+    const r = await fetch(`https://api.airtable.com/v0/${base}/${table}/${recordId}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${jeton}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: { [champMontantCure(numero)]: null } }),
+    });
+
+    if (!r.ok && r.status !== 404) {
+      const corps = await r.json().catch(() => ({}));
+      return json(
+        { error: `Airtable ${r.status} : ${corps?.error?.message ?? 'modification refusée'}` },
+        500,
+      );
+    }
+
+    return json({ vide: true });
   }
 
   const db = createClient(

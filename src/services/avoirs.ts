@@ -125,3 +125,68 @@ export async function rembourserAvoir(
   });
   if (error) throw error;
 }
+
+/*
+  Supprimer une cure — pas l'arrêter.
+
+  Arrêter dit qu'elle a existé ; supprimer dit qu'elle n'aurait jamais dû.
+  La base efface tout ce qu'elle a laissé (échéances, séances, contrat,
+  sorties de stock, avoir) et refuse si l'avoir né de son arrêt a déjà été
+  dépensé. Direction seulement, vérifié côté base.
+*/
+export interface ContenuCure {
+  seances_faites: number;
+  echeances_payees: number;
+  montant_paye: number;
+  contrats: number;
+  sorties_stock: number;
+  avoir_accorde: number;
+  avoir_utilise: number;
+}
+
+export async function contenuCure(programmeId: string): Promise<ContenuCure> {
+  const { data, error } = await supabase.rpc('contenu_cure', { p_programme_id: programmeId });
+  if (error) throw error;
+  const l = (Array.isArray(data) ? data[0] : data) ?? {};
+  return {
+    seances_faites: Number(l.seances_faites) || 0,
+    echeances_payees: Number(l.echeances_payees) || 0,
+    montant_paye: Number(l.montant_paye) || 0,
+    contrats: Number(l.contrats) || 0,
+    sorties_stock: Number(l.sorties_stock) || 0,
+    avoir_accorde: Number(l.avoir_accorde) || 0,
+    avoir_utilise: Number(l.avoir_utilise) || 0,
+  };
+}
+
+/**
+ * Efface la cure, puis demande au CRM de vider « Montant cure N ».
+ *
+ * La synchro n'écrit que les cures qui existent : sans cet appel, le
+ * montant d'une cure effacée resterait dans Airtable pour toujours. Il
+ * vient APRÈS l'effacement — c'est la base qui décide ; si le CRM ne
+ * répond pas, la cure est bien partie et on le dit, plutôt que de laisser
+ * en base une cure dont le montant a disparu du CRM.
+ *
+ * Rend `null` si tout est passé, sinon ce qu'il reste à faire à la main.
+ */
+export async function supprimerCure(
+  programmeId: string,
+  airtableRecordId: string | null,
+): Promise<string | null> {
+  const { data, error } = await supabase.rpc('supprimer_cure', { p_programme_id: programmeId });
+  if (error) throw error;
+
+  const ligne = (Array.isArray(data) ? data[0] : data) as { numero?: number } | undefined;
+  const numero = Number(ligne?.numero);
+  if (!airtableRecordId || !numero) return null;
+
+  const { data: reponse, error: erreurEdge } = await supabase.functions.invoke('synchro-airtable', {
+    body: { action: 'vider_montant_cure', recordId: airtableRecordId, numero },
+  });
+  const champ = numero <= 1 ? 'Montant Cure' : `Montant cure ${numero}`;
+  if (erreurEdge || (reponse && typeof reponse === 'object' && 'error' in reponse)) {
+    return `La cure est supprimée, mais « ${champ} » n'a pas pu être vidé dans Airtable : à faire à la main sur la fiche du CRM.`;
+  }
+  return null;
+}

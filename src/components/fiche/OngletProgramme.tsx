@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { texteErreur } from '../../lib/erreurs';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { OctagonX, Plus, RotateCcw, Sparkles, Wallet } from 'lucide-react';
+import { OctagonX, Plus, RotateCcw, Sparkles, Trash2, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import toast from 'react-hot-toast';
@@ -28,6 +28,7 @@ import {
 } from '../../domain/reglement';
 import ModaleNouvelleCure from '../cure/ModaleNouvelleCure';
 import ModaleArretCure from '../cure/ModaleArretCure';
+import ModaleSuppressionCure from '../cure/ModaleSuppressionCure';
 import CarteAvoir, { BoutonAvoir } from '../cure/CarteAvoir';
 import { resteAEncaisser } from '../../domain/avoir';
 import { rouvrirCure } from '../../services/avoirs';
@@ -53,6 +54,7 @@ export default function OngletProgramme({
   const qc = useQueryClient();
   const [nouvelleCure, setNouvelleCure] = useState(false);
   const [arret, setArret] = useState<ProgrammeComplet | null>(null);
+  const [suppression, setSuppression] = useState<Programme | null>(null);
 
   const { data: programmes = [], isLoading } = useQuery({
     queryKey: ['programmes', clienteId],
@@ -452,23 +454,46 @@ export default function OngletProgramme({
                 tout le monde — c'est le geste qui est réservé, pas
                 l'information.
               */}
-              {!arretee && p.origine !== 'import_v1' && role === 'direction' && (
-                <div className="mt-4 border-t border-ardoise-100 pt-3">
-                  <button
-                    onClick={() =>
-                      setArret(
-                        programmes.find((x) => x.programme.id === p.id) as ProgrammeComplet,
-                      )
-                    }
-                    className="bouton-discret border-rose-200 text-xs text-rose-700 hover:bg-rose-50"
-                  >
-                    <OctagonX className="h-3.5 w-3.5" />
-                    Arrêter cette cure
-                  </button>
-                  <p className="mt-1.5 text-xs text-ardoise-400">
-                    La cure s’arrête en cours de route : on annule ce qui reste à payer, et on
-                    lui fait un avoir si les règlements dépassent ce qui a été reçu.
-                  </p>
+              {role === 'direction' && (
+                <div className="mt-4 grid gap-3 border-t border-ardoise-100 pt-3 sm:grid-cols-2">
+                  {!arretee && p.origine !== 'import_v1' && (
+                    <div>
+                      <button
+                        onClick={() =>
+                          setArret(
+                            programmes.find((x) => x.programme.id === p.id) as ProgrammeComplet,
+                          )
+                        }
+                        className="bouton-discret border-rose-200 text-xs text-rose-700 hover:bg-rose-50"
+                      >
+                        <OctagonX className="h-3.5 w-3.5" />
+                        Arrêter cette cure
+                      </button>
+                      <p className="mt-1.5 text-xs text-ardoise-400">
+                        La cure s’arrête en cours de route : on annule ce qui reste à payer, et
+                        on lui fait un avoir si les règlements dépassent ce qui a été reçu.
+                      </p>
+                    </div>
+                  )}
+                  {/*
+                    Supprimer n'est pas arrêter : une cure ajoutée par erreur
+                    n'a pas existé, et l'arrêter lui fabriquerait un avoir —
+                    sur une cure Alma, du montant entier. Définitif, direction
+                    seulement, vérifié côté base.
+                  */}
+                  <div>
+                    <button
+                      onClick={() => setSuppression(p)}
+                      className="bouton-discret border-rose-200 text-xs text-rose-700 hover:bg-rose-50"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Supprimer cette cure
+                    </button>
+                    <p className="mt-1.5 text-xs text-ardoise-400">
+                      Pour une cure qui n’aurait jamais dû exister : elle s’efface avec ses
+                      séances, ses règlements et son contrat, sans avoir. Définitif.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -485,6 +510,15 @@ export default function OngletProgramme({
           clienteId={clienteId}
           centreId={centreId}
           onFerme={() => setArret(null)}
+        />
+      )}
+
+      {suppression && (
+        <ModaleSuppressionCure
+          cliente={cliente}
+          programme={suppression}
+          centreId={centreId}
+          onFerme={() => setSuppression(null)}
         />
       )}
 
