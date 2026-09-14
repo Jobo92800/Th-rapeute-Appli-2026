@@ -92,7 +92,11 @@ export interface ContractData {
    * accordé par Alma, et le contrat du centre devient faux.
    */
   almaSansEcheancier: boolean;
-  /** « 10 fois par carte via Alma », quand c'est le cas. */
+  /**
+   * « Paiement Alma », quand c'est le cas — sans le nombre de mensualités.
+   * Le contrat du centre dit le mode et s'arrête là : le nombre de fois,
+   * comme les dates, appartient au contrat de crédit signé avec Alma.
+   */
   almaLibelle: string;
 }
 
@@ -267,7 +271,7 @@ export function construireContrat(args: {
           method: LIBELLE_MOYEN[e.moyen ?? ''] ?? '',
         })),
     almaSansEcheancier: alma,
-    almaLibelle: alma ? `${suite.length} fois par carte, via Alma` : '',
+    almaLibelle: alma ? 'Paiement Alma' : '',
   };
 }
 

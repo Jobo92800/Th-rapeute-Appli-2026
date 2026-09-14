@@ -255,6 +255,14 @@ export function controlerMetier() {
     sur le contrat qu'elle signe avec lui.
   */
   egal('chez Alma, le contrat annonce la cure seule', contrat.totalAmount, '1 180,00 €');
+  /*
+    Et il dit le mode sans le nombre de fois : « 10 fois » appartient au
+    contrat de crédit signé avec Alma, comme les dates — le recopier ici,
+    c'était promettre deux fois la même chose dans deux documents qui
+    peuvent diverger.
+  */
+  egal('chez Alma, le contrat dit le mode et rien de plus', contrat.almaLibelle, 'Paiement Alma');
+  verifie('chez Alma, le contrat ne porte aucune échéance', contrat.almaSansEcheancier && contrat.installments.length === 0);
 
   const contratCheques = construireContrat({
     cliente,
