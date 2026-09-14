@@ -230,6 +230,20 @@ export function minimumSeances(presta: Prestation): number {
 }
 
 /**
+ * Une séance de plus ou de moins, à la main, sur le programme sur mesure.
+ *
+ * Le « − » s'arrête au minimum de la prestation — 10 en luxo, 6 en I-Shape
+ * et en presso — et n'y descend jamais en dessous : sous ce nombre, le soin
+ * ne produit plus rien, et une cure de quatre luxo n'est pas une cure plus
+ * courte, c'est une cure qui ne marche pas (Jonathan, 14 septembre 2026).
+ * Il descendait jusqu'à zéro, ce qui retirait le soin en quatorze clics
+ * sans jamais le dire.
+ */
+export function ajusterSeances(presta: Prestation, actuelle: number, delta: number): number {
+  return Math.max(minimumSeances(presta), actuelle + delta);
+}
+
+/**
  * Le palier le plus proche d'une cible.
  *
  * À égalité de distance, on prend le plus bas : la formule Équilibre existe

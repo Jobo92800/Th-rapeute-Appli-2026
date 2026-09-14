@@ -5,6 +5,8 @@ import { detailInclus, type DetailInclus } from '../../domain/inclus';
 import BulleInclus from './BulleInclus';
 import {
   FORMULES,
+  ajusterSeances,
+  minimumSeances,
   LIBELLES_NIVEAU,
   appliquerFormule,
   ligneAjoutee,
@@ -239,7 +241,7 @@ export default function CureEtDevis({
 
   function ajuster(presta: Prestation, delta: number) {
     const actuelle = cure.find((l) => l.presta === presta)?.seances ?? 0;
-    setAjusts((a) => ({ ...a, [presta]: Math.max(0, actuelle + delta) }));
+    setAjusts((a) => ({ ...a, [presta]: ajusterSeances(presta, actuelle, delta) }));
   }
 
   /*
@@ -385,7 +387,7 @@ export default function CureEtDevis({
                     <button
                       type="button"
                       onClick={() => ajuster(l.presta, -1)}
-                      disabled={l.seances <= 0}
+                      disabled={l.seances <= minimumSeances(l.presta)}
                       aria-label="Une séance de moins"
                       className="flex h-7 w-7 items-center justify-center rounded-lg border border-ardoise-200 text-marine-700 hover:bg-marine-50 disabled:opacity-30"
                     >

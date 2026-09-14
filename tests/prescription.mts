@@ -12,6 +12,7 @@ import type { Bareme, Prestation } from '../src/domain/bioportrait.ts';
 import { mesuresInbody } from '../src/domain/bioportrait.ts';
 import {
   PALIERS_SEANCES,
+  ajusterSeances,
   appliquerFormule,
   depouiller,
   minimumSeances,
@@ -382,4 +383,23 @@ export function controlerPrescription() {
   egal('ajouté, il démarre à son premier palier, marqué « Ajouté »', ligneAjoutee(neutre, 'DOME'), {
     presta: 'DOME', niveau: 'prop', seances: 6, contreIndication: null, ajoute: true,
   });
+
+  /*
+    LES PETITS « − » S'ARRÊTENT AU MINIMUM.
+
+    Dix luxo, six I-Shape, six presso : en dessous, le soin ne produit plus
+    rien. Le bouton descendait jusqu'à zéro, ce qui retirait le soin sans
+    le dire (Jonathan, 14 septembre 2026).
+  */
+  section('Le « − » du programme sur mesure ne descend pas sous le minimum');
+
+  egal('luxo : de 11 on descend à 10', ajusterSeances('LUXO', 11, -1), 10);
+  egal('luxo : de 10 on reste à 10', ajusterSeances('LUXO', 10, -1), 10);
+  egal('I-Shape : plancher à 6', ajusterSeances('ISHAPE', 6, -1), 6);
+  egal('presso : plancher à 6', ajusterSeances('PRESSO', 6, -1), 6);
+  egal('le « + » n’est pas borné', ajusterSeances('LUXO', 20, 1), 21);
+  verifie(
+    'le plancher de chaque soin est son premier palier',
+    (Object.keys(PALIERS_SEANCES) as Prestation[]).every((p) => ajusterSeances(p, 0, -1) === minimumSeances(p)),
+  );
 }
