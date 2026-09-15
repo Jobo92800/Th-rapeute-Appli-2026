@@ -21,6 +21,7 @@ import { controlerMessages } from './messages.mts';
 import { controlerCivilite } from './civilite.mts';
 import { controlerSante } from './sante.mts';
 import { controlerAntiAge } from './antiAge.mts';
+import { controlerPodcasts } from './podcasts.mts';
 
 console.log('\n  MAbeautyplus V2 — contrôle des règles métier');
 
@@ -33,5 +34,6 @@ controlerMessages();
 controlerCivilite();
 controlerSante();
 controlerAntiAge();
+controlerPodcasts();
 
 process.exit(bilan());

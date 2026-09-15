@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   Fingerprint,
+  Headphones,
   Ruler,
   RefreshCw,
   User,
@@ -35,6 +36,7 @@ import CarteParrainage from '../components/fiche/CarteParrainage';
 import ExceptionCure from '../components/fiche/ExceptionCure';
 import Notes from '../components/fiche/Notes';
 import OngletDocuments from '../components/fiche/OngletDocuments';
+import OngletParcoursAudio from '../components/fiche/OngletParcoursAudio';
 import type { AxeProfil } from '../domain/bioportrait';
 
 type Onglet =
@@ -45,6 +47,7 @@ type Onglet =
   | 'mensurations'
   | 'complements'
   | 'documents'
+  | 'parcours'
   | 'notes';
 
 const ONGLETS: { id: Onglet; libelle: string; icone: typeof User }[] = [
@@ -55,6 +58,7 @@ const ONGLETS: { id: Onglet; libelle: string; icone: typeof User }[] = [
   { id: 'mensurations', libelle: 'Mensurations', icone: Ruler },
   { id: 'complements', libelle: 'Compléments', icone: Pill },
   { id: 'documents', libelle: 'Contrat', icone: FileSignature },
+  { id: 'parcours', libelle: 'Parcours audio', icone: Headphones },
   { id: 'notes', libelle: 'Notes', icone: MessageSquare },
 ];
 
@@ -297,6 +301,7 @@ export default function FicheCliente() {
         <OngletComplements clienteId={id!} centreId={centre.id} />
       )}
       {!creation && onglet === 'documents' && <OngletDocuments cliente={cliente!} />}
+      {!creation && onglet === 'parcours' && <OngletParcoursAudio cliente={cliente!} />}
       {!creation && onglet === 'notes' && <Notes clienteId={id!} centreId={centre.id} />}
     </div>
   );
