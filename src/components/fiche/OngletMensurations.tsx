@@ -50,6 +50,22 @@ function libelle(cle: CleMesure): string {
   return MESURES.find((m) => m.cle === cle)?.libelle ?? cle;
 }
 
+/** « 27,5 », ou un tiret quand la mesure n'a pas été prise. */
+function cm(v: number | null): string {
+  return v == null ? '—' : Number(v).toLocaleString('fr-FR', { maximumFractionDigits: 1 });
+}
+
+/**
+ * Les trois groupes de la synthèse, comme dans l'ancienne application :
+ * haut du corps, bras, jambes. Chaque ligne dit le chemin parcouru depuis
+ * le premier relevé.
+ */
+const GROUPES: Array<{ titre: string; cles: CleMesure[] }> = [
+  { titre: 'Haut du corps', cles: ['poitrine', 'sous_poitrine', 'taille', 'ventre', 'hanches'] },
+  { titre: 'Bras', cles: ['bras_droit', 'bras_gauche'] },
+  { titre: 'Jambes', cles: ['cuisse_droite', 'cuisse_gauche', 'mollet_droit', 'mollet_gauche'] },
+];
+
 export default function OngletMensurations({
   clienteId,
   centreId,
@@ -144,18 +160,66 @@ export default function OngletMensurations({
     ajouter.mutate();
   }
 
-  /** Écart avec le tout premier relevé, pour montrer le chemin parcouru. */
-  function ecart(cle: CleMesure, valeur: number | null): string | null {
-    if (valeur == null || mesures.length < 2) return null;
-    const premier = mesures[mesures.length - 1][cle];
-    if (premier == null) return null;
-    const d = Number(valeur) - Number(premier);
-    if (Math.abs(d) < 0.05) return null;
-    return `${d > 0 ? '+' : ''}${d.toLocaleString('fr-FR', { maximumFractionDigits: 1 })}`;
+  /*
+    Le chemin parcouru depuis le premier relevé, mesure par mesure. Le
+    premier relevé est le point de départ de la cure ; le dernier, où elle
+    en est. Une baisse en vert, une hausse en rose, zéro en gris : « +0 »
+    en rouge, comme l'ancienne application, faisait lire une alerte là où
+    rien n'avait bougé.
+  */
+  const premier = mesures.at(-1) ?? null;
+  const dernier = mesures[0] ?? null;
+  function chemin(cle: CleMesure): number | null {
+    if (!premier || !dernier || premier === dernier) return null;
+    const a = premier[cle];
+    const b = dernier[cle];
+    if (a == null || b == null) return null;
+    return Math.round((Number(b) - Number(a)) * 10) / 10;
   }
 
   return (
     <div className="space-y-5">
+      {mesures.length >= 2 && (
+        <div className="grid gap-4 md:grid-cols-3">
+          {GROUPES.map((g) => (
+            <section key={g.titre} className="carte px-5 py-4">
+              <h3 className="text-base font-semibold text-ardoise-900">{g.titre}</h3>
+              <dl className="mt-3 space-y-2">
+                {g.cles.map((cle) => {
+                  const d = chemin(cle);
+                  return (
+                    <div key={cle} className="flex items-center justify-between gap-3 text-sm">
+                      <dt className="text-ardoise-600">{libelle(cle)}</dt>
+                      <dd
+                        className={`chiffres font-semibold ${
+                          d == null
+                            ? 'text-ardoise-300'
+                            : d < 0
+                              ? 'text-emerald-600'
+                              : d > 0
+                                ? 'text-rose-600'
+                                : 'text-ardoise-400'
+                        }`}
+                      >
+                        {d == null
+                          ? '—'
+                          : `${d > 0 ? '+' : ''}${d.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} cm`}
+                      </dd>
+                    </div>
+                  );
+                })}
+              </dl>
+              {g.titre === 'Haut du corps' && (
+                <p className="mt-3 text-2xs text-ardoise-400">
+                  Depuis le premier relevé, le{' '}
+                  {premier && format(new Date(premier.date_mesure), 'd MMMM yyyy', { locale: fr })}.
+                </p>
+              )}
+            </section>
+          ))}
+        </div>
+      )}
+
       <section className="carte">
         <div className="flex items-center justify-between border-b border-ardoise-100 px-5 py-3.5">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-ardoise-900">
@@ -255,73 +319,66 @@ export default function OngletMensurations({
           </p>
         ) : (
           <div className="overflow-x-auto">
+            {/*
+              Une ligne par relevé, une colonne par mesure — la disposition
+              de l'ancienne application, que les thérapeutes lisent depuis
+              des années : la date à gauche, les deux côtés d'un bras dans
+              la même case (« 27,5 / 27 »), et les gestes au bout de la
+              ligne. La première version mettait les dates en colonnes, ce
+              qui obligeait à lire de haut en bas pour un seul relevé.
+            */}
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-ardoise-200 bg-ardoise-50">
-                  <th className="px-4 py-2.5 text-left text-2xs font-semibold uppercase tracking-widest text-ardoise-500">
-                    Mesure
-                  </th>
-                  {mesures.map((m) => (
-                    <th
-                      key={m.id}
-                      className="px-4 py-2 text-right text-2xs font-semibold uppercase tracking-widest text-ardoise-500"
-                    >
-                      {/*
-                        Corriger ou supprimer un relevé se fait depuis sa
-                        colonne : c'est là qu'on voit la valeur fausse.
-                      */}
-                      <span className="inline-flex items-center gap-1">
-                        {format(new Date(m.date_mesure), 'd MMM yy', { locale: fr })}
+                <tr className="border-b border-ardoise-200 bg-ardoise-50 text-2xs font-semibold uppercase tracking-widest text-ardoise-500">
+                  <th className="px-4 py-2.5 text-left">Date</th>
+                  {MESURES_CENTRALES.map((m) => (
+                    <th key={m.cle} className="px-3 py-2.5 text-right">{m.libelle}</th>
+                  ))}
+                  {MESURES_PAIRES.map((p) => (
+                    <th key={p.partie} className="px-3 py-2.5 text-right">
+                      {p.partie} <span className="normal-case tracking-normal text-ardoise-400">D / G</span>
+                    </th>
+                  ))}
+                  <th className="px-4 py-2.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-ardoise-100">
+                {mesures.map((m) => {
+                  const jour = format(new Date(m.date_mesure), 'd MMMM yyyy', { locale: fr });
+                  return (
+                    <tr key={m.id} className="hover:bg-ardoise-50">
+                      <td className="whitespace-nowrap px-4 py-2.5 font-medium text-ardoise-800">{jour}</td>
+                      {MESURES_CENTRALES.map((mes) => (
+                        <td key={mes.cle} className="chiffres whitespace-nowrap px-3 py-2.5 text-right text-ardoise-800">
+                          {cm(m[mes.cle])}
+                        </td>
+                      ))}
+                      {MESURES_PAIRES.map((p) => (
+                        <td key={p.partie} className="chiffres whitespace-nowrap px-3 py-2.5 text-right text-ardoise-800">
+                          {cm(m[p.droite])} / {cm(m[p.gauche])}
+                        </td>
+                      ))}
+                      <td className="whitespace-nowrap px-4 py-2 text-right">
                         <button
                           type="button"
                           onClick={() => ouvrirPourCorriger(m)}
-                          aria-label={`Corriger le relevé du ${format(new Date(m.date_mesure), 'd MMMM yyyy', { locale: fr })}`}
+                          aria-label={`Corriger le relevé du ${jour}`}
                           title="Corriger ce relevé"
-                          className="rounded p-1 text-ardoise-400 hover:bg-ardoise-200 hover:text-marine-700"
+                          className="rounded p-1.5 text-ardoise-400 hover:bg-ardoise-200 hover:text-marine-700"
                         >
-                          <Pencil className="h-3.5 w-3.5" />
+                          <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           type="button"
                           onClick={() => demanderSuppression(m)}
                           disabled={supprimer.isPending}
-                          aria-label={`Supprimer le relevé du ${format(new Date(m.date_mesure), 'd MMMM yyyy', { locale: fr })}`}
+                          aria-label={`Supprimer le relevé du ${jour}`}
                           title="Supprimer ce relevé"
-                          className="rounded p-1 text-ardoise-400 hover:bg-rose-100 hover:text-rose-700"
+                          className="rounded p-1.5 text-ardoise-400 hover:bg-rose-100 hover:text-rose-700"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
-                      </span>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ardoise-100">
-                {MESURES.map((mes) => {
-                  if (mesures.every((m) => m[mes.cle] == null)) return null;
-                  return (
-                    <tr key={mes.cle} className="hover:bg-ardoise-50">
-                      <td className="px-4 py-2 font-medium text-ardoise-700">{mes.libelle}</td>
-                      {mesures.map((m, i) => {
-                        const v = m[mes.cle];
-                        const e = i === 0 ? ecart(mes.cle, v) : null;
-                        return (
-                          <td key={m.id} className="px-4 py-2 text-right text-ardoise-800">
-                            {v == null
-                              ? '—'
-                              : Number(v).toLocaleString('fr-FR', { maximumFractionDigits: 1 })}
-                            {e && (
-                              <span
-                                className={`ml-1.5 text-2xs font-semibold ${
-                                  e.startsWith('-') ? 'text-emerald-600' : 'text-rose-600'
-                                }`}
-                              >
-                                {e}
-                              </span>
-                            )}
-                          </td>
-                        );
-                      })}
+                      </td>
                     </tr>
                   );
                 })}
