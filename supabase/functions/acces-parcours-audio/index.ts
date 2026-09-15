@@ -74,7 +74,38 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { clienteId, parcours, motDePasse, action = 'creer' } = await req.json();
+    const { clienteId, parcours, motDePasse, action = 'creer', etape } = await req.json();
+
+    // --- Écouter un podcast depuis l'application des thérapeutes ---------
+    /*
+      Mon Parcours signe une adresse d'écoute valable une heure, sans
+      condition de déblocage — c'est son « écoute de contrôle ». On la
+      demande pour l'étape N du parcours B ou C : l'identifiant de l'étape
+      se lit dans la liste des étapes, que l'API ne sait pas interroger
+      autrement. Aucune cliente en jeu ici.
+    */
+    if (action === 'ecouter') {
+      const codeParcours = String(parcours ?? '').toUpperCase();
+      const numero = Number(etape);
+      if (!['B', 'C'].includes(codeParcours) || !Number.isInteger(numero) || numero < 1) {
+        return json({ error: 'parcours (B ou C) et etape manquants.' }, 400);
+      }
+      const liste = await podcast({ action: 'parcours' });
+      if (!liste.ok) return json({ error: 'Mon Parcours ne répond pas.' }, 502);
+      const etapes = (liste.corps?.etapes ?? []) as Array<{
+        id: string; parcours_code: string; numero: number; titre: string; fichier: string | null; actif: boolean;
+      }>;
+      const trouvee = etapes.find((e) => e.parcours_code === codeParcours && e.numero === numero);
+      if (!trouvee) return json({ error: 'Cette étape n’est pas encore en ligne dans Mon Parcours.' }, 404);
+      if (!trouvee.fichier) return json({ error: 'Cette étape n’a pas encore de fichier audio.' }, 404);
+
+      const r = await podcast({ action: 'ecouter', id: trouvee.id });
+      if (!r.ok || !r.corps?.url) {
+        return json({ error: r.corps?.erreur === 'audio-absent' ? 'Pas de fichier audio pour cette étape.' : 'Mon Parcours refuse l’écoute.' }, 502);
+      }
+      return json({ url: r.corps.url, titre: r.corps.titre ?? trouvee.titre });
+    }
+
     if (!clienteId) return json({ error: 'clienteId manquant.' }, 400);
 
     const db = createClient(

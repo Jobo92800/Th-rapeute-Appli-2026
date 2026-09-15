@@ -835,6 +835,29 @@ export interface CompteParcours {
   derniereActivite: string | null;
 }
 
+/**
+ * L'adresse d'écoute d'un podcast, signée par Mon Parcours pour une heure.
+ * Pour la thérapeute qui veut entendre ce que la cliente a entendu, sans
+ * quitter la fiche.
+ */
+export async function urlEcoutePodcast(
+  parcours: 'B' | 'C',
+  etape: number,
+): Promise<{ url: string; titre: string }> {
+  const { data, error } = await supabase.functions.invoke('acces-parcours-audio', {
+    body: { action: 'ecouter', parcours, etape },
+  });
+  if (error) {
+    // Hors 2xx, la fonction met sa raison dans le corps : on la lit avant de renoncer.
+    const ctx = (error as { context?: Response }).context;
+    const corps = ctx ? await ctx.json().catch(() => null) : null;
+    throw new Error(corps?.error || error.message || 'Mon Parcours ne répond pas.');
+  }
+  const r = data as { url?: string; titre?: string; error?: string };
+  if (!r?.url) throw new Error(r?.error || 'Mon Parcours ne répond pas.');
+  return { url: r.url, titre: r.titre ?? '' };
+}
+
 /** État du compte de la cliente côté Mon Parcours, ou null s'il n'existe pas. */
 export async function etatParcours(clienteId: string): Promise<CompteParcours | null> {
   const { data, error } = await supabase.functions.invoke('acces-parcours-audio', {

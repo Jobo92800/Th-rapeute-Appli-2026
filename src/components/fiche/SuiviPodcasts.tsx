@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, ChevronLeft, ChevronRight, Headphones, Loader2, Target, Trophy } from 'lucide-react';
-import { etatParcours } from '../../services/metier';
+import { BookOpen, ChevronLeft, ChevronRight, Headphones, Loader2, Play, Target, Trophy } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { texteErreur } from '../../lib/erreurs';
+import { etatParcours, urlEcoutePodcast } from '../../services/metier';
 import { laCliente, majuscule, pronom } from '../../domain/civilite';
 import { PARCOURS, libelleParcours, type CodeParcours } from '../../domain/parcoursAudio';
 import {
@@ -89,6 +91,27 @@ export default function SuiviPodcasts({ cliente }: { cliente: Cliente }) {
 
   const n = Math.max(0, Math.min(numero ?? courant, sommaire.length - 1));
   const fiche = sommaire[n];
+
+  /*
+    Écouter l'épisode ici même. Mon Parcours signe l'adresse pour une heure ;
+    on la demande au clic, pas à l'ouverture — treize adresses signées pour
+    une page qu'on regarde dix secondes, c'est treize appels pour rien.
+    Le lecteur est celui du navigateur : rien à installer.
+  */
+  const [lecture, setLecture] = useState<{ numero: number; url: string } | null>(null);
+  const [chargementAudio, setChargementAudio] = useState(false);
+
+  async function ecouter() {
+    setChargementAudio(true);
+    try {
+      const { url } = await urlEcoutePodcast(code, fiche.numero + 1);
+      setLecture({ numero: fiche.numero, url });
+    } catch (e) {
+      toast.error(texteErreur(e) || 'Impossible de lancer l’écoute.');
+    } finally {
+      setChargementAudio(false);
+    }
+  }
   const precedente = n > 0 ? sommaire[n - 1] : null;
   const etat = (p: number): EtatPodcast | null => (avancement ? etatDuPodcast(p, avancement) : null);
   const etatFiche = etat(n);
@@ -192,6 +215,23 @@ export default function SuiviPodcasts({ cliente }: { cliente: Cliente }) {
                 )}
               </div>
               <h3 className="mt-0.5 text-lg font-semibold text-ardoise-900">{fiche.titre}</h3>
+
+              {lecture?.numero === fiche.numero ? (
+                <audio controls autoPlay src={lecture.url} className="mt-2 w-full" aria-label={`Podcast ${fiche.numero}`}>
+                  Votre navigateur ne sait pas lire ce fichier audio.
+                </audio>
+              ) : (
+                <button
+                  type="button"
+                  onClick={ecouter}
+                  disabled={chargementAudio || etatFiche === 'pas_en_ligne'}
+                  className="bouton-discret mt-2 text-xs"
+                >
+                  {chargementAudio ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+                  Écouter le podcast
+                </button>
+              )}
+
               <p className="mt-2 text-sm leading-relaxed text-ardoise-700">{fiche.resume}</p>
 
               <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
