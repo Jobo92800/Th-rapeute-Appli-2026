@@ -66,6 +66,12 @@ export interface Cliente {
    */
   exception_cure: string;
   /**
+   * Taille de la combi I-Shape du centre, notée par la thérapeute. Change au
+   * fil de la cure ; texte libre (063). À ne pas confondre avec la taille
+   * de la tenue vendue, figée sur la cure.
+   */
+  taille_combi_ishape: string | null;
+  /**
    * Bilan santé complémentaire, saisi sur l'onglet BioPortrait. N'entre
    * dans aucun calcul : ni le BioPortrait, ni la prescription, ni le prix.
    */

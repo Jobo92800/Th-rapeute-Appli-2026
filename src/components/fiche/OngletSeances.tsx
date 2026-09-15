@@ -5,7 +5,6 @@ import {
   Dices,
   Lock,
   Plus,
-  Shirt,
   X,
 } from 'lucide-react';
 import { differenceInCalendarDays, format } from 'date-fns';
@@ -23,6 +22,7 @@ import { couleurSoin } from '../../domain/soins';
 import { LIBELLES_TECHNOLOGIE } from '../../domain/tarification';
 import CourbePoids, { libelleDelta } from './CourbePoids';
 import ModaleSeance from './ModaleSeance';
+import EquipementIShape from './EquipementIShape';
 import { LIBELLES_PHASE, choisirJeu } from '../../domain/jeuDuJour';
 import type { AxeProfil } from '../../domain/bioportrait';
 import type { Seance, Technologie } from '../../types/db';
@@ -275,7 +275,8 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
               Toutes les séances de la cure {actif.programme.numero} ont été réalisées.
             </p>
           ) : (
-            <div className="flex flex-wrap gap-2 p-5">
+            <div className="p-5">
+            <div className="flex flex-wrap gap-2">
               {/*
                 La même couleur qu'en bas de page : la thérapeute voit la
                 teinte au moment de démarrer la séance, et la retrouve dans la
@@ -302,26 +303,23 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
                 </button>
               ))}
 
+            </div>
+
               {/*
-                La taille de tenue, à côté du bouton qui la concerne.
+                Les deux tailles de l'I-Shape, sous les boutons, en gros.
 
-                Elle est choisie une fois, dans la fenêtre de signature, et
-                dort ensuite dans l'onglet Contrat. Or c'est ici qu'on en a
-                besoin : la thérapeute sort la tenue au moment d'installer la
-                cliente sur l'I-Shape, et aller la chercher dans un autre
-                onglet fait perdre plus de temps que de demander sa taille à
-                la cliente — qui ne s'en souvient pas toujours.
+                La tenue est choisie une fois, dans la fenêtre de signature,
+                et dormait dans l'onglet Contrat ; la combi se note ici même
+                et change au fil de la cure. C'est au moment d'installer la
+                cliente sur l'I-Shape qu'on en a besoin, et une pastille en
+                petit se cherchait — Jonathan l'a demandée « plus grosse et
+                plus visible ».
 
-                Elle n'apparaît que si l'I-Shape est au programme : sur une
-                cure sans électrostimulation, la tenue ne dit rien.
+                Elles n'apparaissent que si l'I-Shape est au programme : sur
+                une cure sans électrostimulation, elles ne disent rien.
               */}
-              {tailleTenue && restantes.some((s) => s.technologie === 'ishape') && (
-                <span
-                  className={`inline-flex items-center gap-1.5 self-center rounded-full px-3 py-1.5 text-xs font-semibold ${couleurSoin('ishape').pastille}`}
-                >
-                  <Shirt className="h-3.5 w-3.5" />
-                  Tenue I-Shape · taille {tailleTenue}
-                </span>
+              {restantes.some((s) => s.technologie === 'ishape') && (
+                <EquipementIShape clienteId={clienteId} tailleTenue={tailleTenue} />
               )}
             </div>
           )}

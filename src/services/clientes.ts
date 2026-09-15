@@ -181,6 +181,16 @@ export async function enregistrerSante(clienteId: string, sante: Sante): Promise
   if (error) throw error;
 }
 
+/** La taille de la combi I-Shape, notée au fil des séances. Vide = pas encore constatée. */
+export async function definirTailleCombi(clienteId: string, taille: string): Promise<void> {
+  const { error } = await supabase
+    .from('clientes')
+    .update({ taille_combi_ishape: taille.trim() || null })
+    .eq('id', clienteId);
+
+  if (error) throw error;
+}
+
 export async function definirExceptionCure(clienteId: string, texte: string): Promise<void> {
   const { error } = await supabase
     .from('clientes')
