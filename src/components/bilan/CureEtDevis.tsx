@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Ban, Eye, Loader2, Mail, Minus, Pencil, Plus, Stethoscope } from 'lucide-react';
+import { AlertTriangle, Ban, Eye, Loader2, Mail, Minus, Pencil, Plus, Stethoscope, X } from 'lucide-react';
 import type { Bareme, Prestation } from '../../domain/bioportrait';
 import { detailInclus, type DetailInclus } from '../../domain/inclus';
 import BulleInclus from './BulleInclus';
@@ -121,6 +121,14 @@ export default function CureEtDevis({
     ils ne viennent pas du barème, ils viennent d'une décision.
   */
   const [ajoutes, setAjoutes] = useState<Prestation[]>([]);
+  /*
+    Les soins retirés à la main. Le « − » s'arrête au minimum du soin — en
+    dessous, il ne produit plus rien — mais une thérapeute doit pouvoir
+    sortir un soin de la cure d'un geste, sans le descendre à zéro clic
+    par clic. Retiré, le soin reste affiché en pointillés avec « Remettre »,
+    comme un soin écarté par la formule : la cliente voit ce qu'elle laisse.
+  */
+  const [retires, setRetires] = useState<Prestation[]>([]);
   const [methode, setMethode] = useState<'centre' | 'alma'>('centre');
   const [nEcheances, setNEcheances] = useState(4);
   /*
@@ -157,9 +165,27 @@ export default function CureEtDevis({
       .map((p) => ligneAjoutee(depouillement, p));
 
     return [...prescrites, ...supplementaires].map((l) =>
-      ajusts[l.presta] != null ? { ...l, seances: ajusts[l.presta]! } : l,
+      retires.includes(l.presta)
+        ? { ...l, seances: 0 }
+        : ajusts[l.presta] != null
+          ? { ...l, seances: ajusts[l.presta]! }
+          : l,
     );
-  }, [base, formule, ajusts, ajoutes, depouillement]);
+  }, [base, formule, ajusts, ajoutes, retires, depouillement]);
+
+  function retirer(presta: Prestation) {
+    // Un soin ajouté à la main se retire en l'oubliant ; un soin prescrit reste visible, retiré.
+    if (ajoutes.includes(presta)) setAjoutes((a) => a.filter((p) => p !== presta));
+    else setRetires((r) => [...r, presta]);
+    setAjusts((a) => {
+      const { [presta]: _, ...reste } = a;
+      return reste;
+    });
+  }
+
+  function remettre(presta: Prestation) {
+    setRetires((r) => r.filter((p) => p !== presta));
+  }
 
   const ajoutables = useMemo(
     () => prestationsAjoutables(depouillement, cure, avecDome),
@@ -310,7 +336,8 @@ export default function CureEtDevis({
             garde qu'un. À distinguer d'un soin contre-indiqué — celui-là est
             impossible, celui-ci est seulement hors budget.
           */
-          const ecarte = !retire && l.seances === 0;
+          const retireMain = !retire && retires.includes(l.presta);
+          const ecarte = !retire && !retireMain && l.seances === 0;
 
           return (
             <div
@@ -318,7 +345,7 @@ export default function CureEtDevis({
               className={`flex flex-wrap items-center gap-3.5 rounded-2xl border px-4 py-3.5 ${
                 retire
                   ? 'border-ardoise-200 bg-ardoise-50 opacity-60'
-                  : ecarte
+                  : ecarte || retireMain
                     ? 'border-dashed border-ardoise-200 bg-ardoise-50/50 opacity-70'
                     : surveille
                       ? 'border-amber-200 bg-amber-50/60'
@@ -337,6 +364,10 @@ export default function CureEtDevis({
                     <span className="inline-flex items-center gap-1 rounded-full bg-ardoise-200 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ardoise-600">
                       <Ban className="h-3 w-3" />
                       Retiré
+                    </span>
+                  ) : retireMain ? (
+                    <span className="rounded-full bg-ardoise-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ardoise-500">
+                      Retiré par la thérapeute
                     </span>
                   ) : ecarte ? (
                     /*
@@ -375,7 +406,9 @@ export default function CureEtDevis({
                 <p className="mt-0.5 text-xs text-ardoise-500">
                   {retire
                     ? 'Contre-indiqué par une réponse de santé — ce soin n’est pas facturé.'
-                    : ecarte
+                    : retireMain
+                      ? 'Sorti de la cure à la main — il ne compte plus dans le prix.'
+                      : ecarte
                       ? 'Recommandé par votre bilan, mais pas compris dans cette formule.'
                       : surveille
                         ? 'Possible après avis médical. Le soin reste au programme.'
@@ -383,7 +416,18 @@ export default function CureEtDevis({
                 </p>
               </div>
 
-              {!retire && !ecarte && (
+              {retireMain && edition && (
+                <button
+                  type="button"
+                  onClick={() => remettre(l.presta)}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-marine-300 bg-white px-3 py-1 text-xs font-semibold text-marine-700 hover:bg-marine-50"
+                >
+                  <Plus className="h-3 w-3" />
+                  Remettre
+                </button>
+              )}
+
+              {!retire && !ecarte && !retireMain && (
                 <div className="flex shrink-0 items-center gap-2">
                   {edition && (
                     <button
@@ -413,6 +457,18 @@ export default function CureEtDevis({
                   )}
 
                   <span className="text-[11px] text-ardoise-400">séances</span>
+
+                  {edition && (
+                    <button
+                      type="button"
+                      onClick={() => retirer(l.presta)}
+                      aria-label="Retirer ce soin de la cure"
+                      title="Retirer ce soin de la cure"
+                      className="ml-1 flex h-7 w-7 items-center justify-center rounded-lg border border-ardoise-200 text-ardoise-400 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -460,6 +516,7 @@ export default function CureEtDevis({
                 onClick={() => {
                   setFormule(f.code);
                   setAjusts({});
+                  setRetires([]);
                 }}
                 className={`flex-1 rounded-2xl border-[1.5px] px-3 py-3 text-center transition-colors ${
                   formule === f.code
