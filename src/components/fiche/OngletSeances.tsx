@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Check,
+  ChevronDown,
   Dices,
   Lock,
   Plus,
@@ -38,6 +39,10 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
   const [aCorriger, setACorriger] = useState<Seance | null>(null);
   const [enCours, setEnCours] = useState<Seance | null>(null);
   const [cureChoisie, setCureChoisie] = useState<string | null>(null);
+  /* Les blocs de soins repliés : un clic sur l'en-tête replie ou déploie. Tous ouverts au départ. */
+  const [replies, setReplies] = useState<Technologie[]>([]);
+  const basculer = (t: Technologie) =>
+    setReplies((r) => (r.includes(t) ? r.filter((x) => x !== t) : [...r, t]));
 
   const { data: programmes = [], isLoading } = useQuery({
     queryKey: ['programmes', clienteId],
@@ -387,21 +392,40 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
         blocsParSoin.map(({ technologie, liste, prevues }) => {
           const teinte = couleurSoin(technologie);
           const avecCourbe = technologie === 'luxo';
+          const replie = replies.includes(technologie);
           return (
             <section key={technologie} className={`carte border ${teinte.carte}`}>
-              <div className={`flex flex-wrap items-center justify-between gap-3 border-b px-5 py-3.5 ${teinte.entete}`}>
-                <h2 className={`text-sm font-semibold ${teinte.texte}`}>
+              {/*
+                L'en-tête est un bouton : un clic replie le bloc, un autre le
+                déploie. Quatre soins avec quinze séances chacun font une
+                page longue ; celle qui ne s'occupe que de l'I-Shape replie
+                le reste.
+              */}
+              <button
+                type="button"
+                onClick={() => basculer(technologie)}
+                aria-expanded={!replie}
+                className={`flex w-full flex-wrap items-center justify-between gap-3 px-5 py-3.5 text-left ${
+                  replie ? '' : 'border-b'
+                } ${teinte.entete}`}
+              >
+                <h2 className={`flex items-center gap-2 text-sm font-semibold ${teinte.texte}`}>
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${replie ? '-rotate-90' : ''}`}
+                  />
                   {LIBELLES_TECHNOLOGIE[technologie]}
                   {eligibles.length > 1 && (
-                    <span className="ml-2 font-normal text-ardoise-500">— cure {actif.programme.numero}</span>
+                    <span className="font-normal text-ardoise-500">— cure {actif.programme.numero}</span>
                   )}
                 </h2>
                 <span className="chiffres text-xs text-ardoise-500">
                   {liste.length}
                   {prevues != null ? ` / ${prevues}` : ''} séance{liste.length > 1 ? 's' : ''}
+                  {replie && <span className="ml-2 text-ardoise-400">· repliées</span>}
                 </span>
-              </div>
+              </button>
 
+              {!replie && (
               <div className={avecCourbe ? 'lg:grid lg:grid-cols-[1fr_minmax(300px,42%)]' : ''}>
                 <ul className="divide-y divide-white/70">
                   {liste.map((s, i) => {
@@ -468,6 +492,7 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
                   </div>
                 )}
               </div>
+              )}
             </section>
           );
         })

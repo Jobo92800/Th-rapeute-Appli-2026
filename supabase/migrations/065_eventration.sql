@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS migrations_faites (
   nom text PRIMARY KEY,
   le  timestamptz NOT NULL DEFAULT now()
 );
+-- Fermée à tout le monde : seul l'éditeur SQL y écrit, personne n'a à la lire.
+ALTER TABLE migrations_faites ENABLE ROW LEVEL SECURITY;
 
 -- 1. La réponse, avant « Aucune de ces situations ».
 UPDATE bareme_empreinte
