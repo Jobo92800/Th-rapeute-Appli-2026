@@ -110,6 +110,23 @@ export function controlerPrescription() {
   egal('pacemaker : la pressodynamie est retirée', pacemaker.contreIndications.PRESSO, 'rem');
   verifie('pacemaker : la luxothérapie reste possible', !pacemaker.contreIndications.LUXO);
 
+  /*
+    L'ÉVENTRATION RETIRE L'I-SHAPE (Jonathan, 15 septembre 2026, migration
+    065) : une paroi abdominale ouverte ne se stimule pas. Rien d'autre —
+    la luxo et la presso restent possibles.
+  */
+  const iEventration = options.findIndex((o) => o[0].toLowerCase().includes('éventration'));
+  verifie('la question de santé propose l’éventration', iEventration >= 0);
+  const eventration = depouiller(bareme, { [iSante]: [iEventration] });
+  egal('éventration : l’électrostimulation est retirée', eventration.contreIndications.ISHAPE, 'rem');
+  verifie('éventration : la luxothérapie reste possible', !eventration.contreIndications.LUXO);
+  verifie('éventration : la pressodynamie reste possible', !eventration.contreIndications.PRESSO);
+  verifie(
+    'l’I-Shape ne se rajoute pas à la main non plus',
+    !prestationsAjoutables(eventration, prescrire(bareme, eventration)).includes('ISHAPE'),
+  );
+  egal('« Aucune » reste la dernière réponse', options[options.length - 1][0], 'Aucune de ces situations');
+
   const diabete = depouiller(bareme, { [iSante]: [iDiabete] });
   egal('diabète : avis médical, pas un retrait', diabete.contreIndications.ISHAPE, 'med');
 
