@@ -49,6 +49,7 @@ const LIBELLE_MODE: Record<string, string> = {
   centre_2x: '2 fois au centre',
   centre_3x: '3 fois au centre',
   centre_4x: '4 fois au centre',
+  centre_5x: '5 fois au centre',
   alma_2x: '2 fois Alma',
   alma_3x: '3 fois Alma',
   alma_4x: '4 fois Alma',

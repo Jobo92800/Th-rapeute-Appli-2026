@@ -178,7 +178,7 @@ export function controlerTarification() {
   egal('centre en 1 fois', modeReglement('centre', 1), 'comptant');
   egal('centre en 3 fois', modeReglement('centre', 3), 'centre_3x');
   egal('Alma en 10 fois', modeReglement('alma', 10), 'alma_10x');
-  egal('quatre choix au centre', ECHEANCES_CENTRE, [1, 2, 3, 4]);
+  egal('cinq choix au centre, le cinquième sous condition', ECHEANCES_CENTRE, [1, 2, 3, 4, 5]);
   egal('cinq choix chez Alma', ECHEANCES_ALMA, [2, 3, 4, 10, 12]);
 
   section('L’échéancier des cures suivantes (ancien modèle)');
@@ -223,8 +223,28 @@ export function controlerTarification() {
 
   egal('une cure de trois mois n’accepte que trois chèques', echeancesCentrePossibles(3), [1, 2, 3]);
   egal('quatre mois rouvrent le quatrième', echeancesCentrePossibles(4), [1, 2, 3, 4]);
-  egal('cinq mois ne vont pas au-delà de quatre', echeancesCentrePossibles(5), [1, 2, 3, 4]);
+  /*
+    LE CINQUIÈME CHÈQUE, À PARTIR DE VINGT LUXO SEULEMENT (Jonathan,
+    15 septembre 2026). Cinq mois ne suffisent pas : vingt I-Shape durent
+    aussi cinq mois et restent à quatre chèques.
+  */
+  egal('cinq mois sans vingt luxo ne vont pas au-delà de quatre', echeancesCentrePossibles(5), [1, 2, 3, 4]);
+  egal('cinq mois et dix-neuf luxo non plus', echeancesCentrePossibles(5, 19), [1, 2, 3, 4]);
+  egal('cinq mois et vingt luxo ouvrent le cinquième', echeancesCentrePossibles(5, 20), [1, 2, 3, 4, 5]);
+  egal('vingt luxo sur une cure plus courte ne suffisent pas', echeancesCentrePossibles(4, 20), [1, 2, 3, 4]);
   egal('un mois ne laisse que le comptant', echeancesCentrePossibles(1), [1]);
+
+  const centre5 = construireEcheancierCure({
+    seances: 20,
+    prixSeance: 59,
+    options: 89,
+    methode: 'centre',
+    n: 5,
+  });
+  egal('cinq échéances', centre5.echeances.length, 5);
+  egal('mode enregistré en 5 fois', centre5.mode, 'centre_5x');
+  egalEuros('vingt luxo en cinq chèques : 325 puis 236 quatre fois', centre5.echeances[0].montant, 4 * 59 + 89);
+  verifie('les quatre suivants sont ronds', centre5.echeances.slice(1).every((e) => e.montant === 4 * 59));
 
   /*
     Le cas qui a motivé la règle : la thérapeute réduit l'offre, et le

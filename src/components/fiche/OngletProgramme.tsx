@@ -14,6 +14,7 @@ import {
 import type { ProgrammeComplet } from '../../services/metier';
 import {
   LIBELLES_TECHNOLOGIE,
+  SEANCES_LUXO_POUR_CINQ_CHEQUES,
   formaterEuros,
   formaterEurosJuste,
 } from '../../domain/tarification';
@@ -623,6 +624,14 @@ function Reechelonner({
     ? Number(lignes[0].prix_unitaire)
     : undefined;
 
+  /*
+    Le même plafond qu'à la signature : cinq chèques seulement à partir de
+    vingt luxo. Sans quoi une cure signée en quatre se redécouperait en cinq
+    par la petite porte.
+  */
+  const seancesLuxo = lignes.find((l) => l.technologie === 'luxo')?.seances_prevues ?? 0;
+  const choix = seancesLuxo >= SEANCES_LUXO_POUR_CINQ_CHEQUES ? [1, 2, 3, 4, 5] : [1, 2, 3, 4];
+
   const apercu = reechelonner(
     echeances,
     n,
@@ -668,7 +677,7 @@ function Reechelonner({
       </p>
 
       <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-        {[1, 2, 3, 4].map((c) => (
+        {choix.map((c) => (
           <button
             key={c}
             type="button"

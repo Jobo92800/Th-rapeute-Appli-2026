@@ -144,6 +144,7 @@ const LIBELLE_REGLEMENT: Record<string, string> = {
   centre_2x: 'Au centre, en 2 fois sans frais',
   centre_3x: 'Au centre, en 3 fois sans frais',
   centre_4x: 'Au centre, en 4 fois sans frais',
+  centre_5x: 'Au centre, en 5 fois sans frais',
   alma_2x: 'Par carte, en 2 fois via Alma',
   alma_3x: 'Par carte, en 3 fois via Alma',
   alma_4x: 'Par carte, en 4 fois via Alma',

@@ -110,6 +110,7 @@ export type ModeReglement =
   | 'centre_2x'
   | 'centre_3x'
   | 'centre_4x'
+  | 'centre_5x'
   | 'alma_2x'
   | 'alma_3x'
   | 'alma_4x'
@@ -174,7 +175,14 @@ export function fraisAlma(n: number, montant: number): number {
   return arrondir((montant * tauxFraisAlma(n, montant)) / 100);
 }
 
-export const ECHEANCES_CENTRE = [1, 2, 3, 4];
+export const ECHEANCES_CENTRE = [1, 2, 3, 4, 5];
+
+/**
+ * Le cinquième chèque ne s'ouvre qu'à partir de vingt luxo (Jonathan,
+ * 15 septembre 2026) : c'est la cure la plus longue et la plus chère, la
+ * seule où étaler sur cinq mois se justifie. En dessous, quatre au plus.
+ */
+export const SEANCES_LUXO_POUR_CINQ_CHEQUES = 20;
 export const ECHEANCES_ALMA = [2, 3, 4, 10, 12];
 
 /**
@@ -207,9 +215,11 @@ export function dureeCureEnMois(seancesDuSoinLePlusLong: number, soinsPrincipaux
  * Alma n'est pas concerné : c'est un crédit avancé par Alma, le centre est
  * payé tout de suite, la durée de la cure ne l'engage pas.
  */
-export function echeancesCentrePossibles(dureeMois: number): number[] {
+export function echeancesCentrePossibles(dureeMois: number, seancesLuxo = 0): number[] {
   const plafond = Math.max(1, dureeMois);
-  return ECHEANCES_CENTRE.filter((n) => n <= plafond);
+  return ECHEANCES_CENTRE.filter(
+    (n) => n <= plafond && (n < 5 || seancesLuxo >= SEANCES_LUXO_POUR_CINQ_CHEQUES),
+  );
 }
 
 export function modeReglement(methode: 'centre' | 'alma', n: number): ModeReglement {
@@ -222,6 +232,7 @@ export const LIBELLES_MODE_REGLEMENT: Record<ModeReglement, string> = {
   centre_2x: '2 fois au centre',
   centre_3x: '3 fois au centre',
   centre_4x: '4 fois au centre',
+  centre_5x: '5 fois au centre',
   alma_2x: '2 fois Alma',
   alma_3x: '3 fois Alma',
   alma_4x: '4 fois Alma',
@@ -496,7 +507,7 @@ export function construireEcheancierCure(args: {
     dejaRegle > 0 ? [{ rang: 1, montant: dejaRegle, type: 'bilan' as const }] : [];
 
   if (methode === 'centre') {
-    const n = Math.max(1, Math.min(4, args.n));
+    const n = Math.max(1, Math.min(ECHEANCES_CENTRE[ECHEANCES_CENTRE.length - 1], args.n));
 
     const acompte = arrondir(Math.max(0, Math.min(args.acompte ?? 0, base - dejaRegle)));
 

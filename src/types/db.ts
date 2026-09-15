@@ -188,6 +188,7 @@ export type ModeReglement =
   | 'centre_2x'
   | 'centre_3x'
   | 'centre_4x'
+  | 'centre_5x'
   | 'alma_2x'
   | 'alma_3x'
   | 'alma_4x'

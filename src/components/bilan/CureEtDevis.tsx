@@ -19,7 +19,7 @@ import {
 } from '../../domain/prescription';
 import {
   ECHEANCES_ALMA,
-  ECHEANCES_CENTRE,
+  SEANCES_LUXO_POUR_CINQ_CHEQUES,
   creneauxParDefaut,
   dureeCureEnMois,
   echeancesCentrePossibles,
@@ -182,8 +182,10 @@ export default function CureEtDevis({
   const seancesDuPlusLong = retenues.reduce((n, l) => Math.max(n, l.seances), 0);
   const dureeMois = dureeCureEnMois(seancesDuPlusLong, soinsPrincipaux);
 
+  // Le cinquième chèque ne s'ouvre qu'à partir de vingt luxo.
+  const seancesLuxo = retenues.find((l) => l.presta === 'LUXO')?.seances ?? 0;
   const choixEcheances =
-    methode === 'centre' ? echeancesCentrePossibles(dureeMois) : ECHEANCES_ALMA;
+    methode === 'centre' ? echeancesCentrePossibles(dureeMois, seancesLuxo) : ECHEANCES_ALMA;
 
   /*
     Le nombre retenu, et non celui qui traîne dans l'état : la thérapeute a
@@ -790,10 +792,16 @@ export default function CureEtDevis({
               La thérapeute doit comprendre pourquoi le 4× a disparu, sinon
               elle croit à une panne et cherche le bouton manquant.
             */}
-            {methode === 'centre' && choixEcheances.length < ECHEANCES_CENTRE.length && (
+            {methode === 'centre' && choixEcheances.length < 4 && (
               <p className="mx-auto mt-1.5 max-w-sm text-[11px] text-marine-300">
                 Cette cure dure {dureeMois} mois : au-delà de {choixEcheances.length} chèques, le
                 dernier serait encaissé après la dernière séance.
+              </p>
+            )}
+            {methode === 'centre' && choixEcheances.length === 4 && dureeMois >= 5 && (
+              <p className="mx-auto mt-1.5 max-w-sm text-[11px] text-marine-300">
+                Le cinquième chèque est réservé aux cures d’au moins{' '}
+                {SEANCES_LUXO_POUR_CINQ_CHEQUES} luxo.
               </p>
             )}
           </div>

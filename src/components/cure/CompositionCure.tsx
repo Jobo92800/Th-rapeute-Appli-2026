@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Check, Gift, Minus, Plus } from 'lucide-react';
 import {
   ECHEANCES_ALMA,
-  ECHEANCES_CENTRE,
+  SEANCES_LUXO_POUR_CINQ_CHEQUES,
   dureeCureEnMois,
   echeancesCentrePossibles,
   tauxFraisAlma,
@@ -135,8 +135,10 @@ export default function CompositionCure({
   const soinsPrincipaux = lignes.filter((l) => l.seances > 0 && l.technologie !== 'relax').length;
   const seancesDuPlusLong = lignes.reduce((n, l) => Math.max(n, l.seances), 0);
   const dureeMois = dureeCureEnMois(seancesDuPlusLong, soinsPrincipaux);
+  // Le cinquième chèque ne s'ouvre qu'à partir de vingt luxo.
+  const seancesLuxo = lignes.find((l) => l.technologie === 'luxo')?.seances ?? 0;
   const choixEcheances =
-    methode === 'centre' ? echeancesCentrePossibles(dureeMois) : ECHEANCES_ALMA;
+    methode === 'centre' ? echeancesCentrePossibles(dureeMois, seancesLuxo) : ECHEANCES_ALMA;
   const nRetenu = choixEcheances.includes(nEcheances)
     ? nEcheances
     : (choixEcheances[choixEcheances.length - 1] ?? 1);
@@ -393,10 +395,16 @@ export default function CompositionCure({
           Sans cette phrase, la thérapeute croit à une panne : le 4× était là
           il y a dix secondes, et il a disparu quand elle a retiré des séances.
         */}
-        {methode === 'centre' && choixEcheances.length < ECHEANCES_CENTRE.length && (
+        {methode === 'centre' && choixEcheances.length < 4 && (
           <p className="mt-3 text-xs text-ardoise-500">
             Cette cure dure {dureeMois} mois : au-delà de {choixEcheances.length} chèques, le
             dernier serait encaissé après la dernière séance.
+          </p>
+        )}
+        {methode === 'centre' && choixEcheances.length === 4 && dureeMois >= 5 && (
+          <p className="mt-3 text-xs text-ardoise-500">
+            Le cinquième chèque est réservé aux cures d’au moins {SEANCES_LUXO_POUR_CINQ_CHEQUES}{' '}
+            luxo.
           </p>
         )}
 
