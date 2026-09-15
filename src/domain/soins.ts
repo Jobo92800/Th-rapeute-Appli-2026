@@ -53,6 +53,16 @@ export interface CouleurSoin {
   bord: string;
   /** La pastille, quand la place manque pour le nom entier. */
   pastille: string;
+  /**
+   * La carte entière du soin, dans l'onglet Séances : un fond pâle et un
+   * cadre de sa teinte. Le filet et le nom coloré restaient trop discrets
+   * pour séparer les blocs d'un coup d'œil (Jonathan, 15 septembre 2026).
+   */
+  carte: string;
+  /** L'en-tête de cette carte, un ton plus soutenu que le fond. */
+  entete: string;
+  /** Un bouton de démarrage, dans la teinte du soin. */
+  bouton: string;
 }
 
 export const COULEURS_SOIN: Record<Technologie, CouleurSoin> = {
@@ -60,21 +70,33 @@ export const COULEURS_SOIN: Record<Technologie, CouleurSoin> = {
     texte: 'text-marine-700',
     bord: 'border-l-marine-500',
     pastille: 'bg-marine-100 text-marine-800',
+    carte: 'border-marine-300 bg-marine-50',
+    entete: 'border-marine-200 bg-marine-100',
+    bouton: 'border-marine-300 bg-marine-50 hover:bg-marine-100',
   },
   relax: {
     texte: 'text-violet-700',
     bord: 'border-l-violet-500',
     pastille: 'bg-violet-100 text-violet-800',
+    carte: 'border-violet-300 bg-violet-50',
+    entete: 'border-violet-200 bg-violet-100',
+    bouton: 'border-violet-300 bg-violet-50 hover:bg-violet-100',
   },
   ishape: {
     texte: 'text-amber-700',
     bord: 'border-l-amber-500',
     pastille: 'bg-amber-100 text-amber-800',
+    carte: 'border-amber-300 bg-amber-50',
+    entete: 'border-amber-200 bg-amber-100',
+    bouton: 'border-amber-300 bg-amber-50 hover:bg-amber-100',
   },
   presso: {
     texte: 'text-sky-700',
     bord: 'border-l-sky-500',
     pastille: 'bg-sky-100 text-sky-800',
+    carte: 'border-sky-300 bg-sky-50',
+    entete: 'border-sky-200 bg-sky-100',
+    bouton: 'border-sky-300 bg-sky-50 hover:bg-sky-100',
   },
   /*
     L'Advance Lift, le soin de l'anti-âge : rose, la teinte du terrain sur le
@@ -85,12 +107,18 @@ export const COULEURS_SOIN: Record<Technologie, CouleurSoin> = {
     texte: 'text-rose-700',
     bord: 'border-l-rose-500',
     pastille: 'bg-rose-100 text-rose-800',
+    carte: 'border-rose-300 bg-rose-50',
+    entete: 'border-rose-200 bg-rose-100',
+    bouton: 'border-rose-300 bg-rose-50 hover:bg-rose-100',
   },
   /* Le Dôme n'est plus prescrit : il reste lisible sur les cures passées. */
   dome: {
     texte: 'text-ardoise-600',
     bord: 'border-l-ardoise-400',
     pastille: 'bg-ardoise-100 text-ardoise-700',
+    carte: 'border-ardoise-300 bg-ardoise-50',
+    entete: 'border-ardoise-200 bg-ardoise-100',
+    bouton: 'border-ardoise-300 bg-ardoise-50 hover:bg-ardoise-100',
   },
 };
 

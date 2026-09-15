@@ -308,7 +308,7 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
                 <button
                   key={s.technologie}
                   onClick={() => demarrer(s.technologie)}
-                  className="bouton-discret"
+                  className={`bouton-discret ${couleurSoin(s.technologie).bouton}`}
                 >
                   <Plus className={`h-4 w-4 ${couleurSoin(s.technologie).texte}`} />
                   <span className={`font-semibold ${couleurSoin(s.technologie).texte}`}>
@@ -388,8 +388,8 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
           const teinte = couleurSoin(technologie);
           const avecCourbe = technologie === 'luxo';
           return (
-            <section key={technologie} className="carte">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ardoise-100 px-5 py-3.5">
+            <section key={technologie} className={`carte border ${teinte.carte}`}>
+              <div className={`flex flex-wrap items-center justify-between gap-3 border-b px-5 py-3.5 ${teinte.entete}`}>
                 <h2 className={`text-sm font-semibold ${teinte.texte}`}>
                   {LIBELLES_TECHNOLOGIE[technologie]}
                   {eligibles.length > 1 && (
@@ -403,7 +403,7 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
               </div>
 
               <div className={avecCourbe ? 'lg:grid lg:grid-cols-[1fr_minmax(300px,42%)]' : ''}>
-                <ul className="divide-y divide-ardoise-100">
+                <ul className="divide-y divide-white/70">
                   {liste.map((s, i) => {
                     const numeroSeance = liste.length - i;
                     const jeu = bibliotheque.find((j) => j.code === s.jeu_code);
@@ -413,7 +413,7 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
                         <button
                           type="button"
                           onClick={() => setACorriger(s)}
-                          className={`flex w-full items-start gap-4 border-l-[3px] py-3 pl-4 pr-5 text-left hover:bg-ardoise-50 ${teinte.bord}`}
+                          className={`flex w-full items-start gap-4 border-l-[3px] py-3 pl-4 pr-5 text-left hover:bg-white/70 ${teinte.bord}`}
                           title="Corriger cette séance"
                         >
                           <span
@@ -463,7 +463,7 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
                 </ul>
 
                 {avecCourbe && (
-                  <div className="border-t border-ardoise-100 lg:border-l lg:border-t-0">
+                  <div className="border-t border-white/80 bg-white/50 lg:border-l lg:border-t-0">
                     <CourbePoids seances={faites} nue />
                   </div>
                 )}
