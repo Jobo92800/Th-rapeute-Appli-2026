@@ -470,6 +470,17 @@ export async function ajouterMensuration(m: Partial<Mensuration>): Promise<void>
   if (error) throw error;
 }
 
+/** Corriger un relevé : une valeur mal lue, une date fausse. La courbe se redessine. */
+export async function majMensuration(id: string, m: Partial<Mensuration>): Promise<void> {
+  const { error } = await supabase.from('mensurations').update(m).eq('id', id);
+  if (error) throw error;
+}
+
+export async function supprimerMensuration(id: string): Promise<void> {
+  const { error } = await supabase.from('mensurations').delete().eq('id', id);
+  if (error) throw error;
+}
+
 export async function ventesDeLaCliente(clienteId: string): Promise<VenteComplement[]> {
   const { data, error } = await supabase
     .from('ventes_complements')

@@ -1,10 +1,16 @@
 import { Fragment, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { LineChart, Plus, Ruler } from 'lucide-react';
+import { LineChart, Pencil, Plus, Ruler, Trash2, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { ajouterMensuration, mensurationsDeLaCliente } from '../../services/metier';
+import {
+  ajouterMensuration,
+  majMensuration,
+  mensurationsDeLaCliente,
+  supprimerMensuration,
+} from '../../services/metier';
+import { texteErreur } from '../../lib/erreurs';
 import type { Mensuration } from '../../types/db';
 import CourbeMensurations from './CourbeMensurations';
 
@@ -55,6 +61,37 @@ export default function OngletMensurations({
   const [ouvert, setOuvert] = useState(false);
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [valeurs, setValeurs] = useState<Record<string, string>>({});
+  /*
+    Le relevé qu'on corrige, s'il y en a un. Le même formulaire sert à
+    saisir et à corriger : une valeur mal lue sur le mètre se voit dans le
+    tableau, et il faut pouvoir la reprendre là, sans refaire le relevé.
+  */
+  const [corrige, setCorrige] = useState<Mensuration | null>(null);
+
+  function ouvrirVierge() {
+    setCorrige(null);
+    setDate(format(new Date(), 'yyyy-MM-dd'));
+    setValeurs({});
+    setOuvert(true);
+  }
+
+  function ouvrirPourCorriger(m: Mensuration) {
+    setCorrige(m);
+    setDate(m.date_mesure);
+    const v: Record<string, string> = {};
+    for (const mes of MESURES) {
+      const x = m[mes.cle];
+      if (x != null) v[mes.cle] = String(x);
+    }
+    setValeurs(v);
+    setOuvert(true);
+  }
+
+  function fermer() {
+    setOuvert(false);
+    setCorrige(null);
+    setValeurs({});
+  }
 
   const { data: mesures = [], isLoading } = useQuery({
     queryKey: ['mensurations', clienteId],
@@ -63,25 +100,44 @@ export default function OngletMensurations({
 
   const ajouter = useMutation({
     mutationFn: async () => {
-      const ligne: Record<string, unknown> = {
-        cliente_id: clienteId,
-        centre_id: centreId,
-        date_mesure: date,
-      };
+      const ligne: Record<string, unknown> = { date_mesure: date };
       for (const m of MESURES) {
         const v = valeurs[m.cle];
         ligne[m.cle] = v ? Number(v) : null;
       }
-      await ajouterMensuration(ligne as Partial<Mensuration>);
+      if (corrige) {
+        await majMensuration(corrige.id, ligne as Partial<Mensuration>);
+      } else {
+        await ajouterMensuration({
+          ...ligne,
+          cliente_id: clienteId,
+          centre_id: centreId,
+        } as Partial<Mensuration>);
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['mensurations', clienteId] });
-      setValeurs({});
-      setOuvert(false);
-      toast.success('Mensurations enregistrées');
+      toast.success(corrige ? 'Relevé corrigé' : 'Mensurations enregistrées');
+      fermer();
     },
-    onError: () => toast.error("Les mensurations n'ont pas pu être enregistrées."),
+    onError: (e) => toast.error(texteErreur(e) || "Les mensurations n'ont pas pu être enregistrées."),
   });
+
+  const supprimer = useMutation({
+    mutationFn: (id: string) => supprimerMensuration(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['mensurations', clienteId] });
+      toast.success('Relevé supprimé');
+      if (corrige) fermer();
+    },
+    onError: (e) => toast.error(texteErreur(e) || "Le relevé n'a pas pu être supprimé."),
+  });
+
+  function demanderSuppression(m: Mensuration) {
+    const jour = format(new Date(m.date_mesure), 'd MMMM yyyy', { locale: fr });
+    if (!confirm(`Supprimer le relevé du ${jour} ? Ses onze mesures disparaissent, la courbe se redessine.`)) return;
+    supprimer.mutate(m.id);
+  }
 
   function soumettre(e: FormEvent) {
     e.preventDefault();
@@ -106,7 +162,7 @@ export default function OngletMensurations({
             <Ruler className="h-4 w-4 text-ardoise-400" />
             Mensurations
           </h2>
-          <button onClick={() => setOuvert((o) => !o)} className="bouton-discret">
+          <button onClick={() => (ouvert && !corrige ? fermer() : ouvrirVierge())} className="bouton-discret">
             <Plus className="h-4 w-4" />
             Nouveau relevé
           </button>
@@ -114,6 +170,19 @@ export default function OngletMensurations({
 
         {ouvert && (
           <form onSubmit={soumettre} className="border-b border-ardoise-100 bg-ardoise-50/60 p-5">
+            {corrige && (
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-marine-200 bg-marine-50 px-3 py-2 text-sm text-marine-900">
+                <span>
+                  <b>Correction du relevé du{' '}
+                  {format(new Date(corrige.date_mesure), 'd MMMM yyyy', { locale: fr })}</b> — les
+                  valeurs ci-dessous remplacent les anciennes.
+                </span>
+                <button type="button" onClick={fermer} className="bouton-discret text-xs">
+                  <X className="h-3.5 w-3.5" />
+                  Annuler
+                </button>
+              </div>
+            )}
             <div className="mb-4 max-w-xs">
               <label htmlFor="date-mesure" className="etiquette">
                 Date du relevé
@@ -169,7 +238,11 @@ export default function OngletMensurations({
               ))}
             </div>
             <button type="submit" disabled={ajouter.isPending} className="bouton-principal mt-4">
-              {ajouter.isPending ? 'Enregistrement…' : 'Enregistrer le relevé'}
+              {ajouter.isPending
+                ? 'Enregistrement…'
+                : corrige
+                  ? 'Enregistrer la correction'
+                  : 'Enregistrer le relevé'}
             </button>
           </form>
         )}
@@ -191,9 +264,34 @@ export default function OngletMensurations({
                   {mesures.map((m) => (
                     <th
                       key={m.id}
-                      className="px-4 py-2.5 text-right text-2xs font-semibold uppercase tracking-widest text-ardoise-500"
+                      className="px-4 py-2 text-right text-2xs font-semibold uppercase tracking-widest text-ardoise-500"
                     >
-                      {format(new Date(m.date_mesure), 'd MMM yy', { locale: fr })}
+                      {/*
+                        Corriger ou supprimer un relevé se fait depuis sa
+                        colonne : c'est là qu'on voit la valeur fausse.
+                      */}
+                      <span className="inline-flex items-center gap-1">
+                        {format(new Date(m.date_mesure), 'd MMM yy', { locale: fr })}
+                        <button
+                          type="button"
+                          onClick={() => ouvrirPourCorriger(m)}
+                          aria-label={`Corriger le relevé du ${format(new Date(m.date_mesure), 'd MMMM yyyy', { locale: fr })}`}
+                          title="Corriger ce relevé"
+                          className="rounded p-1 text-ardoise-400 hover:bg-ardoise-200 hover:text-marine-700"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => demanderSuppression(m)}
+                          disabled={supprimer.isPending}
+                          aria-label={`Supprimer le relevé du ${format(new Date(m.date_mesure), 'd MMMM yyyy', { locale: fr })}`}
+                          title="Supprimer ce relevé"
+                          className="rounded p-1 text-ardoise-400 hover:bg-rose-100 hover:text-rose-700"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </span>
                     </th>
                   ))}
                 </tr>
