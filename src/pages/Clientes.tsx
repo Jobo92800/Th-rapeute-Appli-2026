@@ -13,7 +13,7 @@ import {
   listerTherapeutes,
   restaurerCliente,
 } from '../services/clientes';
-import { resumeNotesDuCentre, situationsDuCentre } from '../services/metier';
+import { clientesAvecBilanFacture, resumeNotesDuCentre, situationsDuCentre } from '../services/metier';
 import { creditsDuCentre } from '../services/parrainage';
 import PastilleCredits from '../components/PastilleCredits';
 import { soldeDepuisCompteurs } from '../domain/parrainage';
@@ -101,6 +101,12 @@ export default function Clientes() {
     queryKey: ['situations', perimetre],
     queryFn: () => situationsDuCentre(perimetre),
     retry: false,
+  });
+
+  // Celles qui ont payé un bilan sans prendre de cure : « Bilan seul ».
+  const { data: bilansSeuls = new Set<string>() } = useQuery({
+    queryKey: ['bilans-factures', perimetre],
+    queryFn: () => clientesAvecBilanFacture(perimetre),
   });
 
   // Les crédits de parrainage du centre, en un seul appel : une filleule
@@ -400,7 +406,7 @@ export default function Clientes() {
                     {c.therapeutes.length > 0 ? c.therapeutes.join(', ') : '—'}
                   </td>
                   <td className="px-4 py-2.5">
-                    <CelluleReglement situation={situation} />
+                    <CelluleReglement situation={situation} bilanSeul={bilansSeuls.has(c.id!)} />
                   </td>
                   <td className="px-4 py-2.5">
                     <BoutonNotes
@@ -509,10 +515,29 @@ function BoutonNotes({
   );
 }
 
-function CelluleReglement({ situation }: { situation: SituationReglement | undefined }) {
+function CelluleReglement({
+  situation,
+  bilanSeul,
+}: {
+  situation: SituationReglement | undefined;
+  /** Un bilan facturé sur la fiche : sans cure, c'est ce que la colonne doit dire. */
+  bilanSeul: boolean;
+}) {
   const etat = etatCliente(situation);
 
   if (etat.etat === 'aucun') {
+    /*
+      Pas d'échéancier, mais un bilan payé : la cliente est venue, a réglé
+      son BioPortrait et n'a pas démarré. Ce n'est pas « rien », et ça se
+      lit d'un coup d'œil dans la liste — c'est celles-là qu'on relance.
+    */
+    if (bilanSeul) {
+      return (
+        <span className="inline-flex w-fit items-center rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-2xs font-semibold text-amber-800">
+          Bilan seul
+        </span>
+      );
+    }
     return <span className="text-xs text-ardoise-300">—</span>;
   }
 

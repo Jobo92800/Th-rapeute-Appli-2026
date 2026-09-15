@@ -379,6 +379,24 @@ export async function situationsDuCentre(centreId: string | null): Promise<Situa
 }
 
 /**
+ * Les clientes qui ont réglé un bilan sans ouvrir de cure.
+ *
+ * Un bilan facturé n'a pas d'échéancier : la vue des règlements ne le voit
+ * pas, et la liste affichait « — » pour une cliente qui a pourtant payé
+ * 129 €. Jonathan veut le lire d'un coup d'œil (15 septembre 2026). On
+ * rend les identifiants des clientes ayant au moins un bilan facturé ;
+ * c'est l'écran qui décide de ne l'afficher que si aucune cure ne prend
+ * le dessus.
+ */
+export async function clientesAvecBilanFacture(centreId: string | null): Promise<Set<string>> {
+  let requete = supabase.from('bilans').select('cliente_id').eq('facturation', 'facture');
+  if (centreId) requete = requete.eq('centre_id', centreId);
+  const { data, error } = await requete;
+  if (error) throw error;
+  return new Set((data ?? []).map((b) => b.cliente_id as string));
+}
+
+/**
  * Redécoupe ce qui reste dû sur une cure réglée au centre.
  *
  * Le calcul vient du domaine ; la base, elle, refait ses propres
