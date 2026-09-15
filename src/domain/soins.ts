@@ -12,14 +12,15 @@
   gauche de la ligne. Le décompte reste en haut : ces couleurs ne comptent
   rien, elles séparent.
 
-  LE CHOIX DES TEINTES. Elles ne doivent pas se confondre avec celles qui
-  disent un état ailleurs dans l'application : le vert d'un règlement
-  encaissé, le rouge d'un retard, l'ambre d'une mise en garde. Le teal de la
-  charte revient au soin principal — la Luxothérapie Perte de poids est le
-  cœur de la méthode, elle a droit à la couleur maison. Les autres prennent
-  des teintes voisines assez distantes pour se séparer d'un coup d'œil, y
-  compris pour un œil qui distingue mal le rouge du vert : violet, ambre et
-  bleu ciel ne se ressemblent sur aucun type de vision.
+  LE CHOIX DES TEINTES (Jonathan, 15 septembre 2026) : **bleu** pour la
+  Luxothérapie Perte de poids, **bleu ciel** pour la Relaxation — les deux
+  luxo se ressemblent, c'est voulu, l'une est la version soutenue de
+  l'autre —, **ambre** pour l'I-Shape, **vert** pour la Pressodynamie,
+  rose pour l'Advance Lift. La première palette gardait le teal de la
+  charte pour la luxo et le violet pour la relaxation ; le teal se
+  confondait avec l'interface, et le violet ne disait rien. Le vert de la
+  presso est celui du drainage et de la circulation, pas celui d'un
+  règlement encaissé : ils ne se rencontrent jamais sur le même écran.
 */
 
 import type { Technologie } from './tarification';
@@ -67,20 +68,20 @@ export interface CouleurSoin {
 
 export const COULEURS_SOIN: Record<Technologie, CouleurSoin> = {
   luxo: {
-    texte: 'text-marine-700',
-    bord: 'border-l-marine-500',
-    pastille: 'bg-marine-100 text-marine-800',
-    carte: 'border-marine-300 bg-marine-50',
-    entete: 'border-marine-200 bg-marine-100',
-    bouton: 'border-marine-300 bg-marine-50 hover:bg-marine-100',
+    texte: 'text-blue-700',
+    bord: 'border-l-blue-500',
+    pastille: 'bg-blue-100 text-blue-800',
+    carte: 'border-blue-300 bg-blue-50',
+    entete: 'border-blue-200 bg-blue-100',
+    bouton: 'border-blue-300 bg-blue-50 hover:bg-blue-100',
   },
   relax: {
-    texte: 'text-violet-700',
-    bord: 'border-l-violet-500',
-    pastille: 'bg-violet-100 text-violet-800',
-    carte: 'border-violet-300 bg-violet-50',
-    entete: 'border-violet-200 bg-violet-100',
-    bouton: 'border-violet-300 bg-violet-50 hover:bg-violet-100',
+    texte: 'text-sky-700',
+    bord: 'border-l-sky-500',
+    pastille: 'bg-sky-100 text-sky-800',
+    carte: 'border-sky-300 bg-sky-50',
+    entete: 'border-sky-200 bg-sky-100',
+    bouton: 'border-sky-300 bg-sky-50 hover:bg-sky-100',
   },
   ishape: {
     texte: 'text-amber-700',
@@ -91,12 +92,12 @@ export const COULEURS_SOIN: Record<Technologie, CouleurSoin> = {
     bouton: 'border-amber-300 bg-amber-50 hover:bg-amber-100',
   },
   presso: {
-    texte: 'text-sky-700',
-    bord: 'border-l-sky-500',
-    pastille: 'bg-sky-100 text-sky-800',
-    carte: 'border-sky-300 bg-sky-50',
-    entete: 'border-sky-200 bg-sky-100',
-    bouton: 'border-sky-300 bg-sky-50 hover:bg-sky-100',
+    texte: 'text-emerald-700',
+    bord: 'border-l-emerald-500',
+    pastille: 'bg-emerald-100 text-emerald-800',
+    carte: 'border-emerald-300 bg-emerald-50',
+    entete: 'border-emerald-200 bg-emerald-100',
+    bouton: 'border-emerald-300 bg-emerald-50 hover:bg-emerald-100',
   },
   /*
     L'Advance Lift, le soin de l'anti-âge : rose, la teinte du terrain sur le
