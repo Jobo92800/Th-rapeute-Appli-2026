@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Check, Loader2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { texteErreur } from '../../lib/erreurs';
 import CompositionCure, { type Prescription } from './CompositionCure';
 import { creerProgramme, lireGrilleTarifaire } from '../../services/metier';
 import { filleulesDe, seancesOffertesUtilisees } from '../../services/parrainage';
@@ -90,7 +91,8 @@ export default function ModaleNouvelleCure({
       onCreee();
     } catch (e) {
       console.error(e);
-      toast.error("La cure n'a pas pu être enregistrée. Réessayez.");
+      // Le refus vient de la base et nomme la cause : on le montre.
+      toast.error(texteErreur(e) || "La cure n'a pas pu être enregistrée. Réessayez.");
       setEnCours(false);
     }
   }

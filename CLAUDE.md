@@ -472,6 +472,16 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   `supabase/corriger_alice_fabre.sql` pour le modèle. Et dans Airtable,
   « Montant cure N » d'une cure supprimée ne se vide pas tout seul : la
   synchro n'écrit que les cures qui existent.
+- **Un numéro de cure se prend sur le plus haut existant, jamais en
+  comptant.** `creerProgramme` faisait « nombre de cures + 1 » ; or la
+  reprise du CRM garde les numéros d'Airtable (« Montant cure 3 » fait une
+  cure 3 sans cure 2) et une cure supprimée laisse un trou. Sur une fiche
+  reprise à trous, le numéro calculé était déjà pris, la base refusait
+  (unique `cliente_id, numero`) et « Nouvelle cure » échouait avec un
+  message qui ne disait rien — Arlette Cottin, 15 septembre 2026. L'écran
+  affichait bien « Cure 6 » (il prenait le max) pendant que le service
+  écrivait 5. Les deux calculs ne doivent pas diverger : le service fait
+  foi, l'écran l'annonce.
 - **Doublons Airtable.** Le parcours du bilan enchaîne trois écritures ;
   sans verrou, trois synchros parallèles créaient trois fiches. Réglé par
   `reclamer_taches_airtable` (SKIP LOCKED), un verrou par cliente et un

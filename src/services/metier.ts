@@ -218,11 +218,23 @@ export async function enregistrerTailleTenue(
 }
 
 export async function creerProgramme(n: NouveauProgramme): Promise<Programme> {
-  // Numéro de cure : 1 pour la première, puis 2, 3…
-  const { count } = await supabase
+  /*
+    Numéro de cure : le plus haut existant, plus un — PAS le nombre de cures
+    plus un. Les deux se confondent tant que les numéros se suivent, et ils
+    ne se suivent pas toujours : la reprise du CRM garde les numéros
+    d'Airtable (« Montant cure 3 » fait une cure 3 même sans cure 2), et une
+    cure supprimée laisse un trou. Compter donnait alors un numéro déjà
+    pris, la base refusait (unique cliente_id + numero), et « Nouvelle
+    cure » échouait sur toute fiche reprise à trous — Arlette Cottin,
+    15 septembre 2026.
+  */
+  const { data: derniere } = await supabase
     .from('programmes')
-    .select('*', { count: 'exact', head: true })
-    .eq('cliente_id', n.clienteId);
+    .select('numero')
+    .eq('cliente_id', n.clienteId)
+    .order('numero', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   const { data: programme, error } = await supabase
     .from('programmes')
@@ -230,7 +242,7 @@ export async function creerProgramme(n: NouveauProgramme): Promise<Programme> {
       cliente_id: n.clienteId,
       bilan_id: n.bilanId,
       centre_id: n.centreId,
-      numero: (count ?? 0) + 1,
+      numero: (derniere?.numero ?? 0) + 1,
       statut: 'valide',
       electro: n.electro,
       guide: n.guide,
