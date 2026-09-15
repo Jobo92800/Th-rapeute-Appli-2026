@@ -104,6 +104,27 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
     staleTime: Infinity,
   });
 
+  const faites = useMemo(() => seances.filter((s) => s.cloturee), [seances]);
+
+  /*
+    Un bloc par soin, dans l'ordre des soins, la séance la plus récente en
+    haut de chaque bloc. Le nombre prévu vient du suivi de la cure ; il
+    manque sur une cure reprise du CRM.
+  */
+  const blocsParSoin = useMemo(() => {
+    const ordre: Technologie[] = ['luxo', 'relax', 'ishape', 'presso', 'dome', 'advance_lift'];
+    return ordre
+      .map((technologie) => ({
+        technologie,
+        liste: faites
+          .filter((s) => s.technologie === technologie)
+          .slice()
+          .sort((a, b) => b.date_seance.localeCompare(a.date_seance) || b.cree_le.localeCompare(a.cree_le)),
+        prevues: actif?.suivi.find((x) => x.technologie === technologie)?.seances_prevues ?? null,
+      }))
+      .filter((b) => b.liste.length > 0);
+  }, [faites, actif]);
+
   const totaux = useMemo(() => {
     const prevues = actif?.suivi.reduce((n, s) => n + s.seances_prevues, 0) ?? 0;
     const faites = actif?.suivi.reduce((n, s) => n + s.seances_faites, 0) ?? 0;
@@ -341,94 +362,117 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
         </section>
       )}
 
-      {!cureAntiAge && <CourbePoids seances={seances.filter((s) => s.cloturee)} />}
+      {/*
+        Historique — UN BLOC PAR SOIN, comme le cahier des thérapeutes.
 
-      {/* Historique ------------------------------------------------------ */}
-      <section className="carte">
-        <div className="border-b border-ardoise-100 px-5 py-3.5">
-          <h2 className="text-sm font-semibold text-ardoise-900">
-          Séances réalisées
-          {eligibles.length > 1 && (
-            <span className="ml-2 font-normal text-ardoise-500">
-              — cure {actif.programme.numero}
-            </span>
-          )}
-        </h2>
-        </div>
-
-        {seances.filter((s) => s.cloturee).length === 0 ? (
+        La première version listait toutes les séances dans l'ordre des
+        venues, tous soins mêlés. Jonathan a demandé la disposition de son
+        cahier (15 septembre 2026) : la Luxothérapie avec sa courbe de poids,
+        puis l'I-Shape, puis la presso, chacun avec ses séances numérotées
+        S1, S2, S3… La question au comptoir n'est pas « que s'est-il passé
+        le 6 septembre » mais « où en est-elle sur l'I-Shape, et quel
+        programme la collègue a mis la dernière fois ». S1 est la première
+        séance du soin ; la plus récente est en haut.
+      */}
+      {faites.length === 0 ? (
+        <section className="carte">
+          <div className="border-b border-ardoise-100 px-5 py-3.5">
+            <h2 className="text-sm font-semibold text-ardoise-900">Séances réalisées</h2>
+          </div>
           <p className="px-5 py-8 text-center text-sm text-ardoise-400">
             Aucune séance clôturée pour l'instant.
           </p>
-        ) : (
-          <ul className="divide-y divide-ardoise-100">
-            {seances
-              .filter((s) => s.cloturee)
-              .map((s) => {
-                const jeu = bibliotheque.find((j) => j.code === s.jeu_code);
-                const delta = ecartPoids.get(s.id) ?? null;
-                const teinte = couleurSoin(s.technologie);
+        </section>
+      ) : (
+        blocsParSoin.map(({ technologie, liste, prevues }) => {
+          const teinte = couleurSoin(technologie);
+          const avecCourbe = technologie === 'luxo';
+          return (
+            <section key={technologie} className="carte">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ardoise-100 px-5 py-3.5">
+                <h2 className={`text-sm font-semibold ${teinte.texte}`}>
+                  {LIBELLES_TECHNOLOGIE[technologie]}
+                  {eligibles.length > 1 && (
+                    <span className="ml-2 font-normal text-ardoise-500">— cure {actif.programme.numero}</span>
+                  )}
+                </h2>
+                <span className="chiffres text-xs text-ardoise-500">
+                  {liste.length}
+                  {prevues != null ? ` / ${prevues}` : ''} séance{liste.length > 1 ? 's' : ''}
+                </span>
+              </div>
 
-                return (
-                  <li key={s.id}>
-                    <button
-                      type="button"
-                      onClick={() => setACorriger(s)}
-                      className={`flex w-full items-start justify-between gap-4 border-l-[3px] py-3 pl-4 pr-5 text-left hover:bg-ardoise-50 ${teinte.bord}`}
-                      title="Corriger cette séance"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-ardoise-900">
-                          {/*
-                            La date en chiffres. Une thérapeute qui relit une
-                            liste de séances cherche un jour précis : « 06/09 »
-                            se compare d'un coup d'œil à la ligne du dessus,
-                            « 6 septembre » se lit.
-                          */}
-                          {format(new Date(s.date_seance), 'dd/MM/yyyy')}
-                          <span className={`ml-2 font-medium ${teinte.texte}`}>
-                            {LIBELLES_TECHNOLOGIE[s.technologie]}
+              <div className={avecCourbe ? 'lg:grid lg:grid-cols-[1fr_minmax(300px,42%)]' : ''}>
+                <ul className="divide-y divide-ardoise-100">
+                  {liste.map((s, i) => {
+                    const numeroSeance = liste.length - i;
+                    const jeu = bibliotheque.find((j) => j.code === s.jeu_code);
+                    const delta = ecartPoids.get(s.id) ?? null;
+                    return (
+                      <li key={s.id}>
+                        <button
+                          type="button"
+                          onClick={() => setACorriger(s)}
+                          className={`flex w-full items-start gap-4 border-l-[3px] py-3 pl-4 pr-5 text-left hover:bg-ardoise-50 ${teinte.bord}`}
+                          title="Corriger cette séance"
+                        >
+                          <span
+                            className={`chiffres mt-0.5 shrink-0 rounded-md px-2 py-0.5 text-xs font-bold ${teinte.pastille}`}
+                          >
+                            S{numeroSeance}
                           </span>
-                        </p>
-                        {jeu && (
-                          <p className="text-xs text-ardoise-500">
-                            {jeu.code} · {jeu.titre}
-                          </p>
-                        )}
-                        {s.programme_utilise && (
-                          <p className="mt-1 text-xs text-ardoise-600">
-                            <span className="font-semibold text-ardoise-700">Programme :</span>{' '}
-                            {s.programme_utilise}
-                          </p>
-                        )}
-                        {s.commentaire && (
-                          <p className="mt-1 text-xs text-ardoise-600">{s.commentaire}</p>
-                        )}
-                      </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="chiffres text-sm font-semibold text-ardoise-900">
+                              {format(new Date(s.date_seance), 'dd/MM/yyyy')}
+                            </p>
+                            {jeu && (
+                              <p className="text-xs text-ardoise-500">
+                                Mission Déclic {jeu.code} · {jeu.titre}
+                              </p>
+                            )}
+                            {s.programme_utilise && (
+                              <p className="mt-1 text-xs text-ardoise-700">
+                                <span className="font-semibold">Programme :</span> {s.programme_utilise}
+                              </p>
+                            )}
+                            {s.commentaire && (
+                              <p className="mt-1 text-xs text-ardoise-600">{s.commentaire}</p>
+                            )}
+                          </div>
 
-                      {s.poids != null && (
-                        <span className="shrink-0 text-right">
-                          <span className="chiffres block text-sm font-semibold text-marine-800">
-                            {Number(s.poids).toLocaleString('fr-FR', { minimumFractionDigits: 1 })} kg
-                          </span>
-                          {delta != null && delta !== 0 && (
-                            <span
-                              className={`chiffres block text-xs font-semibold ${
-                                delta < 0 ? 'text-marine-600' : 'text-rose-600'
-                              }`}
-                            >
-                              {libelleDelta(delta)}
+                          {s.poids != null && (
+                            <span className="shrink-0 text-right">
+                              <span className="chiffres block text-sm font-semibold text-marine-800">
+                                {Number(s.poids).toLocaleString('fr-FR', { minimumFractionDigits: 1 })} kg
+                              </span>
+                              {delta != null && delta !== 0 && (
+                                <span
+                                  className={`chiffres block text-xs font-semibold ${
+                                    delta < 0 ? 'text-marine-600' : 'text-rose-600'
+                                  }`}
+                                >
+                                  {libelleDelta(delta)}
+                                </span>
+                              )}
                             </span>
                           )}
-                        </span>
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-          </ul>
-        )}
-      </section>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+
+                {avecCourbe && (
+                  <div className="border-t border-ardoise-100 lg:border-l lg:border-t-0">
+                    <CourbePoids seances={faites} nue />
+                  </div>
+                )}
+              </div>
+            </section>
+          );
+        })
+      )}
+
       {aCorriger && (
         <ModaleSeance
           seance={aCorriger}

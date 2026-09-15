@@ -1,11 +1,12 @@
 /*
   La couleur de chaque soin.
 
-  La liste des séances réalisées mélange les quatre soins d'une cure, et
-  c'est voulu : elle raconte les venues dans l'ordre, pas les soins un par
-  un. Mais en noir sur blanc, quatre libellés qui commencent tous par
-  « Luxothérapie » ou « Presso » se lisent ligne à ligne — il faut lire pour
-  distinguer, au lieu de voir.
+  La liste des séances réalisées mélangeait les quatre soins d'une cure ;
+  depuis le 15 septembre 2026 elle fait un bloc par soin, et la couleur
+  reste utile : en tête de bloc, sur le filet des lignes, et sur les
+  boutons de démarrage, où quatre libellés qui commencent tous par
+  « Luxothérapie » ou « Presso » se lisent ligne à ligne — il faut lire
+  pour distinguer, au lieu de voir.
 
   D'où une couleur par soin, portée par le nom du soin et par un filet à
   gauche de la ligne. Le décompte reste en haut : ces couleurs ne comptent

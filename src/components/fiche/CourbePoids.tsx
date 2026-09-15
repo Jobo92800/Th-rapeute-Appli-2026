@@ -28,7 +28,14 @@ export function libelleDelta(d: number): string {
  * En SVG, comme la courbe des mensurations : le projet n'embarque pas de
  * bibliothèque de graphiques et n'en a pas besoin.
  */
-export default function CourbePoids({ seances }: { seances: Seance[] }) {
+export default function CourbePoids({
+  seances,
+  nue = false,
+}: {
+  seances: Seance[];
+  /** Sans sa carte : posée dans le bloc de la Luxothérapie, à côté des séances. */
+  nue?: boolean;
+}) {
   const points: Point[] = useMemo(() => {
     const releves = seances
       .filter((s) => s.poids != null)
@@ -70,7 +77,7 @@ export default function CourbePoids({ seances }: { seances: Seance[] }) {
   const aire = `${chemin} L ${x(points.length - 1).toFixed(1)} ${H - M.bas} L ${x(0).toFixed(1)} ${H - M.bas} Z`;
 
   return (
-    <section className="carte p-5">
+    <section className={nue ? 'p-5' : 'carte p-5'}>
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h2 className="text-sm font-semibold text-ardoise-900">Évolution du poids</h2>
         <span className="text-xs text-ardoise-500">
