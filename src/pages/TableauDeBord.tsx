@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, Download } from 'lucide-react';
+import { AlertTriangle, Download, Trash2 } from 'lucide-react';
 import { endOfMonth, format, startOfMonth, startOfYear, subDays, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
@@ -11,6 +11,7 @@ import { lireBaremeActif } from '../services/metier';
 
 import type { Axe } from '../domain/bioportrait';
 import ContenuTableauDeBord from '../components/tableau/Contenu';
+import ModaleFichesDeTest from '../components/tableau/ModaleFichesDeTest';
 
 type Periode = 'jour' | 'semaine' | 'mois' | 'mois_dernier' | 'annee' | 'tout' | 'perso';
 
@@ -54,6 +55,7 @@ function bornes(p: Periode, perso: { du: string; au: string }): { du: string; au
 export default function TableauDeBord() {
   const { centresAccessibles, role } = useSession();
   const [periode, setPeriode] = useState<Periode>('mois');
+  const [menageTest, setMenageTest] = useState(false);
   const aujourdhuiIso = format(new Date(), 'yyyy-MM-dd');
   const [perso, setPerso] = useState({ du: aujourdhuiIso, au: aujourdhuiIso });
   const [centreId, setCentreId] = useState<string | null>(null);
@@ -129,6 +131,15 @@ export default function TableauDeBord() {
             <Download className="h-4 w-4" />
             Reprendre l’historique
           </Link>
+          <button
+            type="button"
+            onClick={() => setMenageTest(true)}
+            className="bouton-discret border-rose-200 text-rose-700 hover:bg-rose-50"
+            title="Les fiches nées ici dont le nom ou le prénom contient « test »"
+          >
+            <Trash2 className="h-4 w-4" />
+            Effacer les fiches de test
+          </button>
         </div>
       </header>
 
@@ -225,6 +236,7 @@ export default function TableauDeBord() {
       ) : (
         <ContenuTableauDeBord data={data} nomAxe={nomAxe} tousCentres={!centreId} />
       )}
+      {menageTest && <ModaleFichesDeTest onFerme={() => setMenageTest(false)} />}
     </div>
   );
 }

@@ -199,3 +199,43 @@ export async function definirExceptionCure(clienteId: string, texte: string): Pr
 
   if (error) throw error;
 }
+
+/*
+  Le ménage des fiches de test, depuis le tableau de bord.
+
+  Même règle que le script `supabase/effacer_les_fiches_de_test.sql` : les
+  fiches nées dans la V2 dont le nom ou le prénom contient « test ». On
+  liste d'abord, on efface ensuite, et on nettoie leurs copies dans Airtable
+  avec les identifiants que la base rend — une fois la ligne locale partie,
+  ils n'existent plus ailleurs.
+*/
+export interface FicheDeTest {
+  id: string;
+  fiche: string;
+  cree_le: string;
+  airtable_record_id: string | null;
+  cures: number;
+}
+
+export async function listerLesFichesDeTest(): Promise<FicheDeTest[]> {
+  const { data, error } = await supabase.rpc('lister_les_fiches_de_test');
+  if (error) throw error;
+  return (data ?? []) as FicheDeTest[];
+}
+
+/** Efface, puis nettoie Airtable. Rend le nombre effacé et les copies CRM restées. */
+export async function effacerLesFichesDeTest(): Promise<{ effacees: number; airtableRestees: string[] }> {
+  const { data, error } = await supabase.rpc('effacer_les_fiches_de_test');
+  if (error) throw error;
+  const parties = (data ?? []) as Array<{ id: string; fiche: string; airtable_record_id: string | null }>;
+
+  const airtableRestees: string[] = [];
+  for (const p of parties) {
+    if (!p.airtable_record_id) continue;
+    const { data: r, error: e } = await supabase.functions.invoke('synchro-airtable', {
+      body: { action: 'supprimer_fiche', recordId: p.airtable_record_id },
+    });
+    if (e || (r && typeof r === 'object' && 'error' in r)) airtableRestees.push(p.fiche);
+  }
+  return { effacees: parties.length, airtableRestees };
+}
