@@ -28,6 +28,17 @@ import type { Technologie } from './tarification';
  * bilan : la thérapeute l'ajoute à la main, sous « Modifier », à 59 € la
  * séance comme les autres. Ailleurs, il n'apparaît nulle part.
  */
+/**
+ * Les soins où l'on choisit un programme sur l'appareil, et où la séance
+ * le note à part du commentaire : la suivante doit savoir lequel pour
+ * reprendre là où l'autre s'est arrêtée.
+ */
+export const SOINS_AVEC_PROGRAMME: readonly Technologie[] = ['ishape', 'presso'];
+
+export function aUnProgrammeAppareil(t: Technologie): boolean {
+  return SOINS_AVEC_PROGRAMME.includes(t);
+}
+
 export const CENTRES_AVEC_DOME = ['grau-du-roi'];
 
 export function domeDisponible(centreId: string | null | undefined): boolean {

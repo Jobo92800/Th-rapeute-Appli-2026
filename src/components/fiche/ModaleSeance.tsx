@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Loader2, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { majSeance, supprimerSeance } from '../../services/metier';
+import { aUnProgrammeAppareil } from '../../domain/soins';
 import type { Seance } from '../../types/db';
 
 /**
@@ -27,6 +28,8 @@ export default function ModaleSeance({
   const [date, setDate] = useState(seance.date_seance);
   const [poids, setPoids] = useState(seance.poids != null ? String(seance.poids) : '');
   const [commentaire, setCommentaire] = useState(seance.commentaire ?? '');
+  const [programmeUtilise, setProgrammeUtilise] = useState(seance.programme_utilise ?? '');
+  const avecProgramme = aUnProgrammeAppareil(seance.technologie);
   const [enCours, setEnCours] = useState(false);
 
   useEffect(() => {
@@ -54,6 +57,7 @@ export default function ModaleSeance({
         date_seance: date,
         poids: nombre,
         commentaire: commentaire.trim(),
+        ...(avecProgramme ? { programme_utilise: programmeUtilise.trim() || null } : {}),
       });
       toast.success('Séance corrigée');
       onEnregistre();
@@ -134,9 +138,25 @@ export default function ModaleSeance({
             </div>
           </div>
 
+          {avecProgramme && (
+            <div>
+              <label className="etiquette" htmlFor="seance-prog">
+                Programme utilisé
+              </label>
+              <input
+                id="seance-prog"
+                type="text"
+                className="champ"
+                value={programmeUtilise}
+                onChange={(e) => setProgrammeUtilise(e.target.value)}
+                placeholder="Sur l’appareil"
+              />
+            </div>
+          )}
+
           <div>
             <label className="etiquette" htmlFor="seance-com">
-              Commentaire
+              {avecProgramme ? 'Commentaire / ressenti' : 'Commentaire'}
             </label>
             <textarea
               id="seance-com"

@@ -18,7 +18,7 @@ import {
   seancesDuProgramme,
   supprimerSeance,
 } from '../../services/metier';
-import { couleurSoin } from '../../domain/soins';
+import { aUnProgrammeAppareil, couleurSoin } from '../../domain/soins';
 import { LIBELLES_TECHNOLOGIE } from '../../domain/tarification';
 import CourbePoids, { libelleDelta } from './CourbePoids';
 import ModaleSeance from './ModaleSeance';
@@ -395,6 +395,12 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
                             {jeu.code} · {jeu.titre}
                           </p>
                         )}
+                        {s.programme_utilise && (
+                          <p className="mt-1 text-xs text-ardoise-600">
+                            <span className="font-semibold text-ardoise-700">Programme :</span>{' '}
+                            {s.programme_utilise}
+                          </p>
+                        )}
                         {s.commentaire && (
                           <p className="mt-1 text-xs text-ardoise-600">{s.commentaire}</p>
                         )}
@@ -457,8 +463,11 @@ function SeanceEnCours({
 }) {
   const [poids, setPoids] = useState('');
   const [commentaire, setCommentaire] = useState('');
+  const [programmeUtilise, setProgrammeUtilise] = useState('');
   const [photo, setPhoto] = useState(false);
   const [jeuFait, setJeuFait] = useState(false);
+  /* I-Shape et presso : le programme choisi sur l'appareil se note à part du ressenti. */
+  const avecProgramme = aUnProgrammeAppareil(seance.technologie);
   const [reponseJeu, setReponseJeu] = useState('');
 
   /*
@@ -589,7 +598,7 @@ function SeanceEnCours({
           />
         </div>
       ) : (
-        <div className="grid gap-4 p-5 sm:grid-cols-3">
+        <div className={`grid gap-4 p-5 ${avecProgramme ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}>
           <div>
             <label htmlFor="poids" className="etiquette">
               Poids (kg)
@@ -603,9 +612,23 @@ function SeanceEnCours({
               className="champ"
             />
           </div>
+          {avecProgramme && (
+            <div>
+              <label htmlFor="prog" className="etiquette">
+                Programme utilisé
+              </label>
+              <input
+                id="prog"
+                value={programmeUtilise}
+                onChange={(e) => setProgrammeUtilise(e.target.value)}
+                className="champ"
+                placeholder="Sur l’appareil"
+              />
+            </div>
+          )}
           <div className="sm:col-span-2">
             <label htmlFor="comm" className="etiquette">
-              Commentaire
+              {avecProgramme ? 'Commentaire / ressenti' : 'Commentaire'}
             </label>
             <input
               id="comm"
@@ -640,6 +663,7 @@ function SeanceEnCours({
               onCloturer({
                 poids: !antiAge && poids ? Number(poids) : null,
                 commentaire,
+                programme_utilise: avecProgramme ? programmeUtilise.trim() || null : null,
                 photo_prise: photo,
                 jeu_valide: antiAge ? false : jeuFait,
                 jeu_reponse: !antiAge && reponseJeu ? { reponse: reponseJeu } : {},

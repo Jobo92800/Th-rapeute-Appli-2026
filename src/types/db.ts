@@ -281,6 +281,8 @@ export interface Seance {
   technologie: Technologie;
   poids: number | null;
   commentaire: string;
+  /** Programme choisi sur l'appareil — I-Shape, Pressodynamie (064). */
+  programme_utilise: string | null;
   photo_prise: boolean;
   jeu_code: string | null;
   jeu_valide: boolean;
