@@ -49,7 +49,7 @@ export async function lireGrilleTarifaire(): Promise<GrilleTarifaire> {
     guide: vus.get('guide') ?? 29,
     tenue: vus.get('tenue') ?? 60,
     bilan: vus.get('bilan') ?? 87,
-    dome: vus.get('dome') ?? 59,
+    dome: vus.get('dome') ?? 49,
     advance_lift: vus.get('advance_lift') ?? 85,
     complement: vus.get('complement') ?? 37,
   };
