@@ -168,7 +168,7 @@ export function controlerAntiAge() {
   egal('765 € dus, en deux : 5 et 4 séances', enDeux.echeances.map((e) => e.montant), [425, 340]);
   verifie('toujours des multiples de 85', enDeux.echeances.every((e) => e.montant % 85 === 0));
   const sansUnite = reechelonner(dues, 2, new Date('2026-10-10'));
-  egal('sans unité, la règle d’avant : en parts égales', sansUnite.echeances.map((e) => e.montant), [382.5, 382.5]);
+  egal('sans unité, en euros entiers, le reste sur le premier', sansUnite.echeances.map((e) => e.montant), [383, 382]);
 
   section('Le document du Bio-Portrait Anti-Âge');
 

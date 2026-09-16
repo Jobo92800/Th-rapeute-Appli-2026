@@ -376,6 +376,19 @@ export function controlerMetier() {
   egal('la première tombe à la date donnée', enTrois.echeances[0].date_prevue, '2026-10-09');
   egal('la suivante un mois après', enTrois.echeances[1].date_prevue, '2026-11-09');
 
+  /*
+    DES MULTIPLES DE 59, JAMAIS DE VIRGULE (Jonathan, 16 septembre 2026).
+    Avec le prix de la séance, chaque chèque couvre des séances entières,
+    le guide sur le premier ; sans unité commune, des euros entiers.
+  */
+  egal('sans unité, des euros entiers : 1 799 € en trois font 601 · 599 · 599', enTrois.echeances.map((e) => e.montant), [601, 599, 599]);
+  const vingtLuxo = [ech(1, 265, 'a_venir'), ech(2, 236, 'a_venir'), ech(3, 236, 'a_venir'), ech(4, 236, 'a_venir'), ech(5, 236, 'a_venir')];
+  const enQuatre = reechelonner(vingtLuxo, 4, new Date('2026-10-09'), 59);
+  egal('20 luxo + guide (1 209 €) en 4 : 5 séances par chèque, le guide sur le premier', enQuatre.echeances.map((e) => e.montant), [324, 295, 295, 295]);
+  verifie('aucun chèque à virgule', enQuatre.echeances.every((e) => Number.isInteger(e.montant)));
+  const enCinq = reechelonner(vingtLuxo, 5, new Date('2026-10-09'), 59);
+  egal('en 5 : on retrouve le découpage de la signature', enCinq.echeances.map((e) => e.montant), [265, 236, 236, 236, 236]);
+
   const enUne = reechelonner(quatreDues, 1, new Date('2026-10-09'));
   egal('en une fois, une seule ligne', enUne.echeances.length, 1);
   egalEuros('qui porte tout', enUne.echeances[0].montant, 1799);

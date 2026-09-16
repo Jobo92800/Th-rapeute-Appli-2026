@@ -292,10 +292,14 @@ export function echeanceIntouchable(e: Echeance): boolean {
 /**
  * Redécoupe en `n` fois ce qui reste dû sur une cure.
  *
- * La répartition se fait en parts égales, le reliquat d'arrondi sur la
- * première. Le devis, lui, répartit au prorata des séances — mais ici une
- * partie a pu être réglée, et « la première échéance porte le guide et la
- * tenue » n'a plus de sens : ils sont déjà payés.
+ * Avec le prix d'une séance (`unite`), chaque chèque couvre un nombre
+ * entier de séances, comme à la signature — c'est la règle de la maison,
+ * « des multiples de 59 € », et ce qui n'en fait pas une (le guide, la
+ * tenue, un reste) tombe sur le premier. Sans unité commune (des soins à
+ * des prix différents), on redécoupe en euros entiers, le reste sur le
+ * premier : 1 209 € en 4 fois font 303 · 302 · 302 · 302, jamais 302,25.
+ * Personne n'écrit un chèque à virgule devant une cliente (Jonathan,
+ * 16 septembre 2026 — l'écran ne passait l'unité que pour l'Advance Lift).
  */
 export function reechelonner(
   echeances: Echeance[],
@@ -332,7 +336,9 @@ export function reechelonner(
     };
   }
 
-  const part = Math.floor((total / nombre) * 100) / 100;
+  // En euros entiers quand le total l'est ; au centime seulement s'il ne l'est pas.
+  const entier = Number.isInteger(total);
+  const part = entier ? Math.floor(total / nombre) : Math.floor((total / nombre) * 100) / 100;
   const reliquat = Math.round((total - part * nombre) * 100) / 100;
 
   return {

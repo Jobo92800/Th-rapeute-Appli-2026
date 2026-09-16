@@ -616,13 +616,21 @@ function Reechelonner({
     .sort()[0];
 
   /*
-    Une cure d'Advance Lift se redécoupe en séances entières — des multiples
-    de 85 € — comme à la signature. Le prix unitaire est celui figé sur la
-    ligne de la cure, jamais un nombre écrit ici.
+    Une cure se redécoupe en séances entières — des multiples de 59 €, ou
+    de 85 € pour l'Advance Lift — comme à la signature. Le prix unitaire
+    est celui figé sur les lignes de la cure, jamais un nombre écrit ici ;
+    il ne sert que si tous les soins de la cure ont le même (un Dôme à
+    49 € à côté d'une luxo à 59 € n'a pas d'unité commune : on redécoupe
+    alors en euros entiers).
   */
-  const unite = lignes.length > 0 && lignes.every((l) => l.technologie === 'advance_lift')
-    ? Number(lignes[0].prix_unitaire)
-    : undefined;
+  const prix = Array.from(
+    new Set(
+      lignes
+        .filter((l) => l.seances_prevues > 0 && Number(l.prix_unitaire) > 0)
+        .map((l) => Number(l.prix_unitaire)),
+    ),
+  );
+  const unite = prix.length === 1 ? prix[0] : undefined;
 
   /*
     Le même plafond qu'à la signature : cinq chèques seulement à partir de
