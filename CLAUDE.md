@@ -487,6 +487,13 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   affichait bien « Cure 6 » (il prenait le max) pendant que le service
   écrivait 5. Les deux calculs ne doivent pas diverger : le service fait
   foi, l'écran l'annonce.
+- **Le redécoupage échouait dès qu'un chèque était encaissé.** La 052
+  écrivait les nouvelles échéances aux rangs 1, 2, 3… alors que le premier
+  chèque, réglé, restait en place avec son rang 1 : la contrainte d'unicité
+  (programme, type, rang) refusait — Rémy Boisset, 17 septembre 2026. Ça
+  passait en essai, où rien n'est jamais réglé, et jamais en vrai. La 068
+  fait prendre aux nouvelles la suite du plus haut rang encore présent.
+  Règle : ce qu'on insère à côté de lignes conservées ne repart jamais de 1.
 - **Doublons Airtable.** Le parcours du bilan enchaîne trois écritures ;
   sans verrou, trois synchros parallèles créaient trois fiches. Réglé par
   `reclamer_taches_airtable` (SKIP LOCKED), un verrou par cliente et un
@@ -599,7 +606,7 @@ Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`,
 `FIREBASE_SERVICE_ACCOUNT`.
 
-Migrations passées jusqu'à **058** incluse (la 054, la 057, la 059, la **060** à la **067** sont écrites, à passer ; la 060 et la 062 demandent aussi de redéployer `synchro-airtable`), fonction Edge `gerer-les-comptes` déployée et vérifiée de bout en bout, `synchro-airtable` redéployée,
+Migrations passées jusqu'à **058** incluse (la 054, la 057, la 059, la **060** à la **068** sont écrites, à passer ; la 060 et la 062 demandent aussi de redéployer `synchro-airtable`), fonction Edge `gerer-les-comptes` déployée et vérifiée de bout en bout, `synchro-airtable` redéployée,
 et les deux champs du récapitulatif créés dans Airtable. Vérifié le
 5 septembre 2026 depuis l'extérieur : `renvoyer_au_crm`,
 `est_destinataire`, `a_ecrit_le_message`, `envoyer_annonce` et
