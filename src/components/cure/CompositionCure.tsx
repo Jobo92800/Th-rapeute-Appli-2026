@@ -344,8 +344,11 @@ export default function CompositionCure({
           </p>
           <p className="chiffres mt-2 text-5xl font-bold">{formaterEuros(detail.total)}</p>
           <p className="mt-2 text-sm text-marine-200">
-            {detail.totalSeances + offertesPosees} séance
-            {detail.totalSeances + offertesPosees > 1 ? 's' : ''} au programme
+            {detail.totalSeances + offertesPosees === 0 && detail.montantComplements > 0
+              ? 'Compléments seulement, aucune séance'
+              : `${detail.totalSeances + offertesPosees} séance${
+                  detail.totalSeances + offertesPosees > 1 ? 's' : ''
+                } au programme`}
             {offertesPosees > 0 && (
               <span className="text-marine-300"> — dont {offertesPosees} offertes</span>
             )}
@@ -434,7 +437,7 @@ export default function CompositionCure({
           Sans cette phrase, la thérapeute croit à une panne : le 4× était là
           il y a dix secondes, et il a disparu quand elle a retiré des séances.
         */}
-        {methode === 'centre' && choixEcheances.length < 4 && (
+        {methode === 'centre' && choixEcheances.length < 4 && detail.totalSeances > 0 && (
           <p className="mt-3 text-xs text-ardoise-500">
             Cette cure dure {dureeMois} mois : au-delà de {choixEcheances.length} chèques, le
             dernier serait encaissé après la dernière séance.

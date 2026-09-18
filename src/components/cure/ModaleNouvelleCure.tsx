@@ -150,10 +150,17 @@ export default function ModaleNouvelleCure({
         </div>
 
         <div className="flex items-center justify-between gap-3 border-t border-ardoise-200 px-5 py-4">
+          {/*
+            Une cure sans séance se valide quand elle porte des compléments :
+            une cliente qui ne reprend que ses boîtes passe par là (Jonathan,
+            18 septembre 2026). Sans séance ni boîte, il n'y a rien à vendre.
+          */}
           <p className="text-xs text-ardoise-500">
-            {totalSeances === 0
-              ? 'Ajoutez au moins une séance.'
-              : `${totalSeances} séance${totalSeances > 1 ? 's' : ''} au programme.`}
+            {totalSeances > 0
+              ? `${totalSeances} séance${totalSeances > 1 ? 's' : ''} au programme.`
+              : (prescription?.montantTotal ?? 0) > 0
+                ? 'Aucune séance : cette cure ne contient que des compléments.'
+                : 'Ajoutez au moins une séance ou une boîte de compléments.'}
           </p>
           <div className="flex gap-3">
             <button onClick={onFerme} disabled={enCours} className="bouton-discret">
@@ -161,7 +168,7 @@ export default function ModaleNouvelleCure({
             </button>
             <button
               onClick={valider}
-              disabled={enCours || totalSeances === 0 || !prescription}
+              disabled={enCours || !prescription || (totalSeances === 0 && prescription.montantTotal <= 0)}
               className="bouton-fort"
             >
               {enCours ? (

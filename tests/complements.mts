@@ -116,3 +116,24 @@ export function controlerComplements() {
   egalEuros('6 Advance Lift + 1 boîte en 3 : 2 séances et la boîte d’abord', antiAge.echeances[0].montant, 170 + 37);
   egalEuros('puis 2 séances', antiAge.echeances[1].montant, 170);
 }
+
+export function controlerCureSansSeance() {
+  section('Une cure qui ne contient que des compléments');
+
+  // Une cliente qui ne reprend que ses boîtes : aucune séance, un seul règlement.
+  const seule = construireEcheancierCure({
+    seances: 0,
+    prixSeance: 59,
+    options: 148,
+    methode: 'centre',
+    n: 1,
+  });
+  egal('une seule échéance', seule.echeances.length, 1);
+  egalEuros('qui porte les boîtes', seule.echeances[0].montant, 148);
+  egal('réglée comptant', seule.mode, 'comptant');
+  egalEuros('le montant est celui des boîtes', seule.montantARegler, 148);
+
+  const detail = calculerMontant([], { tenue: false, guide: false, boites: 4 }, GRILLE);
+  egal('aucune séance', detail.totalSeances, 0);
+  egalEuros('4 boîtes font 148 €', detail.total, 148);
+}

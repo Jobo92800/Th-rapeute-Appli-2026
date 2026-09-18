@@ -958,8 +958,9 @@ export default function CureEtDevis({
       {totalSeances === 0 && (
         <p className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          Aucune séance au programme : la cure ne peut pas être validée. Ajustez les soins, ou
-          enregistrez le bilan seul.
+          {montantBoites > 0
+            ? 'Aucune séance au programme : la cure validée ne contiendra que les compléments.'
+            : 'Aucune séance au programme : la cure ne peut pas être validée. Ajustez les soins, ou enregistrez le bilan seul.'}
         </p>
       )}
 
@@ -990,7 +991,7 @@ export default function CureEtDevis({
           </button>
           <button
             onClick={valider}
-            disabled={enregistrement || totalSeances === 0}
+            disabled={enregistrement || (totalSeances === 0 && montantBoites <= 0)}
             className="bouton-fort"
           >
             {enregistrement && <Loader2 className="h-4 w-4 animate-spin" />}

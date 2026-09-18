@@ -22,7 +22,7 @@ import { controlerCivilite } from './civilite.mts';
 import { controlerSante } from './sante.mts';
 import { controlerAntiAge } from './antiAge.mts';
 import { controlerPodcasts } from './podcasts.mts';
-import { controlerComplements } from './complements.mts';
+import { controlerComplements, controlerCureSansSeance } from './complements.mts';
 
 console.log('\n  MAbeautyplus V2 — contrôle des règles métier');
 
@@ -37,5 +37,6 @@ controlerSante();
 controlerAntiAge();
 controlerPodcasts();
 controlerComplements();
+controlerCureSansSeance();
 
 process.exit(bilan());
