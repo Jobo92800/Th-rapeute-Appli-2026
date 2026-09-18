@@ -672,7 +672,29 @@ export async function enregistrerContrat(c: {
     if (e) throw e;
   }
 
+  /*
+    Le déclencheur de la base (011) met le contrat en file vers Airtable ;
+    encore faut-il que la synchro parte. Elle ne partait pas : la signature
+    était le seul geste qui n'appelait pas `declencherSynchro`, et le
+    contrat attendait la prochaine action dans l'application — parfois
+    jusqu'au lendemain, quand quelqu'un pensait à « Envoyer au CRM »
+    (Jonathan, 18 septembre 2026).
+  */
+  declencherSynchro();
   return data.id as string;
+}
+
+/**
+ * Quand chaque contrat de la cliente est arrivé dans Airtable — `null`
+ * tant qu'il est en route. Lu sur la table, la vue résumé ne le porte pas.
+ */
+export async function arriveeDesContratsAuCrm(clienteId: string): Promise<Map<string, string | null>> {
+  const { data, error } = await supabase
+    .from('contrats')
+    .select('id, airtable_le')
+    .eq('cliente_id', clienteId);
+  if (error) throw error;
+  return new Map((data ?? []).map((c) => [c.id as string, (c.airtable_le as string | null) ?? null]));
 }
 
 /** Le PDF n'est chargé qu'au moment du téléchargement. */

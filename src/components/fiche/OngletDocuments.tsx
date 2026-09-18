@@ -1,12 +1,22 @@
 import { useState } from 'react';
 import { texteErreur } from '../../lib/erreurs';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Download, FileSignature, FileText, Loader2, ShieldCheck, Upload } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Download,
+  FileSignature,
+  FileText,
+  Loader2,
+  ShieldCheck,
+  Upload,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { useCentre } from '../../lib/session';
 import {
+  arriveeDesContratsAuCrm,
   consentementsDuContrat,
   contratsDeLaCliente,
   lirePdfContrat,
@@ -47,6 +57,22 @@ export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
     queryKey: ['contrats', cliente.id],
     queryFn: () => contratsDeLaCliente(cliente.id),
   });
+
+  /*
+    Où en est chaque contrat vis-à-vis du CRM. Tant qu'un contrat est en
+    route, on redemande toutes les cinq secondes : la thérapeute voit la
+    pastille passer d'« en route » à « dans le CRM » sans rien faire, et
+    n'a plus à se demander si elle a oublié un bouton.
+  */
+  const { data: arrivees } = useQuery({
+    queryKey: ['contrats-crm', cliente.id],
+    queryFn: () => arriveeDesContratsAuCrm(cliente.id),
+    refetchInterval: (q) =>
+      [...(q.state.data?.values() ?? [])].some((d) => d === null) ? 5000 : false,
+  });
+  const enRoute = contrats.filter((c) => arrivees && arrivees.get(c.id) === null);
+  // En route depuis plus de deux minutes : quelque chose coince, on le dit fort.
+  const enPanne = enRoute.filter((c) => Date.now() - new Date(c.signe_le).getTime() > 2 * 60_000);
 
   /*
     Les boîtes de compléments comprises dans la cure figurent au contrat :
@@ -166,6 +192,7 @@ export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
                           {c.therapeute && <>signé avec {c.therapeute} · </>}
                           {c.nb_consentements} consentement{c.nb_consentements > 1 ? 's' : ''}
                         </p>
+                        {arrivees && <PastilleCrm arriveLe={arrivees.get(c.id) ?? null} signeLe={c.signe_le} />}
                       </div>
 
                       <div className="flex flex-wrap gap-2">
@@ -221,7 +248,11 @@ export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
         )}
       </section>
 
-      <EnvoyerAuCrm cliente={cliente} />
+      <EnvoyerAuCrm
+        cliente={cliente}
+        alerte={enPanne.length > 0}
+        onEnvoye={() => qc.invalidateQueries({ queryKey: ['contrats-crm', cliente.id] })}
+      />
 
       {signature && actif && !ventesEnCours && (
         <ModaleContrat
@@ -236,6 +267,7 @@ export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
           onSigne={() => {
             setSignature(false);
             qc.invalidateQueries({ queryKey: ['contrats', cliente.id] });
+            qc.invalidateQueries({ queryKey: ['contrats-crm', cliente.id] });
           }}
         />
       )}
@@ -252,10 +284,44 @@ export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
  * en file, mais rien ne l'annonce et c'est à trois onglets d'ici. Le même
  * geste, nommé, à l'endroit où on le cherche.
  */
-function EnvoyerAuCrm({ cliente }: { cliente: Cliente }) {
+/** Où en est un contrat vis-à-vis du CRM : arrivé, en route, ou bloqué. */
+function PastilleCrm({ arriveLe, signeLe }: { arriveLe: string | null; signeLe: string }) {
+  if (arriveLe) {
+    return (
+      <p className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
+        <CheckCircle2 className="h-3 w-3" />
+        Dans le CRM depuis le {format(new Date(arriveLe), 'd MMM à HH:mm', { locale: fr })}
+      </p>
+    );
+  }
+  const bloque = Date.now() - new Date(signeLe).getTime() > 2 * 60_000;
+  return bloque ? (
+    <p className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-800">
+      <AlertTriangle className="h-3 w-3" />
+      Pas encore dans le CRM — appuyez sur « Envoyer au CRM » ci-dessous
+    </p>
+  ) : (
+    <p className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+      <Loader2 className="h-3 w-3 animate-spin" />
+      En route vers le CRM…
+    </p>
+  );
+}
+
+function EnvoyerAuCrm({
+  cliente,
+  alerte,
+  onEnvoye,
+}: {
+  cliente: Cliente;
+  /** Un contrat n'est toujours pas dans le CRM : le bloc se fait voir. */
+  alerte: boolean;
+  onEnvoye: () => void;
+}) {
   const envoi = useMutation({
     mutationFn: () => renvoyerAuCrm(cliente.id),
     onSuccess: (r) => {
+      onEnvoye();
       if (r.echecs > 0) {
         toast.error(r.erreurs[0]?.message ?? "Le CRM n'a pas accepté l'envoi.");
         return;
@@ -271,15 +337,26 @@ function EnvoyerAuCrm({ cliente }: { cliente: Cliente }) {
   });
 
   return (
-    <section className="carte flex flex-wrap items-center justify-between gap-4 px-5 py-4">
+    <section
+      className={`carte flex flex-wrap items-center justify-between gap-4 px-5 py-4 ${
+        alerte ? 'border-rose-300 bg-rose-50' : ''
+      }`}
+    >
       <div className="min-w-0 flex-1 basis-72">
-        <h2 className="text-sm font-semibold text-ardoise-900">Envoyer au CRM</h2>
-        <p className="mt-0.5 text-xs text-ardoise-500">
-          Le contrat, les consentements et l’accès au parcours audio partent dans Airtable tout
-          seuls. Ce bouton les repose dans la file quand ils n’y sont pas arrivés.
+        <h2 className={`text-sm font-semibold ${alerte ? 'text-rose-900' : 'text-ardoise-900'}`}>
+          {alerte ? 'Un contrat n’est pas arrivé dans le CRM' : 'Envoyer au CRM'}
+        </h2>
+        <p className={`mt-0.5 text-xs ${alerte ? 'text-rose-800' : 'text-ardoise-500'}`}>
+          {alerte
+            ? 'Il est signé et enregistré ici, mais Airtable ne l’a pas reçu. Appuyez pour le renvoyer ; si ça échoue encore, le message dira pourquoi.'
+            : 'Le contrat, les consentements et l’accès au parcours audio partent dans Airtable tout seuls. Ce bouton les repose dans la file quand ils n’y sont pas arrivés.'}
         </p>
       </div>
-      <button onClick={() => envoi.mutate()} disabled={envoi.isPending} className="bouton-principal">
+      <button
+        onClick={() => envoi.mutate()}
+        disabled={envoi.isPending}
+        className={alerte ? 'bouton-fort' : 'bouton-principal'}
+      >
         {envoi.isPending ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
