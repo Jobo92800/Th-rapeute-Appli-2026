@@ -21,6 +21,7 @@ import ChoisirUnCentre from '../components/ChoisirUnCentre';
 import { useCentre, useSession } from '../lib/session';
 import { lireBaremeActif, lireGrilleTarifaire } from '../services/metier';
 import { creerCliente, lireCliente, modifierCliente } from '../services/clientes';
+import { etatDuCentre } from '../services/stock';
 import { laCliente } from '../domain/civilite';
 import { formaterEuros } from '../domain/tarification';
 import { envoyerRecap, rangerBioPortrait } from '../services/recap';
@@ -61,6 +62,7 @@ const PROPOSITION_VIDE: PrescriptionValidee = {
   electro: false,
   guide: false,
   tenue: false,
+  complements: [],
   montantTotal: 0,
   bilanDejaRegle: 0,
   modeReglement: 'inconnu',
@@ -101,6 +103,12 @@ export default function NouveauBilan() {
     queryKey: ['tarifs'],
     queryFn: lireGrilleTarifaire,
     staleTime: 5 * 60_000,
+  });
+
+  // Le rayon du centre, pour proposer les boîtes de compléments sur le devis.
+  const { data: rayon = [] } = useQuery({
+    queryKey: ['stock', centre.id],
+    queryFn: () => etatDuCentre(centre.id),
   });
 
   const [vue, setVue] = useState<Vue>('accueil');
@@ -333,6 +341,7 @@ export default function NouveauBilan() {
           fraisFinancement: prescription.frais,
           echeances: prescription.echeances,
           complementRecommande: complement?.nom ?? null,
+          complements: prescription.complements,
         });
       }
 
@@ -672,6 +681,8 @@ export default function NouveauBilan() {
         grille={grille}
         prenom={prenomAffiche}
         avecDome={domeDisponible(centre.id)}
+        catalogue={rayon}
+        complementRecommande={complementRecommande(bareme, bioportrait)}
         enregistrement={enregistrement}
         onRetour={() => setVue('restitution')}
         // « Bilan seul » envoie le récapitulatif : il n'y a plus qu'un

@@ -121,6 +121,7 @@ export default function OngletComplements({ clienteId, centreId }: Props) {
                 produit: saisie.produit,
                 quantite: saisie.quantite,
                 prix_unitaire: saisie.prix,
+                comprise_dans_la_cure: false,
               });
               qc.invalidateQueries({ queryKey: ['ventes', clienteId] });
               qc.invalidateQueries({ queryKey: ['stock', centreId] });
@@ -148,6 +149,11 @@ export default function OngletComplements({ clienteId, centreId }: Props) {
                   <span className="min-w-0">
                     <span className="block text-sm font-semibold text-ardoise-900">
                       {produit?.nom ?? v.produit} · {v.quantite} boîte{v.quantite > 1 ? 's' : ''}
+                      {v.comprise_dans_la_cure && (
+                        <span className="ml-2 rounded-full border border-marine-200 bg-marine-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-marine-800">
+                          Comprise dans la cure
+                        </span>
+                      )}
                     </span>
                     <span className="block text-xs text-ardoise-500">
                       {format(new Date(v.date_vente), 'd MMM yyyy', { locale: fr })} ·{' '}
@@ -170,17 +176,24 @@ export default function OngletComplements({ clienteId, centreId }: Props) {
                     >
                       {libelleFinDeCure(echeance)}
                     </span>
-                    <button
-                      type="button"
-                      aria-label="Supprimer cette vente"
-                      onClick={() => {
-                        if (!confirm('Supprimer cette vente ? La boîte revient au rayon.')) return;
-                        suppression.mutate(v.id);
-                      }}
-                      className="rounded-lg p-1.5 text-ardoise-400 hover:bg-rose-50 hover:text-rose-600"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {/*
+                      Une boîte comprise dans la cure est dans son montant
+                      et sur son contrat : elle ne se retire pas d'ici, elle
+                      part avec la cure si la cure est supprimée.
+                    */}
+                    {!v.comprise_dans_la_cure && (
+                      <button
+                        type="button"
+                        aria-label="Supprimer cette vente"
+                        onClick={() => {
+                          if (!confirm('Supprimer cette vente ? La boîte revient au rayon.')) return;
+                          suppression.mutate(v.id);
+                        }}
+                        className="rounded-lg p-1.5 text-ardoise-400 hover:bg-rose-50 hover:text-rose-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </span>
                 </li>
               );

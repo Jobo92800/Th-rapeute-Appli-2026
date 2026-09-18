@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { texteErreur } from '../../lib/erreurs';
 import CompositionCure, { type Prescription } from './CompositionCure';
 import { creerProgramme, lireGrilleTarifaire } from '../../services/metier';
+import { etatDuCentre } from '../../services/stock';
 import { filleulesDe, seancesOffertesUtilisees } from '../../services/parrainage';
 import { calculerSolde } from '../../domain/parrainage';
 import type { Cliente } from '../../types/db';
@@ -56,6 +57,12 @@ export default function ModaleNouvelleCure({
 
   const solde = calculerSolde(filleules, offertesUtilisees);
 
+  // Le rayon du centre, pour proposer les boîtes de compléments avec la cure.
+  const { data: rayon = [] } = useQuery({
+    queryKey: ['stock', centreId],
+    queryFn: () => etatDuCentre(centreId),
+  });
+
   useEffect(() => {
     const echap = (e: KeyboardEvent) => e.key === 'Escape' && !enCours && onFerme();
     document.addEventListener('keydown', echap);
@@ -86,6 +93,7 @@ export default function ModaleNouvelleCure({
         echeances: prescription.echeances,
         complementRecommande: null,
         offertes: prescription.offertes,
+        complements: prescription.complements,
       });
       toast.success(`Cure ${numero} enregistrée`);
       onCreee();
@@ -130,6 +138,7 @@ export default function ModaleNouvelleCure({
           ) : (
             <CompositionCure
               grille={grille}
+              catalogue={rayon}
               seancesOffertes={solde.disponibles}
               optionsModifiables
               onChange={(p, n) => {

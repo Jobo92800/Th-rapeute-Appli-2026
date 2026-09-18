@@ -2,7 +2,16 @@ import { useMemo, useState } from 'react';
 import { AlertTriangle, Ban, Eye, Loader2, Mail, Minus, Pencil, Plus, Stethoscope, X } from 'lucide-react';
 import type { Bareme, Prestation } from '../../domain/bioportrait';
 import { detailInclus, type DetailInclus } from '../../domain/inclus';
+import {
+  complementsChoisis,
+  libelleComplements,
+  montantComplements,
+  nombreDeBoites,
+  type ComplementChoisi,
+} from '../../domain/complements';
+import type { EtatStock } from '../../types/db';
 import BulleInclus from './BulleInclus';
+import ChoixComplements from '../cure/ChoixComplements';
 import {
   FORMULES,
   ajusterSeances,
@@ -40,6 +49,8 @@ export interface PrescriptionValidee {
   electro: boolean;
   guide: boolean;
   tenue: boolean;
+  /** Les boîtes de compléments choisies avec la cure, comptées dans le montant. */
+  complements: ComplementChoisi[];
   montantTotal: number;
   /** Ce que la cliente a déjà réglé en ligne. Zéro le plus souvent. */
   bilanDejaRegle: number;
@@ -69,6 +80,10 @@ interface Props {
   prenom: string;
   /** Le Dôme se propose à l'ajout — au Grau-du-Roi seulement. */
   avecDome?: boolean;
+  /** Le rayon du centre, pour proposer les boîtes de compléments avec la cure. */
+  catalogue?: EtatStock[];
+  /** Le complément que le terrain oriente, rappelé au moment de choisir les boîtes. */
+  complementRecommande?: { nom: string; raison: string } | null;
   enregistrement: boolean;
   onRetour: () => void;
   /**
@@ -98,6 +113,8 @@ export default function CureEtDevis({
   grille,
   prenom,
   avecDome = false,
+  catalogue = [],
+  complementRecommande = null,
   enregistrement,
   onRetour,
   onBilanSeul,
@@ -129,6 +146,13 @@ export default function CureEtDevis({
     comme un soin écarté par la formule : la cliente voit ce qu'elle laisse.
   */
   const [retires, setRetires] = useState<Prestation[]>([]);
+  /*
+    Les boîtes de compléments choisies avec la cure, code → nombre. Elles
+    entrent dans le montant et tombent sur la première échéance, comme le
+    guide et la tenue. Rien par défaut : c'est une vente, elle se décide au
+    comptoir, sous « Modifier ».
+  */
+  const [boites, setBoites] = useState<Record<string, number>>({});
   const [methode, setMethode] = useState<'centre' | 'alma'>('centre');
   const [nEcheances, setNEcheances] = useState(4);
   /*
@@ -196,7 +220,13 @@ export default function CureEtDevis({
   const totalSeances = retenues.reduce((n, l) => n + l.seances, 0);
   const luxo = retenues.some((l) => l.presta === 'LUXO' || l.presta === 'RELAX');
   const electro = retenues.some((l) => l.presta === 'ISHAPE');
-  const options = (luxo ? grille.guide : 0) + (electro ? grille.tenue : 0);
+  const complements = useMemo(
+    () => complementsChoisis(boites, catalogue, grille.complement),
+    [boites, catalogue, grille.complement],
+  );
+  const montantBoites = montantComplements(complements);
+  // Tout ce qui n'est pas une séance : sur la première échéance.
+  const options = (luxo ? grille.guide : 0) + (electro ? grille.tenue : 0) + montantBoites;
 
   /*
     La durée de la cure plafonne le nombre de chèques : on n'encaisse pas un
@@ -287,6 +317,7 @@ export default function CureEtDevis({
       electro,
       guide: luxo,
       tenue: electro,
+      complements,
       // Le prix de la cure ne bouge pas : le bilan déjà réglé en fait
       // partie, il est simplement encaissé avant les autres.
       montantTotal: totalSeances * grille.seance + options,
@@ -503,6 +534,16 @@ export default function CureEtDevis({
           </div>
         )}
       </section>
+
+      {/* Les compléments alimentaires ----------------------------------- */}
+      <ChoixComplements
+        catalogue={catalogue}
+        prix={grille.complement}
+        quantites={boites}
+        onChange={setBoites}
+        edition={edition}
+        recommandation={complementRecommande}
+      />
 
       {/* Les formules --------------------------------------------------- */}
       {formules.length > 0 && (
@@ -756,7 +797,9 @@ export default function CureEtDevis({
               {methode === 'centre'
                 ? acompte > 0
                   ? 'Par chèques au centre. L’acompte se déduit du total ; le reste, guide et tenue compris, se répartit sur les échéances.'
-                  : 'Par chèques au centre. Le guide et la tenue sont sur la première échéance.'
+                  : montantBoites > 0
+                    ? 'Par chèques au centre. Le guide, la tenue et les compléments sont sur la première échéance.'
+                    : 'Par chèques au centre. Le guide et la tenue sont sur la première échéance.'
                 : `Frais Alma de ${String(tauxFraisAlma(echeancier.n, totalSeances * grille.seance + options)).replace('.', ',')} %, à sa charge${
                     mensualitesEgales
                       ? ', répartis sur les mensualités.'
@@ -884,7 +927,18 @@ export default function CureEtDevis({
                 Guide de rééquilibrage alimentaire
               </div>
             )}
-            {electro && <div className="py-1.5">Tenue I-Shape</div>}
+            {electro && (
+              <div
+                className={`py-1.5 ${nombreDeBoites(complements) > 0 ? 'border-b border-dashed border-ardoise-200' : ''}`}
+              >
+                Tenue I-Shape
+              </div>
+            )}
+            {nombreDeBoites(complements) > 0 && (
+              <div className="py-1.5">
+                Compléments alimentaires — {libelleComplements(complements)}
+              </div>
+            )}
           </div>
         </div>
 

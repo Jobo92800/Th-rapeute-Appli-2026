@@ -24,6 +24,7 @@ import type {
   LigneProgramme,
   Programme,
   TailleTenue,
+  VenteComplement,
 } from '../../types/db';
 
 interface Props {
@@ -32,6 +33,9 @@ interface Props {
   programme: Programme;
   lignes: LigneProgramme[];
   echeances: Echeance[];
+  /** Les ventes de la cliente : celles comprises dans cette cure figurent au contrat. */
+  ventes?: VenteComplement[];
+  nomProduit?: (code: string) => string;
   onFerme: () => void;
   onSigne: () => void;
 }
@@ -75,6 +79,8 @@ export default function ModaleContrat({
   programme,
   lignes,
   echeances,
+  ventes,
+  nomProduit,
   onFerme,
   onSigne,
 }: Props) {
@@ -98,7 +104,15 @@ export default function ModaleContrat({
   const [vus, setVus] = useState<Set<string>>(new Set());
   const [preparation, setPreparation] = useState(true);
 
-  const contrat: ContractData = construireContrat({ cliente, centre, programme, lignes, echeances });
+  const contrat: ContractData = construireContrat({
+    cliente,
+    centre,
+    programme,
+    lignes,
+    echeances,
+    ventes,
+    nomProduit,
+  });
 
   // La tenue est facturée sur cette cure : il faut savoir laquelle sortir du rayon.
   const tenueAremettre = programme.tenue || Number(programme.prix_tenue) > 0;

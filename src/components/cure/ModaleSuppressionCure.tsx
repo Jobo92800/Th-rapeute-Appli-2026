@@ -69,6 +69,11 @@ export default function ModaleSuppressionCure({
         'les sorties de stock de la signature : le guide et la tenue reviennent au rayon',
       );
     }
+    if (contenu.complements_compris > 0) {
+      lignes.push(
+        `${contenu.complements_compris} boîte${contenu.complements_compris > 1 ? 's' : ''} de compléments comprise${contenu.complements_compris > 1 ? 's' : ''} dans la cure — elle${contenu.complements_compris > 1 ? 's' : ''} revien${contenu.complements_compris > 1 ? 'nent' : 't'} au rayon`,
+      );
+    }
     if (contenu.avoir_accorde > 0) {
       lignes.push(`l'avoir de ${formaterEuros(contenu.avoir_accorde, 2)} né de son arrêt`);
     }
@@ -85,6 +90,9 @@ export default function ModaleSuppressionCure({
       qc.invalidateQueries({ queryKey: ['avoir-mouvements', cliente.id] });
       qc.invalidateQueries({ queryKey: ['contrats', cliente.id] });
       qc.invalidateQueries({ queryKey: ['situations', centreId] });
+      // Les boîtes comprises dans la cure sont parties avec elle : le rayon les récupère.
+      qc.invalidateQueries({ queryKey: ['ventes', cliente.id] });
+      qc.invalidateQueries({ queryKey: ['stock', centreId] });
       if (reste) toast(reste, { duration: 10000, icon: '⚠️' });
       else toast.success(`Cure ${programme.numero} supprimée`);
       onFerme();

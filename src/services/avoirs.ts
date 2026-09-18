@@ -140,6 +140,8 @@ export interface ContenuCure {
   montant_paye: number;
   contrats: number;
   sorties_stock: number;
+  /** Les boîtes de compléments comprises dans la cure : elles reviennent au rayon. */
+  complements_compris: number;
   avoir_accorde: number;
   avoir_utilise: number;
 }
@@ -154,6 +156,7 @@ export async function contenuCure(programmeId: string): Promise<ContenuCure> {
     montant_paye: Number(l.montant_paye) || 0,
     contrats: Number(l.contrats) || 0,
     sorties_stock: Number(l.sorties_stock) || 0,
+    complements_compris: Number(l.complements_compris) || 0,
     avoir_accorde: Number(l.avoir_accorde) || 0,
     avoir_utilise: Number(l.avoir_utilise) || 0,
   };

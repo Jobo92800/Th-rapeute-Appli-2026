@@ -9,7 +9,14 @@
 
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import type { Centre, Cliente, Echeance, LigneProgramme, Programme } from '../types/db';
+import type {
+  Centre,
+  Cliente,
+  Echeance,
+  LigneProgramme,
+  Programme,
+  VenteComplement,
+} from '../types/db';
 import type { Technologie } from './tarification';
 import { pourPdf } from './texte';
 
@@ -63,6 +70,13 @@ export interface ContractData {
    */
   offeredSessions: number;
   offeredLabel: string;
+  /**
+   * Les boîtes de compléments choisies avec la cure et comprises dans son
+   * montant — « 2 boîtes de compléments alimentaires (BURN ×1, DÉTOX ×1) ».
+   * Vide quand il n'y en a pas. Elles figurent à l'article 1 : le contrat
+   * est le document itemisé, et le montant total les contient.
+   */
+  supplementsLabel: string;
   /** Technologies réellement prescrites : elles pilotent les consentements. */
   activeServiceIds: string[];
   totalAmount: string;
@@ -158,8 +172,23 @@ export function construireContrat(args: {
   programme: Programme;
   lignes: LigneProgramme[];
   echeances: Echeance[];
+  /** Les ventes de la cliente ; seules celles comprises dans cette cure sont retenues. */
+  ventes?: VenteComplement[];
+  /** Nom d'un produit d'après son code, pour écrire « DÉTOX » et non « DETOX ». */
+  nomProduit?: (code: string) => string;
 }): ContractData {
   const { cliente, centre, programme, lignes, echeances } = args;
+
+  const boites = (args.ventes ?? []).filter(
+    (v) => v.programme_id === programme.id && v.comprise_dans_la_cure && v.quantite > 0,
+  );
+  const nombreBoites = boites.reduce((n, v) => n + v.quantite, 0);
+  const supplementsLabel =
+    nombreBoites > 0
+      ? `${nombreBoites} boîte${nombreBoites > 1 ? 's' : ''} de compléments alimentaires (${boites
+          .map((v) => `${(args.nomProduit ?? ((c) => c))(v.produit)} ×${v.quantite}`)
+          .join(', ')})`
+      : '';
 
   const parTechno = new Map(lignes.map((l) => [l.technologie, l.seances_prevues]));
 
@@ -225,6 +254,7 @@ export function construireContrat(args: {
     careItems,
     offeredSessions,
     offeredLabel,
+    supplementsLabel: pourPdf(supplementsLabel),
     activeServiceIds: [...new Set(activeServiceIds)],
     /*
       LE CONTRAT DIT LE PRIX DE LA CURE, PAS LE COÛT DU CRÉDIT.

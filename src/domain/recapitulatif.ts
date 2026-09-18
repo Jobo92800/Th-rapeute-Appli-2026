@@ -13,6 +13,7 @@
 import { SEUIL_PRESENCE, type Axe, type Bareme, type BioPortrait, type MesureInbody } from './bioportrait';
 import type { BaremeAntiAge, BioPortraitAntiAge } from './antiAge';
 import { LIBELLES_TECHNOLOGIE, formaterEuros } from './tarification';
+import { libelleComplements, nombreDeBoites, type ComplementChoisi } from './complements';
 import type { ModeReglement, Technologie } from '../types/db';
 
 /**
@@ -26,6 +27,8 @@ export interface Proposition {
   tenue: boolean;
   prixGuide: number;
   prixTenue: number;
+  /** Les boîtes de compléments choisies avec la cure. Absent sur les bilans d'avant. */
+  complements?: ComplementChoisi[];
   montantTotal: number;
   modeReglement: ModeReglement;
   frais: number;
@@ -191,6 +194,12 @@ export function construireRecap(args: {
   if (p.tenue && Number(p.prixTenue) > 0) {
     options.push({ libelle: 'Tenue I-Shape' });
   }
+  // Les boîtes choisies avec la cure : « Compris », comme le guide — le
+  // récapitulatif dit ce qu'elle reçoit, pas le prix de chaque ligne.
+  const boites = p.complements ?? [];
+  if (nombreDeBoites(boites) > 0) {
+    options.push({ libelle: `Compléments alimentaires — ${libelleComplements(boites)}` });
+  }
 
   /*
     « Aussi présent » ne veut pas dire « deuxième du classement » : un axe à
@@ -296,7 +305,11 @@ export function construireRecapAntiAge(args: {
     aussiPresents: [],
     inbody: [],
     soins,
-    options: [],
+    // Ni guide ni tenue sur l'anti-âge ; les boîtes de compléments, si elle en prend.
+    options:
+      nombreDeBoites(p.complements ?? []) > 0
+        ? [{ libelle: `Compléments alimentaires — ${libelleComplements(p.complements ?? [])}` }]
+        : [],
     totalSeances: soins.reduce((n, s) => n + s.seances, 0),
     montantTotal: Number(p.montantTotal),
     montantRegle: Number(p.montantTotal) + Number(p.frais),

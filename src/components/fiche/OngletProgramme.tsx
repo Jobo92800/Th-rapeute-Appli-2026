@@ -10,6 +10,7 @@ import {
   majEcheance,
   programmesDeLaCliente,
   reechelonnerLesEcheances,
+  ventesDeLaCliente,
 } from '../../services/metier';
 import type { ProgrammeComplet } from '../../services/metier';
 import {
@@ -33,6 +34,7 @@ import ModaleSuppressionCure from '../cure/ModaleSuppressionCure';
 import CarteAvoir, { BoutonAvoir } from '../cure/CarteAvoir';
 import { resteAEncaisser } from '../../domain/avoir';
 import { rouvrirCure } from '../../services/avoirs';
+import { etatDuCentre } from '../../services/stock';
 import { useSession } from '../../lib/session';
 import type { Cliente, Echeance, LigneProgramme, Programme, StatutEcheance } from '../../types/db';
 
@@ -62,9 +64,25 @@ export default function OngletProgramme({
     queryFn: () => programmesDeLaCliente(clienteId),
   });
 
+  // Les boîtes de compléments choisies avec une cure : elles figurent dans
+  // son contenu, à côté du guide et de la tenue.
+  const { data: ventes = [] } = useQuery({
+    queryKey: ['ventes', clienteId],
+    queryFn: () => ventesDeLaCliente(clienteId),
+  });
+  // Le rayon, pour écrire « DÉTOX » plutôt que son code.
+  const { data: rayon = [] } = useQuery({
+    queryKey: ['stock', centreId],
+    queryFn: () => etatDuCentre(centreId),
+  });
+  const nomProduit = (code: string) => rayon.find((r) => r.code === code)?.nom ?? code;
+
   function rafraichir() {
     qc.invalidateQueries({ queryKey: ['programmes', clienteId] });
     qc.invalidateQueries({ queryKey: ['situations', centreId] });
+    // Une cure emporte ou apporte des boîtes : l'onglet Compléments et le rayon suivent.
+    qc.invalidateQueries({ queryKey: ['ventes', clienteId] });
+    qc.invalidateQueries({ queryKey: ['stock', centreId] });
   }
 
   async function changerStatut(e: Echeance, statut: StatutEcheance) {
@@ -149,8 +167,7 @@ export default function OngletProgramme({
             onFerme={() => setNouvelleCure(false)}
             onCreee={() => {
               setNouvelleCure(false);
-              qc.invalidateQueries({ queryKey: ['programmes', clienteId] });
-              qc.invalidateQueries({ queryKey: ['situations', centreId] });
+              rafraichir();
             }}
           />
         )}
@@ -315,6 +332,22 @@ export default function OngletProgramme({
                     </span>
                   </div>
                 )}
+                {ventes
+                  .filter((v) => v.programme_id === p.id && v.comprise_dans_la_cure)
+                  .map((v) => (
+                    <div
+                      key={v.id}
+                      className="flex items-center justify-between py-1.5 text-sm"
+                    >
+                      <span className="text-ardoise-700">
+                        Compléments {nomProduit(v.produit)} · {v.quantite} boîte
+                        {v.quantite > 1 ? 's' : ''}
+                      </span>
+                      <span className="chiffres text-ardoise-500">
+                        {formaterEuros(v.quantite * Number(v.prix_unitaire))}
+                      </span>
+                    </div>
+                  ))}
               </div>
 
               {p.complement_recommande && (
@@ -531,8 +564,7 @@ export default function OngletProgramme({
           onFerme={() => setNouvelleCure(false)}
           onCreee={() => {
             setNouvelleCure(false);
-            qc.invalidateQueries({ queryKey: ['programmes', clienteId] });
-            qc.invalidateQueries({ queryKey: ['situations', centreId] });
+            rafraichir();
           }}
         />
       )}

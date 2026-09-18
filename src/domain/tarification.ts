@@ -10,6 +10,7 @@
       59 € × total de séances
     + 29 €  guide de rééquilibrage — systématique
     + 60 €  tenue I-Shape — uniquement si électrostimulation
+    + 37 €  par boîte de compléments choisie avec la cure (18 septembre 2026)
 
   Les montants ne sont jamais écrits en dur ici : ils viennent de la table
   `tarifs`, qui les date. Un programme copie les prix en vigueur au moment
@@ -52,6 +53,8 @@ export interface DetailMontant {
   montantSeances: number;
   montantGuide: number;
   montantTenue: number;
+  /** Les boîtes de compléments choisies avec la cure. Zéro le plus souvent. */
+  montantComplements: number;
   total: number;
 }
 
@@ -62,23 +65,30 @@ export interface DetailMontant {
  *
  * Le guide et la tenue se facturent séparément : sur une cure suivante, la
  * cliente les a déjà et on ne les lui revend pas.
+ *
+ * Les compléments alimentaires s'ajoutent de la même façon, boîte par
+ * boîte au tarif `complement` : ils font partie de la cure quand ils sont
+ * choisis avec elle, et suivent le guide et la tenue sur la première
+ * échéance.
  */
 export function calculerMontant(
   lignes: LigneProgramme[],
-  options: { tenue: boolean; guide: boolean },
+  options: { tenue: boolean; guide: boolean; boites?: number },
   grille: GrilleTarifaire,
 ): DetailMontant {
   const totalSeances = lignes.reduce((n, l) => n + Math.max(0, l.seances), 0);
   const montantSeances = lignes.reduce((n, l) => n + Math.max(0, l.seances) * l.prixUnitaire, 0);
   const montantGuide = options.guide ? grille.guide : 0;
   const montantTenue = options.tenue ? grille.tenue : 0;
+  const montantComplements = arrondir(Math.max(0, Math.floor(options.boites ?? 0)) * grille.complement);
 
   return {
     totalSeances,
     montantSeances,
     montantGuide,
     montantTenue,
-    total: arrondir(montantSeances + montantGuide + montantTenue),
+    montantComplements,
+    total: arrondir(montantSeances + montantGuide + montantTenue + montantComplements),
   };
 }
 
@@ -412,8 +422,8 @@ export function repartirSeances(total: number, n: number): number[] {
 
 /**
  * Le découpage d'une cure entière : un nombre entier de séances par
- * échéance, le guide et la tenue sur la première — la cliente repart avec.
- * Le reliquat d'arrondi tombe là aussi.
+ * échéance, le guide, la tenue et les boîtes de compléments sur la
+ * première — la cliente repart avec. Le reliquat d'arrondi tombe là aussi.
  */
 function decouperLaCure(
   seances: number,
@@ -450,9 +460,9 @@ function imputerEnTete(montants: number[], verse: number): number[] {
 /**
  * L'échéancier d'une cure.
  *
- * Au centre, par chèques : sans frais, et le guide et la tenue tombent sur
- * la première échéance — la cliente repart avec, elle les règle tout de
- * suite.
+ * Au centre, par chèques : sans frais, et le guide, la tenue et les
+ * compléments (`options`, tout ce qui n'est pas une séance) tombent sur la
+ * première échéance — la cliente repart avec, elle les règle tout de suite.
  *
  * Chez Alma, par carte : des mensualités égales, frais compris. Les frais
  * sont à la charge de la cliente et apparaissent en clair, sans quoi le
@@ -461,6 +471,7 @@ function imputerEnTete(montants: number[], verse: number): number[] {
 export function construireEcheancierCure(args: {
   seances: number;
   prixSeance: number;
+  /** Ce qui n'est pas une séance : guide, tenue, boîtes de compléments. Sur la première échéance. */
   options: number;
   methode: 'centre' | 'alma';
   n: number;

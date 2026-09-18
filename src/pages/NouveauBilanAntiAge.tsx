@@ -13,6 +13,7 @@ import {
   lireGrilleTarifaire,
 } from '../services/metier';
 import { creerCliente, lireCliente, modifierCliente } from '../services/clientes';
+import { etatDuCentre } from '../services/stock';
 import { envoyerDocumentRecap, rangerDocumentBioPortrait } from '../services/recap';
 import { construireRecapAntiAge } from '../domain/recapitulatif';
 import { formaterEuros } from '../domain/tarification';
@@ -70,6 +71,12 @@ export default function NouveauBilanAntiAge() {
     queryKey: ['tarifs'],
     queryFn: lireGrilleTarifaire,
     staleTime: 5 * 60_000,
+  });
+
+  // Le rayon du centre, pour proposer les boîtes de compléments sur le devis.
+  const { data: rayon = [] } = useQuery({
+    queryKey: ['stock', centre.id],
+    queryFn: () => etatDuCentre(centre.id),
   });
 
   const [vue, setVue] = useState<Vue>('accueil');
@@ -236,6 +243,7 @@ export default function NouveauBilanAntiAge() {
           fraisFinancement: proposition.frais,
           echeances: proposition.echeances,
           complementRecommande: null,
+          complements: proposition.complements,
         });
       }
 
@@ -248,6 +256,7 @@ export default function NouveauBilanAntiAge() {
           tenue: false,
           prixGuide: 0,
           prixTenue: 0,
+          complements: proposition?.complements ?? [],
           montantTotal: proposition?.montantTotal ?? 0,
           modeReglement: proposition?.modeReglement ?? 'inconnu',
           frais: proposition?.frais ?? 0,
@@ -404,6 +413,7 @@ export default function NouveauBilanAntiAge() {
       <DevisAntiAge
         grille={grille}
         prenom={prenomAffiche}
+        catalogue={rayon}
         enregistrement={enregistrement}
         onRetour={() => setVue('restitution')}
         onBilanSeul={() => enregistrerTout(null, 'seul')}

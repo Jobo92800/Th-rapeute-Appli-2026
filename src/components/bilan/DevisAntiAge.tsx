@@ -10,6 +10,13 @@ import {
   type GrilleTarifaire,
 } from '../../domain/tarification';
 import type { PrescriptionValidee } from './CureEtDevis';
+import ChoixComplements from '../cure/ChoixComplements';
+import {
+  complementsChoisis,
+  libelleComplements,
+  montantComplements,
+} from '../../domain/complements';
+import type { EtatStock } from '../../types/db';
 
 /*
   Le devis d'une cure d'Advance Lift.
@@ -32,6 +39,7 @@ const SEANCES_PAR_DEFAUT = 6;
 export default function DevisAntiAge({
   grille,
   prenom,
+  catalogue = [],
   enregistrement,
   onRetour,
   onBilanSeul,
@@ -39,6 +47,8 @@ export default function DevisAntiAge({
 }: {
   grille: GrilleTarifaire;
   prenom: string;
+  /** Le rayon du centre, pour proposer les boîtes de compléments avec la cure. */
+  catalogue?: EtatStock[];
   enregistrement: boolean;
   onRetour: () => void;
   onBilanSeul: () => void;
@@ -49,6 +59,13 @@ export default function DevisAntiAge({
   const [methode, setMethode] = useState<'centre' | 'alma'>('centre');
   const [n, setN] = useState(4);
   const [acompte, setAcompte] = useState(false);
+  // Les boîtes de compléments choisies avec la cure : dans le montant, sur la première échéance.
+  const [boites, setBoites] = useState<Record<string, number>>({});
+  const complements = useMemo(
+    () => complementsChoisis(boites, catalogue, grille.complement),
+    [boites, catalogue, grille.complement],
+  );
+  const montantBoites = montantComplements(complements);
 
   /* Au centre, jamais plus de chèques que de séances : un chèque vide n'est pas un chèque. */
   const choixCentre = ECHEANCES_CENTRE.filter((k) => k <= Math.max(1, seances));
@@ -59,15 +76,15 @@ export default function DevisAntiAge({
       construireEcheancierCure({
         seances,
         prixSeance: prix,
-        options: 0,
+        options: montantBoites,
         methode,
         n: nRetenu,
         acompte: methode === 'centre' && acompte ? prix : 0,
       }),
-    [seances, prix, methode, nRetenu, acompte],
+    [seances, prix, methode, nRetenu, acompte, montantBoites],
   );
 
-  const montantTotal = seances * prix;
+  const montantTotal = seances * prix + montantBoites;
   const premier = echeancier.echeances[0];
   const suite = echeancier.echeances.slice(1);
   const mensualitesEgales = methode === 'alma' && (echeancier.n === 10 || echeancier.n === 12);
@@ -78,6 +95,7 @@ export default function DevisAntiAge({
       electro: false,
       guide: false,
       tenue: false,
+      complements,
       montantTotal,
       bilanDejaRegle: 0,
       modeReglement: echeancier.mode,
@@ -134,6 +152,13 @@ export default function DevisAntiAge({
           <span className="text-sm text-ardoise-600">séances</span>
         </div>
       </section>
+
+      <ChoixComplements
+        catalogue={catalogue}
+        prix={grille.complement}
+        quantites={boites}
+        onChange={setBoites}
+      />
 
       {/* Le règlement, dans le bloc sombre du devis. */}
       <section className="overflow-hidden rounded-2xl bg-marine-900 px-6 py-6 text-center text-white">
@@ -225,6 +250,7 @@ export default function DevisAntiAge({
             Montant total : <span className="chiffres font-semibold text-white">{formaterEurosJuste(montantTotal)}</span>
             <span className="block text-xs text-marine-300">
               {seances} séance{seances > 1 ? 's' : ''} · {formaterEuros(prix)} la séance
+              {montantBoites > 0 ? ` · compléments ${libelleComplements(complements)}` : ''}
             </span>
           </div>
         )}
@@ -248,7 +274,9 @@ export default function DevisAntiAge({
 
         <p className="mx-auto mt-3 max-w-sm text-[11px] text-marine-300">
           {methode === 'centre'
-            ? 'Par chèques au centre. Chaque chèque couvre un nombre entier de séances.'
+            ? montantBoites > 0
+              ? 'Par chèques au centre. Chaque chèque couvre un nombre entier de séances ; les compléments sont sur le premier.'
+              : 'Par chèques au centre. Chaque chèque couvre un nombre entier de séances.'
             : `Frais Alma de ${String(tauxFraisAlma(echeancier.n, montantTotal)).replace('.', ',')} %, à sa charge${
                 mensualitesEgales ? ', répartis sur les mensualités.' : ', pris en totalité sur le premier versement.'
               }`}

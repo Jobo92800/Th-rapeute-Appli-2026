@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import type { ComplementChoisi } from '../domain/complements';
 import type { Bareme } from '../domain/bioportrait';
 import type { BaremeAntiAge } from '../domain/antiAge';
 import type {
@@ -199,6 +200,13 @@ export interface NouveauProgramme {
   complementRecommande: string | null;
   /** Séances gagnées par parrainage, posées sur une technologie. Jamais facturées. */
   offertes?: { technologie: Technologie; seances: number } | null;
+  /**
+   * Les boîtes de compléments choisies avec la cure, comptées dans son
+   * montant. Elles deviennent des ventes ordinaires, marquées « comprises
+   * dans la cure » : l'onglet Compléments les voit, et le rayon se
+   * décompte tout seul.
+   */
+  complements?: ComplementChoisi[];
 }
 
 /**
@@ -277,6 +285,30 @@ export async function creerProgramme(n: NouveauProgramme): Promise<Programme> {
 
   if (lignes.length > 0) {
     const { error: e } = await supabase.from('programme_lignes').insert(lignes);
+    if (e) throw e;
+  }
+
+  /*
+    Les boîtes choisies avec la cure : une vente par produit, à la date de
+    la validation, rattachée à la cure et marquée comme comprise dans son
+    montant. Le déclencheur du stock (015) fait sortir les boîtes du rayon
+    à l'insertion — c'est le même geste que « Ajouter un complément » sur
+    la fiche, écrit une seule fois.
+  */
+  const complements = (n.complements ?? []).filter((c) => c.quantite > 0);
+  if (complements.length > 0) {
+    const { error: e } = await supabase.from('ventes_complements').insert(
+      complements.map((c) => ({
+        cliente_id: n.clienteId,
+        centre_id: n.centreId,
+        programme_id: programme.id,
+        date_vente: new Date().toISOString().slice(0, 10),
+        produit: c.produit,
+        quantite: c.quantite,
+        prix_unitaire: c.prixUnitaire,
+        comprise_dans_la_cure: true,
+      })),
+    );
     if (e) throw e;
   }
 

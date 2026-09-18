@@ -335,6 +335,12 @@ export interface VenteComplement {
   produit: ProduitComplement;
   quantite: number;
   prix_unitaire: number;
+  /**
+   * Choisie avec la cure et comptée dans son montant (migration 069) : elle
+   * ne se retire qu'avec la cure, et le tableau de bord ne la compte pas
+   * une seconde fois parmi les ventes.
+   */
+  comprise_dans_la_cure: boolean;
   cree_le: string;
 }
 

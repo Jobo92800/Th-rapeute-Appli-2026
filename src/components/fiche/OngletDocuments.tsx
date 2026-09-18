@@ -12,7 +12,9 @@ import {
   lirePdfContrat,
   programmesDeLaCliente,
   renvoyerAuCrm,
+  ventesDeLaCliente,
 } from '../../services/metier';
+import { etatDuCentre } from '../../services/stock';
 import ModaleContrat from '../contrat/ModaleContrat';
 import type { Cliente } from '../../types/db';
 
@@ -44,6 +46,20 @@ export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
   const { data: contrats = [], isLoading } = useQuery({
     queryKey: ['contrats', cliente.id],
     queryFn: () => contratsDeLaCliente(cliente.id),
+  });
+
+  /*
+    Les boîtes de compléments comprises dans la cure figurent au contrat :
+    on les charge avant d'ouvrir la fenêtre de signature, qui prépare ses
+    documents une seule fois à l'ouverture.
+  */
+  const { data: ventes, isLoading: ventesEnCours } = useQuery({
+    queryKey: ['ventes', cliente.id],
+    queryFn: () => ventesDeLaCliente(cliente.id),
+  });
+  const { data: rayon = [] } = useQuery({
+    queryKey: ['stock', centre.id],
+    queryFn: () => etatDuCentre(centre.id),
   });
 
   const { data: consentements = [] } = useQuery({
@@ -207,13 +223,15 @@ export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
 
       <EnvoyerAuCrm cliente={cliente} />
 
-      {signature && actif && (
+      {signature && actif && !ventesEnCours && (
         <ModaleContrat
           cliente={cliente}
           centre={centre}
           programme={actif.programme}
           lignes={actif.lignes}
           echeances={actif.echeances}
+          ventes={ventes ?? []}
+          nomProduit={(code) => rayon.find((r) => r.code === code)?.nom ?? code}
           onFerme={() => setSignature(false)}
           onSigne={() => {
             setSignature(false);

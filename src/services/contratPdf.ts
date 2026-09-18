@@ -203,6 +203,16 @@ export async function generateSignedContractPdf(
       SMALL_LINE_H,
     );
   }
+  // Les boîtes de compléments comprises dans la cure : le montant total les
+  // contient, le contrat doit donc les nommer.
+  if (data.supplementsLabel) {
+    y = paragraph(
+      doc,
+      `La cure comprend également ${data.supplementsLabel}, remises à la signature.`,
+      y,
+      SMALL_LINE_H,
+    );
+  }
   y = paragraph(doc, 'Les modalités précises de la cure (fréquence, organisation, durée estimée) sont définies lors du bilan préalable.', y, SMALL_LINE_H);
   y += 2;
 

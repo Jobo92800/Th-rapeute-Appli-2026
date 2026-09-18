@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, Gift, Minus, Plus } from 'lucide-react';
+import ChoixComplements from './ChoixComplements';
+import {
+  complementsChoisis,
+  nombreDeBoites,
+  type ComplementChoisi,
+} from '../../domain/complements';
+import type { EtatStock } from '../../types/db';
 import {
   ECHEANCES_ALMA,
   SEANCES_LUXO_POUR_CINQ_CHEQUES,
@@ -28,6 +35,8 @@ export interface Prescription {
   guide: boolean;
   /** Séances gagnées par parrainage, posées sur une technologie. Jamais facturées. */
   offertes: { technologie: Technologie; seances: number } | null;
+  /** Les boîtes de compléments choisies avec la cure, comptées dans le montant. */
+  complements: ComplementChoisi[];
   montantTotal: number;
   modeReglement: ModeReglement;
   frais: number;
@@ -38,6 +47,11 @@ interface Props {
   grille: GrilleTarifaire;
   /** Complément orienté par le terrain, affiché dans ce qui est inclus. */
   complement?: { nom: string; raison: string } | null;
+  /**
+   * Le rayon du centre, pour proposer les boîtes de compléments avec la
+   * cure. Vide tant qu'il n'est pas chargé : le bloc n'apparaît pas.
+   */
+  catalogue?: EtatStock[];
   /** Séances de départ. 16 séances de luxothérapie par défaut. */
   seancesInitiales?: Partial<Record<Technologie, number>>;
   /**
@@ -80,6 +94,7 @@ const METHODES = [
 export default function CompositionCure({
   grille,
   complement,
+  catalogue = [],
   seancesInitiales,
   optionsModifiables = false,
   seancesOffertes = 0,
@@ -101,6 +116,8 @@ export default function CompositionCure({
   // Tant que la thérapeute n'a pas décidé elle-même, la tenue suit la
   // prescription : elle s'ajoute dès qu'il y a de l'I-Shape.
   const [tenueChoisie, setTenueChoisie] = useState<boolean | null>(null);
+  // Les boîtes de compléments, code du produit → nombre. Rien par défaut.
+  const [boites, setBoites] = useState<Record<string, number>>({});
 
   // Les séances gagnées sont dues : on les pose d'emblée, sur la
   // luxothérapie, et la thérapeute déplace ou réduit si besoin.
@@ -120,9 +137,14 @@ export default function CompositionCure({
     [seances, grille],
   );
 
+  const complements = useMemo(
+    () => complementsChoisis(boites, catalogue, grille.complement),
+    [boites, catalogue, grille.complement],
+  );
+
   const detail = useMemo(
-    () => calculerMontant(lignes, { tenue, guide }, grille),
-    [lignes, tenue, guide, grille],
+    () => calculerMontant(lignes, { tenue, guide, boites: nombreDeBoites(complements) }, grille),
+    [lignes, tenue, guide, complements, grille],
   );
 
   const offertesPosees = Math.min(offertes, seancesOffertes);
@@ -149,7 +171,8 @@ export default function CompositionCure({
         seances: detail.totalSeances,
         prixSeance: grille.seance,
         montantSeances: detail.montantSeances,
-        options: detail.montantGuide + detail.montantTenue,
+        // Tout ce qui n'est pas une séance tombe sur la première échéance.
+        options: detail.montantGuide + detail.montantTenue + detail.montantComplements,
         methode,
         n: nRetenu,
       }),
@@ -165,6 +188,7 @@ export default function CompositionCure({
         guide,
         offertes:
           offertesPosees > 0 ? { technologie: technoOfferte, seances: offertesPosees } : null,
+        complements,
         montantTotal: detail.total,
         modeReglement: echeancier.mode,
         frais: echeancier.frais,
@@ -174,7 +198,7 @@ export default function CompositionCure({
     );
     // onChange est recréée à chaque rendu du parent : on ne l'observe pas.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lignes, electro, tenue, guide, detail, echeancier, offertesPosees, technoOfferte]);
+  }, [lignes, electro, tenue, guide, detail, echeancier, offertesPosees, technoOfferte, complements]);
 
   function ajuster(t: Technologie, delta: number) {
     setSeances((s) => ({ ...s, [t]: Math.max(0, s[t] + delta) }));
@@ -242,6 +266,14 @@ export default function CompositionCure({
           )}
         </div>
       </section>
+
+      <ChoixComplements
+        catalogue={catalogue}
+        prix={grille.complement}
+        quantites={boites}
+        onChange={setBoites}
+        recommandation={complement}
+      />
 
       {seancesOffertes > 0 && (
         <section className="carte border-marine-200 bg-marine-50 p-5">
@@ -334,13 +366,20 @@ export default function CompositionCure({
           )}
         </div>
 
-        <div className="grid grid-cols-3 gap-px bg-marine-800 text-center text-xs">
+        <div
+          className={`grid gap-px bg-marine-800 text-center text-xs ${
+            detail.montantComplements > 0 ? 'grid-cols-4' : 'grid-cols-3'
+          }`}
+        >
           <Detail libelle="Séances" valeur={formaterEuros(detail.montantSeances)} />
           <Detail libelle="Guide" valeur={guide ? formaterEuros(detail.montantGuide) : '—'} />
           <Detail
             libelle="Tenue I-Shape"
             valeur={tenue ? formaterEuros(detail.montantTenue) : '—'}
           />
+          {detail.montantComplements > 0 && (
+            <Detail libelle="Compléments" valeur={formaterEuros(detail.montantComplements)} />
+          )}
         </div>
       </section>
 
@@ -416,13 +455,20 @@ export default function CompositionCure({
           </p>
         )}
 
-        {methode === 'centre' && detail.montantGuide + detail.montantTenue > 0 && (
-          <p className="mt-3 text-xs text-ardoise-500">
-            Sans frais. Le guide et la tenue (
-            {formaterEuros(detail.montantGuide + detail.montantTenue)}) sont portés par la première
-            échéance.
-          </p>
-        )}
+        {methode === 'centre' &&
+          detail.montantGuide + detail.montantTenue + detail.montantComplements > 0 && (
+            <p className="mt-3 text-xs text-ardoise-500">
+              Sans frais.{' '}
+              {detail.montantComplements > 0
+                ? 'Le guide, la tenue et les compléments'
+                : 'Le guide et la tenue'}{' '}
+              (
+              {formaterEuros(
+                detail.montantGuide + detail.montantTenue + detail.montantComplements,
+              )}
+              ) sont portés par la première échéance.
+            </p>
+          )}
 
         {echeancier.echeances.length > 1 && (
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
