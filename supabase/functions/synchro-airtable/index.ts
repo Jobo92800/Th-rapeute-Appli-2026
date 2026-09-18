@@ -286,11 +286,24 @@ Deno.serve(async (req: Request) => {
    *
    * Retenu le temps de l'appel : la file passe par lots, et il n'y a aucune
    * raison de redemander le schéma pour chaque récapitulatif.
+   *
+   * RETENU PAR NOM, et c'est tout l'objet de la correction du 18 septembre
+   * 2026. La première version ne gardait qu'un seul identifiant, quel que
+   * soit le champ demandé : dès qu'un lot traitait le BioPortrait puis le
+   * récapitulatif de la même cliente — ce que « Bilan seul » produit à
+   * chaque fois, les deux tâches naissant à une seconde d'écart —, le
+   * récapitulatif était déposé DANS LE CHAMP DU BIOPORTRAIT, et la date
+   * d'envoi partait sur une fiche dont le champ « Récapitulatif » restait
+   * vide. Ça ne se produisait que si les deux tâches tombaient dans le même
+   * lot ; quand le PDF du récapitulatif arrivait après le départ de la
+   * synchro, il passait au lot suivant, seul, et tout allait bien. D'où un
+   * défaut qui allait et venait sans qu'on voie pourquoi.
    */
-  let idChampRecap: string | null = null;
+  const idsDesChamps = new Map<string, string>();
 
   async function idDuChamp(nom: string): Promise<string> {
-    if (idChampRecap) return idChampRecap;
+    const connu = idsDesChamps.get(nom);
+    if (connu) return connu;
 
     const r = await fetch(`https://api.airtable.com/v0/meta/bases/${base}/tables`, {
       headers: enTetesAirtable,
@@ -312,8 +325,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    idChampRecap = champ.id as string;
-    return idChampRecap;
+    idsDesChamps.set(nom, champ.id as string);
+    return champ.id as string;
   }
 
   /**
@@ -401,6 +414,18 @@ Deno.serve(async (req: Request) => {
       b.recap_pdf,
     );
 
+    /*
+      L'automatisation Airtable se déclenche quand la fiche SE MET à
+      correspondre à sa condition (« Récap envoyé le » non vide). Sur un
+      renvoi, ou sur un second bilan, la date était déjà posée : la remplacer
+      par une autre ne fait pas « entrer » la fiche dans la condition, et le
+      mail ne repartait pas. On la vide d'abord, puis on la repose.
+    */
+    await airtable(`/${cliente.airtable_record_id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ fields: { [CHAMP_RECAP_DATE]: null }, typecast: true }),
+    });
+    await new Promise((r) => setTimeout(r, 400));
     await airtable(`/${cliente.airtable_record_id}`, {
       method: 'PATCH',
       body: JSON.stringify({
@@ -831,8 +856,13 @@ Deno.serve(async (req: Request) => {
         let clienteId = id;
 
         if (entite !== 'cliente') {
+          // Le récapitulatif et le BioPortrait portent l'identifiant d'un bilan.
           const table =
-            entite === 'bilan' ? 'bilans' : entite === 'programme' ? 'programmes' : 'contrats';
+            entite === 'bilan' || entite === 'recap' || entite === 'bioportrait'
+              ? 'bilans'
+              : entite === 'programme'
+                ? 'programmes'
+                : 'contrats';
           const { data } = await db.from(table).select('cliente_id').eq('id', id).maybeSingle();
           if (!data) return 'ligne introuvable';
           clienteId = data.cliente_id;

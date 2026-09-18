@@ -497,6 +497,20 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   passait en essai, où rien n'est jamais réglé, et jamais en vrai. La 068
   fait prendre aux nouvelles la suite du plus haut rang encore présent.
   Règle : ce qu'on insère à côté de lignes conservées ne repart jamais de 1.
+- **Le récapitulatif déposé dans le mauvais champ, une fois sur deux.** La
+  synchro cherche l'identifiant d'un champ Airtable par son nom et le
+  retenait le temps du lot — mais **un seul, quel que soit le nom demandé**.
+  Depuis la 050, « Bilan seul » met en file deux pièces jointes à une
+  seconde d'écart, le BioPortrait puis le récapitulatif : quand les deux
+  tombaient dans le même lot, le récapitulatif partait dans le champ
+  « BioPortrait », la date d'envoi était posée, et le mail partait sans
+  pièce jointe. Quand le PDF arrivait après le départ de la synchro, il
+  passait seul au lot suivant et tout allait bien — d'où un défaut
+  intermittent (Jonathan, 18 septembre 2026). Retenu par nom désormais, et
+  les gestes de `recap.ts` relancent eux-mêmes la synchro. Même
+  correction, la date « Récap envoyé le » est **vidée puis reposée** : une
+  automatisation « quand la fiche correspond » ne se redéclenche pas si la
+  fiche correspondait déjà, et un renvoi ne repartait pas.
 - **Doublons Airtable.** Le parcours du bilan enchaîne trois écritures ;
   sans verrou, trois synchros parallèles créaient trois fiches. Réglé par
   `reclamer_taches_airtable` (SKIP LOCKED), un verrou par cliente et un

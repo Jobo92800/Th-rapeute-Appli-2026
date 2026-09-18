@@ -9,6 +9,7 @@
 */
 
 import { supabase } from '../lib/supabase';
+import { declencherSynchro } from './metier';
 import type { Bareme, BioPortrait, MesureInbody } from '../domain/bioportrait';
 import { construireRecap, type DonneesRecap, type Proposition } from '../domain/recapitulatif';
 import { bioPortraitEnBase64, recapEnBase64 } from './recapPdf';
@@ -52,6 +53,12 @@ export async function envoyerRecap(args: {
     p_pdf: recapEnBase64(donnees),
   });
   if (error) throw error;
+  /*
+    La synchro repart tout de suite : sans ça, un PDF mis en file après le
+    départ de la synchro lancée par l'enregistrement du bilan attendait le
+    prochain geste dans l'application — parfois plusieurs minutes.
+  */
+  declencherSynchro();
 }
 
 /**
@@ -67,6 +74,7 @@ export async function renvoyerRecap(bilanId: string): Promise<void> {
     p_pdf: null,
   });
   if (error) throw error;
+  declencherSynchro(); // voir envoyerRecap
 }
 
 /**
@@ -113,6 +121,7 @@ export async function rangerBioPortrait(args: {
     p_pdf: bioPortraitEnBase64(donnees),
   });
   if (error) throw error;
+  declencherSynchro(); // voir envoyerRecap
 }
 
 /**
@@ -130,6 +139,7 @@ export async function rangerDocumentBioPortrait(bilanId: string, donnees: Donnee
     p_pdf: bioPortraitEnBase64(donnees),
   });
   if (error) throw error;
+  declencherSynchro(); // voir envoyerRecap
 }
 
 export async function envoyerDocumentRecap(bilanId: string, donnees: DonneesRecap): Promise<void> {
@@ -138,6 +148,7 @@ export async function envoyerDocumentRecap(bilanId: string, donnees: DonneesReca
     p_pdf: recapEnBase64(donnees),
   });
   if (error) throw error;
+  declencherSynchro(); // voir envoyerRecap
 }
 
 /** Redépose le BioPortrait déjà établi, à l'identique. */
@@ -147,4 +158,5 @@ export async function redeposerBioPortrait(bilanId: string): Promise<void> {
     p_pdf: null,
   });
   if (error) throw error;
+  declencherSynchro(); // voir envoyerRecap
 }
