@@ -510,7 +510,14 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   les gestes de `recap.ts` relancent eux-mêmes la synchro. Même
   correction, la date « Récap envoyé le » est **vidée puis reposée** : une
   automatisation « quand la fiche correspond » ne se redéclenche pas si la
-  fiche correspondait déjà, et un renvoi ne repartait pas.
+  fiche correspondait déjà, et un renvoi ne repartait pas. Et **la synchro
+  fait jusqu'à trois passes** : deux appels qui se chevauchent — l'un crée
+  la fiche dans Airtable pendant que l'autre réclame le récapitulatif —
+  laissaient celui-ci en « nouvelle tentative plus tard » sans que rien ne
+  le relance avant le prochain geste dans l'application ; un échec de cet
+  ordre déclenche désormais une nouvelle passe après 2,5 s. Il n'y a
+  toujours **aucune relance périodique** (pas de cron) : une tâche en
+  échec attend un geste dans l'application ou « Relancer » sur l'accueil.
 - **Doublons Airtable.** Le parcours du bilan enchaîne trois écritures ;
   sans verrou, trois synchros parallèles créaient trois fiches. Réglé par
   `reclamer_taches_airtable` (SKIP LOCKED), un verrou par cliente et un

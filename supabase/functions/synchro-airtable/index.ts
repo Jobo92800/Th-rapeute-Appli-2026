@@ -835,15 +835,6 @@ Deno.serve(async (req: Request) => {
     // Remet en file les tâches d'une exécution interrompue.
     await db.rpc('debloquer_taches_airtable');
 
-    // Réclamation atomique : deux appels simultanés ne peuvent pas prendre
-    // la même tâche, ce qui évitait jusqu'ici les créations en double.
-    const { data: taches, error: erreurLot } = await db.rpc('reclamer_taches_airtable', {
-      p_lot: LOT,
-    });
-
-    if (erreurLot) return json({ error: erreurLot.message }, 500);
-    if (!taches?.length) return json({ traitees: 0, echecs: 0 });
-
     let traitees = 0;
     let echecs = 0;
     // Les messages sont renvoyés dans la réponse : sans ça, diagnostiquer un
@@ -880,33 +871,65 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    for (const t of taches as Array<{ id: string; entite: string; entite_id: string; tentatives: number }>) {
-      try {
-        await traiter(t);
-        await db
-          .from('airtable_sync')
-          .update({ statut: 'ok', traite_le: new Date().toISOString(), derniere_erreur: null })
-          .eq('id', t.id);
-        traitees++;
-      } catch (err) {
-        echecs++;
-        erreurs.push({
-          entite: t.entite,
-          qui: await quiEstCe(t.entite, t.entite_id),
-          message: String(err).slice(0, 400),
-        });
-        await db
-          .from('airtable_sync')
-          .update({
-            statut: 'erreur',
-            tentatives: (t.tentatives ?? 0) + 1,
-            derniere_erreur: String(err).slice(0, 500),
-          })
-          .eq('id', t.id);
+    /*
+      PLUSIEURS PASSES, PAS UNE SEULE.
+
+      Un bilan met quatre tâches en file à quelques secondes d'écart — la
+      fiche, le bilan, le BioPortrait, le récapitulatif — et l'application
+      relance la synchro à chaque dépôt. Deux appels peuvent donc se
+      chevaucher : le premier crée la fiche dans Airtable pendant que le
+      second réclame le récapitulatif, qui échoue « pas encore dans
+      Airtable, nouvelle tentative plus tard »… et plus rien ne le
+      relançait avant le prochain geste dans l'application. C'est ainsi
+      que le récapitulatif de « Bilan seul » restait en file (18 septembre
+      2026). Quand un échec est de cet ordre — un « plus tard » —, on
+      attend un peu et on refait une passe, trois fois au plus.
+    */
+    for (let passe = 0; passe < 3; passe++) {
+      if (passe > 0) await new Promise((r) => setTimeout(r, 2500));
+
+      // Réclamation atomique : deux appels simultanés ne peuvent pas prendre
+      // la même tâche, ce qui évitait jusqu'ici les créations en double.
+      const { data: taches, error: erreurLot } = await db.rpc('reclamer_taches_airtable', {
+        p_lot: LOT,
+      });
+
+      if (erreurLot) return json({ error: erreurLot.message }, 500);
+      if (!taches?.length) break;
+
+      let aReessayer = false;
+
+      for (const t of taches as Array<{ id: string; entite: string; entite_id: string; tentatives: number }>) {
+        try {
+          await traiter(t);
+          await db
+            .from('airtable_sync')
+            .update({ statut: 'ok', traite_le: new Date().toISOString(), derniere_erreur: null })
+            .eq('id', t.id);
+          traitees++;
+        } catch (err) {
+          echecs++;
+          if (String(err).includes('plus tard')) aReessayer = true;
+          erreurs.push({
+            entite: t.entite,
+            qui: await quiEstCe(t.entite, t.entite_id),
+            message: String(err).slice(0, 400),
+          });
+          await db
+            .from('airtable_sync')
+            .update({
+              statut: 'erreur',
+              tentatives: (t.tentatives ?? 0) + 1,
+              derniere_erreur: String(err).slice(0, 500),
+            })
+            .eq('id', t.id);
+        }
+
+        // Airtable plafonne à 5 requêtes par seconde et par base.
+        await new Promise((r) => setTimeout(r, 220));
       }
 
-      // Airtable plafonne à 5 requêtes par seconde et par base.
-      await new Promise((r) => setTimeout(r, 220));
+      if (!aReessayer) break;
     }
 
     return json({ traitees, echecs, erreurs });
