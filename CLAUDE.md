@@ -589,6 +589,14 @@ au piège du `netlify.toml` : la redirection `/*` renvoie `index.html` avec un
 **code 200 pour n'importe quelle adresse**. Un `guide.html` « qui répond »
 ne prouve donc rien — il faut regarder son contenu.
 
+**Une page ouverte apprend qu'elle est dépassée** (`MiseAJour`, 18
+septembre 2026) : toutes les cinq minutes et à chaque retour sur l'onglet,
+l'application relit sa page d'accueil et compare le nom du fichier
+principal (`assets/index-XXXX.js`, unique par construction) à celui qui
+tourne ; s'ils diffèrent, un encart en bas propose « Mettre à jour », ou
+« Plus tard » jusqu'à la version suivante. Aucun numéro de version à
+tenir : c'est le nom que Vite donne au fichier qui sert de version.
+
 **Ne jamais pousser sans que Jonathan le demande.** Chaque poussée
 reconstruit le site et lui coûte des crédits Netlify — autant pour une
 correction d'une ligne que pour une livraison entière. On commite en local,
