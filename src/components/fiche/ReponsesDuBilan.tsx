@@ -35,7 +35,7 @@ export default function ReponsesDuBilan({ bilan, onFermer }: { bilan: Bilan; onF
 
   const couleurs = (cle: string): Couleurs => {
     const c = bareme?.CAT?.[cle];
-    return c ? { fond: c[1], encre: c[2] } : { fond: '#EEF2F2', encre: '#3A5556' };
+    return c ? { fond: c[1], encre: c[2] } : { fond: '#E6EFEF', encre: '#41595A' };
   };
 
   return (

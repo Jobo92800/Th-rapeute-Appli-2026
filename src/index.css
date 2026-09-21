@@ -14,10 +14,11 @@
   */
   body {
     @apply bg-ardoise-100 text-ardoise-900;
+    /* Le « halo-haut » de la DA, tel quel. */
     background-image: radial-gradient(
-      1000px 480px at 50% -220px,
-      theme('colors.marine.100') 0%,
-      rgba(234, 247, 247, 0) 72%
+      1350px 620px at 50% -250px,
+      #e7f7f7 0%,
+      rgba(231, 247, 247, 0) 70%
     );
     background-attachment: fixed;
   }
@@ -57,8 +58,7 @@
 
   /* Le magenta ne sert qu'aux gestes qui engagent : signer, valider, démarrer. */
   .bouton-fort {
-    @apply bouton bg-rose-500 text-white shadow-[0_8px_20px_-8px_rgba(232,49,138,0.55)]
-           hover:-translate-y-px hover:bg-rose-600;
+    @apply bouton bg-rose-500 text-white shadow-cta hover:-translate-y-px hover:bg-rose-600;
   }
 
   .bouton-discret {
@@ -66,12 +66,13 @@
            hover:bg-marine-50;
   }
 
+  /* Une carte se délimite d'un filet, sans ombre : c'est la règle de la DA. */
   .carte {
-    @apply rounded-2xl border border-ardoise-200 bg-white shadow-carte;
+    @apply rounded-2xl border border-ardoise-200 bg-white;
   }
 
-  /* Le sur-titre discret des sections, repris du diagnostic. */
+  /* Le sur-titre des sections : 12 px, capitales espacées, en aqua-texte — celui de la DA. */
   .surtitre {
-    @apply text-[11px] font-semibold uppercase tracking-[0.2em] text-ardoise-500;
+    @apply text-xs font-semibold uppercase tracking-[0.14em] text-marine-700;
   }
 }

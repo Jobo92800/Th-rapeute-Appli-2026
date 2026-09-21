@@ -466,7 +466,7 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
                               {delta != null && delta !== 0 && (
                                 <span
                                   className={`chiffres block text-xs font-semibold ${
-                                    delta < 0 ? 'text-marine-600' : 'text-rose-600'
+                                    delta < 0 ? 'text-marine-700' : 'text-rose-600'
                                   }`}
                                 >
                                   {libelleDelta(delta)}
@@ -634,7 +634,7 @@ function SeanceEnCours({
               type="checkbox"
               checked={jeuFait}
               onChange={(e) => setJeuFait(e.target.checked)}
-              className="h-4 w-4 rounded border-ardoise-300 text-marine-600 focus:ring-marine-500"
+              className="h-4 w-4 rounded border-ardoise-300 text-marine-700 focus:ring-marine-500"
             />
             <span className="text-sm font-semibold text-ardoise-900">
               Mission Déclic {jeu.code} réalisée — je valide le code
@@ -711,7 +711,7 @@ function SeanceEnCours({
             type="checkbox"
             checked={photo}
             onChange={(e) => setPhoto(e.target.checked)}
-            className="h-4 w-4 rounded border-ardoise-300 text-marine-600 focus:ring-marine-500"
+            className="h-4 w-4 rounded border-ardoise-300 text-marine-700 focus:ring-marine-500"
           />
           Photo prise
         </label>

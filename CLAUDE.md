@@ -105,21 +105,44 @@ mensualités sont égales. Les anciennes valeurs `4x_maison` et `10x_alma` reste
 
 ## Charte graphique
 
-Celle du diagnostic BioPortrait, étendue à toute l'application : **teal**
-(`#3BBFBF`) pour l'interface, **magenta** (`#E8318A`) réservé aux gestes qui
-engagent — signer, valider, démarrer. Typographie **Poppins**, titres en
-maigre avec le mot important en gras. Coins généreux (cartes 16 px, boutons
-en pilule), fond blanc lavé d'un halo de teal.
+**La direction artistique officielle de MAbeautyplus** — la skill
+`mabeautyplus-da` de Jonathan (jetons CSS, preset Tailwind, logo, script
+d'audit), appliquée à l'application le 21 septembre 2026. Elle est née de
+la charte du diagnostic BioPortrait, sur laquelle l'application était déjà
+bâtie : l'adaptation a surtout calé des valeurs au code près. **Teal**
+(`#3BBFBF`, « aqua ») pour l'interface, **magenta** (`#E8318A`, « rose »)
+réservé aux gestes qui engagent — signer, valider, démarrer. Typographie
+**Poppins** 300–700, titres en maigre avec le mot important en gras.
+Cartes à **18 px** délimitées par **un filet, sans ombre** (les ombres de la
+DA ne servent qu'aux fenêtres et aux encarts qui flottent, `shadow-flottante`,
+et au bouton rose, `shadow-cta`) ; champs à 14 px ; boutons en pilule ; fond
+lavé du « halo-haut » de la DA. **Le teal qui écrit en petit est
+`marine-700` (`#1F7F7F`, aqua-texte, 4,8:1)**, jamais `marine-500` ni
+`marine-600` (3,0:1). Le sur-titre de section est en aqua-texte, 12 px.
 
-Le logo vectorisé est dans `public/logo.svg`, **recadré sur son contenu** :
-le fichier d'origine était fait aux deux tiers de vide, si bien que le nom
-restait minuscule quelle que soit la taille donnée à l'image. Recadré, c'est
-une enseigne large — 2,5 fois plus large que haute — qui remplit la barre
-latérale et se lit du premier coup. Si un jour vous repartez du fichier
-d'origine, pensez à refaire ce recadrage — `viewBox="5.6 41.2 107.3 42.6"` —
-et à **retirer le rectangle de fond** qui couvre toute la planche : opaque,
-il est invisible sur du blanc et bien voyant dès que le logo se pose sur
-autre chose. La page de connexion l'a montré tout de suite.
+Deux écarts assumés, décidés par Jonathan : **le bouton principal teal
+plein** (`bouton-principal`, aqua-profond) que la DA ne connaît pas — elle
+n'a qu'un rose et un secondaire à filet — reste ; et **les couleurs des
+soins et des états** (ambre I-Shape, vert presso, rouge d'un retard, vert
+d'un encaissement) restent hors palette DA, parce qu'elles portent une
+information et non une décoration. Le script d'audit de la skill donne
+95 % de jetons exacts sur `src/`, le reste étant ces couleurs-là.
+
+Le preset Tailwind de la DA n'est pas importé tel quel : la palette de
+l'application garde ses noms (`marine`, `rose`, `ardoise`, plus `violet`),
+calés cran par cran sur les jetons — voir le commentaire de
+`tailwind.config.js`. Les rayons Tailwind y sont redéfinis sur l'échelle de
+la DA (`rounded-2xl` = 18 px), ce qui a mis toute l'application à la charte
+sans toucher un écran.
+
+**Le logo est un fichier, jamais un dessin** (règle n° 9 de la DA) :
+`public/logo.svg` est désormais `mabeautyplus-logo.svg` de la skill, tel
+quel — deux encres (`#35AEDC`, `#F52BBF`) qui ne sont pas des couleurs
+d'interface, 2,66 fois plus large que haut, déjà recadré. Le logo des PDF
+(`src/services/logoPdf.ts`, JPEG sur fond blanc) en a été refait à
+420 × 158. Si la DA change de logo, reprendre le fichier de la skill et
+refaire ce JPEG avec la commande notée dans le fichier ; ne jamais le
+recolorer ni le recadrer à la main.
 
 Les noms de teintes n'ont pas changé — `marine` désigne désormais le teal,
 `ardoise` un gris qui tire vers le vert-de-gris. Changer la charte se fait

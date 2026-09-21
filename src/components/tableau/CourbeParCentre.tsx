@@ -7,10 +7,11 @@ import { formaterEuros } from '../../domain/tarification';
 /*
   Cinq centres, cinq teintes fixes : la couleur d'un centre ne change pas
   d'un chargement à l'autre, sinon la lecture se refait à chaque fois.
-  Le rose de l'identité est gardé pour le premier, les autres s'en écartent
-  assez pour rester distinguables.
+  Toutes viennent de la DA (aqua-texte, rose, violet, et les encres des
+  terrains 2 et 4 du BioPortrait) : assez écartées pour se distinguer, et
+  aucune couleur étrangère à la charte sur le tableau de bord.
 */
-const TEINTES = ['#1f7fa3', '#d10e9c', '#2f9e7e', '#e8a33d', '#7c5cd6'];
+const TEINTES = ['#1f7f7f', '#e8318a', '#8e6fc6', '#3d6e93', '#8e3c80'];
 
 function moisCourt(iso: string): string {
   const [a, m] = iso.split('-');

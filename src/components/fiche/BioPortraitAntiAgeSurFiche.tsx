@@ -107,7 +107,7 @@ export default function BioPortraitAntiAgeSurFiche({
             Refaire le point
           </Link>
           <Link to={`/bilan?cliente=${clienteId}`} className="bouton-discret" title="Le BioPortrait de la perte de poids, sur cette même fiche">
-            <Sparkles className="h-4 w-4 text-marine-600" />
+            <Sparkles className="h-4 w-4 text-marine-700" />
             Bilan perte de poids
           </Link>
         </div>

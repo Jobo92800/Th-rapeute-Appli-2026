@@ -132,7 +132,7 @@ function Pastille({ atout }: { atout: Atout }) {
   const Icone = ICONES[atout.icone];
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-marine-200 bg-marine-50 px-3 py-1.5 text-xs font-semibold text-marine-800">
-      <Icone className="h-3.5 w-3.5 shrink-0 text-marine-600" />
+      <Icone className="h-3.5 w-3.5 shrink-0 text-marine-700" />
       {atout.texte}
     </span>
   );

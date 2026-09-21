@@ -94,7 +94,7 @@ export default function ModaleSeance({
         role="dialog"
         aria-modal="true"
         aria-label="Modifier la séance"
-        className="my-8 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-carte"
+        className="my-8 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-flottante"
       >
         <div className="flex items-center justify-between border-b border-ardoise-200 px-5 py-3.5">
           <h2 className="text-sm font-semibold text-ardoise-900">Corriger la séance</h2>

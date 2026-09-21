@@ -60,7 +60,7 @@ export default function Restitution({
   const [reponsesOuvertes, setReponsesOuvertes] = useState(false);
   const couleurs = (cle: string) => {
     const c = bareme.CAT?.[cle];
-    return c ? { fond: c[1], encre: c[2] } : { fond: '#EEF2F2', encre: '#3A5556' };
+    return c ? { fond: c[1], encre: c[2] } : { fond: '#E6EFEF', encre: '#41595A' };
   };
 
   return (

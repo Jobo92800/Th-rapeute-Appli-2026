@@ -97,7 +97,7 @@ export default function Notes({ clienteId, centreId, compact = false }: Props) {
             type="checkbox"
             checked={epingler}
             onChange={(e) => setEpingler(e.target.checked)}
-            className="h-4 w-4 rounded border-ardoise-300 text-marine-600 focus:ring-marine-500"
+            className="h-4 w-4 rounded border-ardoise-300 text-marine-700 focus:ring-marine-500"
           />
           <Pin className="h-3.5 w-3.5 text-ardoise-400" />
           Épingler en haut de la fiche

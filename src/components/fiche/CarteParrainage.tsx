@@ -242,7 +242,7 @@ export default function CarteParrainage({ cliente }: { cliente: Cliente }) {
         {/* Ce que ça lui rapporte -------------------------------------- */}
         {solde.total > 0 && (
           <div className="flex items-start gap-3 rounded-lg border border-marine-200 bg-marine-50 px-4 py-3">
-            <Gift className="mt-0.5 h-4 w-4 shrink-0 text-marine-600" />
+            <Gift className="mt-0.5 h-4 w-4 shrink-0 text-marine-700" />
             <div className="text-sm text-marine-900">
               <p className="font-semibold">{libelleSolde(solde)}</p>
               <p className="mt-0.5 text-xs">

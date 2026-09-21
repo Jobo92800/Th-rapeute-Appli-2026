@@ -126,7 +126,7 @@ export default function ImportAirtable() {
             type="checkbox"
             checked={lu}
             onChange={(e) => setLu(e.target.checked)}
-            className="h-4 w-4 rounded border-ardoise-300 text-marine-600 focus:ring-marine-500"
+            className="h-4 w-4 rounded border-ardoise-300 text-marine-700 focus:ring-marine-500"
           />
           J’ai lu le décompte ci-dessous.
         </label>

@@ -278,7 +278,7 @@ export default function CompositionCure({
       {seancesOffertes > 0 && (
         <section className="carte border-marine-200 bg-marine-50 p-5">
           <div className="flex items-start gap-3">
-            <Gift className="mt-0.5 h-4 w-4 shrink-0 text-marine-600" />
+            <Gift className="mt-0.5 h-4 w-4 shrink-0 text-marine-700" />
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-semibold text-marine-900">
                 {seancesOffertes} séance{seancesOffertes > 1 ? 's' : ''} offerte
@@ -337,7 +337,7 @@ export default function CompositionCure({
         </section>
       )}
 
-      <section className="overflow-hidden rounded-xl bg-marine-900 text-white shadow-carte">
+      <section className="overflow-hidden rounded-xl bg-marine-900 text-white shadow-flottante">
         <div className="px-6 py-7 text-center">
           <p className="text-2xs font-semibold uppercase tracking-widest text-marine-300">
             Son accompagnement personnalisé
@@ -551,7 +551,7 @@ function Option({
         type="checkbox"
         checked={coche}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 shrink-0 rounded border-ardoise-300 text-marine-600 focus:ring-marine-500"
+        className="h-4 w-4 shrink-0 rounded border-ardoise-300 text-marine-700 focus:ring-marine-500"
       />
       <span className="min-w-0 flex-1">
         <span className={coche ? 'text-ardoise-800' : 'text-ardoise-400 line-through'}>
@@ -571,7 +571,7 @@ function Option({
 function Inclus({ children }: { children: React.ReactNode }) {
   return (
     <p className="flex items-start gap-2 text-ardoise-700">
-      <Check className="mt-0.5 h-4 w-4 shrink-0 text-marine-600" strokeWidth={3} />
+      <Check className="mt-0.5 h-4 w-4 shrink-0 text-marine-700" strokeWidth={3} />
       <span>{children}</span>
     </p>
   );

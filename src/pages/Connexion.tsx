@@ -41,7 +41,7 @@ export default function Connexion() {
             src="/logo.svg"
             alt="MAbeautyplus"
             width={260}
-            height={103}
+            height={98}
             className="mx-auto block w-[260px] max-w-full"
           />
           <p className="mt-2 text-sm text-ardoise-500">Suivi client</p>

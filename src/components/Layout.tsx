@@ -78,7 +78,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             Recadré, c'est une enseigne large — deux fois et demie plus
             large que haute — qui remplit la barre et se lit du premier coup.
           */}
-          <img src="/logo.svg" alt="MAbeautyplus" width={215} height={85} className="block w-full" />
+          <img src="/logo.svg" alt="MAbeautyplus" width={215} height={81} className="block w-full" />
           <div className="mt-2 text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
             Suivi client
           </div>
@@ -162,7 +162,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           </button>
 
           {menuOuvert && plusieursCentres && (
-            <div className="absolute bottom-full left-3 right-3 mb-1 overflow-hidden rounded-lg border border-ardoise-200 bg-white shadow-carte">
+            <div className="absolute bottom-full left-3 right-3 mb-1 overflow-hidden rounded-lg border border-ardoise-200 bg-white shadow-flottante">
               {/* La direction peut tout regarder d'un coup. Les écrans qui
                   demandent un centre précis — bilan, stock — le disent. */}
               {role === 'direction' && (

@@ -60,7 +60,7 @@ export default function EtatSynchro({
           </>
         ) : enCours ? (
           <>
-            <RefreshCw className="h-5 w-5 text-marine-600" />
+            <RefreshCw className="h-5 w-5 text-marine-700" />
             <span className="text-sm font-semibold text-marine-800">
               {enAttente} en attente d'envoi
             </span>

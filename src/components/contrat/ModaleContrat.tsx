@@ -307,7 +307,7 @@ export default function ModaleContrat({
         role="dialog"
         aria-modal="true"
         aria-label="Signature du contrat"
-        className="my-4 w-full max-w-5xl overflow-hidden rounded-xl bg-white shadow-carte"
+        className="my-4 w-full max-w-5xl overflow-hidden rounded-xl bg-white shadow-flottante"
       >
         <div className="flex items-center justify-between border-b border-ardoise-200 px-5 py-3.5">
           <div>
@@ -417,7 +417,7 @@ export default function ModaleContrat({
                 type="checkbox"
                 checked={photos}
                 onChange={(e) => setPhotos(e.target.checked)}
-                className="h-4 w-4 rounded border-ardoise-300 text-marine-600 focus:ring-marine-500"
+                className="h-4 w-4 rounded border-ardoise-300 text-marine-700 focus:ring-marine-500"
               />
               {majuscule(laCliente(cliente.civilite))} autorise la diffusion de ses photos sur les réseaux du centre
             </label>
@@ -445,7 +445,7 @@ export default function ModaleContrat({
                     onChange={(e) =>
                       setCoches((c) => c.map((v, k) => (k === i ? e.target.checked : v)))
                     }
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-ardoise-300 text-marine-600 focus:ring-marine-500 disabled:opacity-40"
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-ardoise-300 text-marine-700 focus:ring-marine-500 disabled:opacity-40"
                   />
                   <span>{texte}</span>
                 </label>

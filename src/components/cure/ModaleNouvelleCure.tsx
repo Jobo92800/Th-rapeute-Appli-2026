@@ -111,7 +111,7 @@ export default function ModaleNouvelleCure({
         role="dialog"
         aria-modal="true"
         aria-label={`Nouvelle cure pour ${cliente.prenom} ${cliente.nom}`}
-        className="my-4 w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-carte"
+        className="my-4 w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-flottante"
       >
         <div className="flex items-center justify-between border-b border-ardoise-200 px-5 py-3.5">
           <div>

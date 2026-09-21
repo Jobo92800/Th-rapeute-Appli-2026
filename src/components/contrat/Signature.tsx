@@ -72,7 +72,7 @@ const Signature = forwardRef<SignatureHandle, Props>(function Signature({ onChan
         const ctx = c.getContext('2d');
         if (!ctx) return;
         const p = position(e);
-        ctx.strokeStyle = '#111827';
+        ctx.strokeStyle = '#152b2c'; // l'encre de la DA
         ctx.lineWidth = 2.2;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';

@@ -552,7 +552,7 @@ export default function NouveauBilan() {
           */}
           <div className="bg-gradient-to-br from-marine-50 via-white to-rose-50/50 px-7 py-10 text-center sm:px-12">
             <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-marine-100">
-              <Sparkles className="h-6 w-6 text-marine-600" />
+              <Sparkles className="h-6 w-6 text-marine-700" />
             </span>
 
             <p className="mt-5 text-2xs font-semibold uppercase tracking-[0.22em] text-marine-700">
@@ -577,7 +577,7 @@ export default function NouveauBilan() {
                   key={r.texte}
                   className="inline-flex items-center gap-1.5 rounded-full border border-marine-200 bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-marine-800"
                 >
-                  <r.icone className="h-3.5 w-3.5 text-marine-600" />
+                  <r.icone className="h-3.5 w-3.5 text-marine-700" />
                   {r.texte}
                 </span>
               ))}

@@ -18,7 +18,14 @@ export interface MesureDefinition {
   acceptable ici parce que chaque courbe porte son nom en bout de tracé et
   que le tableau au-dessus donne tous les chiffres.
 */
-const TEINTES = ['#2a78d6', '#eb6834', '#1baf7a'] as const;
+/*
+  Depuis la DA (21 septembre 2026) : aqua-texte, rose, violet-texte. Le trio
+  bleu / orange / vert d'avant était validé pour le daltonisme ; celui-ci
+  sépare les teintes par la luminosité autant que par la couleur — le teal
+  sombre, le rose vif, le violet moyen — et chaque courbe garde son nom en
+  bout de tracé.
+*/
+const TEINTES = ['#1f7f7f', '#e8318a', '#7a5cb5'] as const;
 const MAX_SERIES = 3;
 
 const L = 46; // marge gauche, pour les valeurs de l'axe
@@ -135,7 +142,7 @@ export default function CourbeMensurations({ mesures, definitions, parDefaut }: 
             >
               <span
                 className="h-2 w-2 shrink-0 rounded-full"
-                style={{ background: active ? TEINTES[rang % TEINTES.length] : '#c2d0d7' }}
+                style={{ background: active ? TEINTES[rang % TEINTES.length] : '#e4f2f2' }}
                 aria-hidden
               />
               {d.libelle}
@@ -173,7 +180,7 @@ export default function CourbeMensurations({ mesures, definitions, parDefaut }: 
                   x2={LARGEUR - R}
                   y1={y(g)}
                   y2={y(g)}
-                  stroke="#e3ecef"
+                  stroke="#e6efef"
                   strokeWidth={1}
                 />
                 <text
@@ -181,7 +188,7 @@ export default function CourbeMensurations({ mesures, definitions, parDefaut }: 
                   y={y(g) + 3.5}
                   textAnchor="end"
                   fontSize={10}
-                  fill="#94a9b4"
+                  fill="#9babab"
                   style={{ fontVariantNumeric: 'tabular-nums' }}
                 >
                   {g}
@@ -201,7 +208,7 @@ export default function CourbeMensurations({ mesures, definitions, parDefaut }: 
                   y={HAUTEUR - 10}
                   textAnchor="middle"
                   fontSize={10}
-                  fill="#94a9b4"
+                  fill="#9babab"
                 >
                   {format(new Date(p.date_mesure), 'd MMM', { locale: fr })}
                 </text>
@@ -215,7 +222,7 @@ export default function CourbeMensurations({ mesures, definitions, parDefaut }: 
                 x2={x(survol)}
                 y1={H_HAUT - 6}
                 y2={HAUTEUR - H_BAS}
-                stroke="#94a9b4"
+                stroke="#9babab"
                 strokeWidth={1}
                 strokeDasharray="3 3"
               />
@@ -275,7 +282,7 @@ export default function CourbeMensurations({ mesures, definitions, parDefaut }: 
           {/* Infobulle */}
           {survol != null && (
             <div
-              className="pointer-events-none absolute top-2 rounded-lg border border-ardoise-200 bg-white px-3 py-2 shadow-carte"
+              className="pointer-events-none absolute top-2 rounded-lg border border-ardoise-200 bg-white px-3 py-2 shadow-flottante"
               style={{
                 left: `${(x(survol) / LARGEUR) * 100}%`,
                 transform:

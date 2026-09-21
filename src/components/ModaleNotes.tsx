@@ -31,7 +31,7 @@ export default function ModaleNotes({ clienteId, centreId, nomCliente, onFermer 
         aria-modal="true"
         aria-label={`Notes de ${nomCliente}`}
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[80vh] w-full max-w-xl flex-col overflow-hidden rounded-xl bg-white shadow-carte"
+        className="flex max-h-[80vh] w-full max-w-xl flex-col overflow-hidden rounded-xl bg-white shadow-flottante"
       >
         <div className="flex items-center justify-between border-b border-ardoise-200 px-5 py-3.5">
           <div>

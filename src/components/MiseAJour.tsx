@@ -78,9 +78,9 @@ export default function MiseAJour() {
   return (
     <div
       role="status"
-      className="fixed bottom-5 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center gap-3 rounded-2xl border border-marine-300 bg-white px-4 py-3 shadow-carte"
+      className="fixed bottom-5 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center gap-3 rounded-2xl border border-marine-300 bg-white px-4 py-3 shadow-flottante"
     >
-      <RefreshCw className="h-5 w-5 shrink-0 text-marine-600" />
+      <RefreshCw className="h-5 w-5 shrink-0 text-marine-700" />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-ardoise-900">Une nouvelle version est disponible</p>
         <p className="text-xs text-ardoise-500">

@@ -109,7 +109,7 @@ export default function ModaleSuppressionCure({
         role="dialog"
         aria-modal="true"
         aria-label={`Supprimer la cure ${programme.numero}`}
-        className="my-8 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-carte"
+        className="my-8 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-flottante"
       >
         <div className="flex items-start justify-between gap-3 border-b border-ardoise-200 px-5 py-3.5">
           <div className="flex gap-3">

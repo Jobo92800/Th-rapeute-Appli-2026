@@ -121,7 +121,7 @@ export default function ModaleMouvement({ ligne, auteur, onFerme, onEnregistre }
         role="dialog"
         aria-modal="true"
         aria-label={`Mouvement de stock — ${ligne.nom}`}
-        className="my-4 w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-carte"
+        className="my-4 w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-flottante"
       >
         <div className="flex items-center justify-between border-b border-ardoise-200 px-5 py-3.5">
           <div>

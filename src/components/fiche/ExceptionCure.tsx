@@ -97,7 +97,7 @@ export default function ExceptionCure({
             role="dialog"
             aria-modal="true"
             aria-label="Exception de cure"
-            className="my-8 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-carte"
+            className="my-8 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-flottante"
           >
             <div className="flex items-center justify-between border-b border-ardoise-200 px-5 py-3.5">
               <div>

@@ -448,7 +448,7 @@ export default function NouveauBilanAntiAge() {
       <div className="carte p-6 sm:p-8">
         <QuestionBioPortrait
           etape={etapeAffichee}
-          theme={['Bio-Portrait Anti-Âge', '#FBE3EA', '#A24E6C']}
+          theme={['Bio-Portrait Anti-Âge', '#FEF0F6', '#C42872']}
           choisis={choixAntiAge(reponses, q.code)}
           onChoisir={repondre}
         />

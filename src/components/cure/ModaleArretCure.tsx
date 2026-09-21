@@ -87,7 +87,7 @@ export default function ModaleArretCure({
         role="dialog"
         aria-modal="true"
         aria-label="Arrêter la cure"
-        className="my-8 w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-carte"
+        className="my-8 w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-flottante"
       >
         <div className="flex items-start justify-between gap-3 border-b border-ardoise-200 px-5 py-3.5">
           <div>

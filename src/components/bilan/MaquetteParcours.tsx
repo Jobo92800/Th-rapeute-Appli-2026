@@ -26,7 +26,7 @@ export default function MaquetteParcours() {
               Mon Parcours
             </div>
             <div className="text-[6.5px] text-ardoise-400">
-              by <span className="font-semibold text-marine-600">MAbeauty</span>
+              by <span className="font-semibold text-marine-700">MAbeauty</span>
               <span className="font-semibold text-rose-500">plus</span>
             </div>
           </div>
