@@ -18,6 +18,8 @@ import {
   type GrilleTarifaire,
   dureeCureEnMois,
   echeancesCentrePossibles,
+  plafondChequesParLuxo,
+  pourquoiPasPlusDeCheques,
   creneauxParDefaut,
   montantAcompte,
   fraisAlma,
@@ -233,6 +235,34 @@ export function controlerTarification() {
   egal('cinq mois et vingt luxo ouvrent le cinquième', echeancesCentrePossibles(5, 20), [1, 2, 3, 4, 5]);
   egal('vingt luxo sur une cure plus courte ne suffisent pas', echeancesCentrePossibles(4, 20), [1, 2, 3, 4]);
   egal('un mois ne laisse que le comptant', echeancesCentrePossibles(1), [1]);
+
+  /*
+    LES SÉANCES DE LUXO PLAFONNENT AUSSI (Jonathan, 21 septembre 2026) :
+    10 ou 12 luxo → 3 chèques, 15 → 4, 20 → 5. Au centre seulement.
+  */
+  egal('dix luxo : trois chèques au plus', plafondChequesParLuxo(10), 3);
+  egal('douze luxo : trois aussi', plafondChequesParLuxo(12), 3);
+  egal('quinze luxo : quatre', plafondChequesParLuxo(15), 4);
+  egal('vingt luxo : cinq', plafondChequesParLuxo(20), 5);
+  egal('sans luxo, la règle ne dit rien', plafondChequesParLuxo(0), null);
+  egal(
+    'dix luxo avec quinze I-Shape : quatre mois, mais trois chèques',
+    echeancesCentrePossibles(dureeCureEnMois(15, 2), 10),
+    [1, 2, 3],
+  );
+  egal('douze luxo en trois soins (quatre mois) : trois chèques', echeancesCentrePossibles(4, 12), [1, 2, 3]);
+  egal('quinze luxo : quatre chèques', echeancesCentrePossibles(dureeCureEnMois(15, 1), 15), [1, 2, 3, 4]);
+  egal('vingt luxo : cinq chèques', echeancesCentrePossibles(dureeCureEnMois(20, 1), 20), [1, 2, 3, 4, 5]);
+  egal('vingt I-Shape sans luxo : quatre, comme avant', echeancesCentrePossibles(dureeCureEnMois(20, 1), 0), [1, 2, 3, 4]);
+  verifie(
+    'l’écran explique le plafond par la luxo quand c’est elle qui décide',
+    (pourquoiPasPlusDeCheques(4, 10) ?? '').includes('10 séances de luxothérapie'),
+  );
+  verifie(
+    'et par la durée quand c’est elle',
+    (pourquoiPasPlusDeCheques(3, 0) ?? '').includes('dure 3 mois'),
+  );
+  egal('rien à expliquer avec quatre chèques sur quatre mois', pourquoiPasPlusDeCheques(4, 15), null);
 
   const centre5 = construireEcheancierCure({
     seances: 20,

@@ -9,8 +9,8 @@ import {
 import type { EtatStock } from '../../types/db';
 import {
   ECHEANCES_ALMA,
-  SEANCES_LUXO_POUR_CINQ_CHEQUES,
   dureeCureEnMois,
+  pourquoiPasPlusDeCheques,
   echeancesCentrePossibles,
   tauxFraisAlma,
   LIBELLES_TECHNOLOGIE,
@@ -437,16 +437,9 @@ export default function CompositionCure({
           Sans cette phrase, la thérapeute croit à une panne : le 4× était là
           il y a dix secondes, et il a disparu quand elle a retiré des séances.
         */}
-        {methode === 'centre' && choixEcheances.length < 4 && detail.totalSeances > 0 && (
+        {methode === 'centre' && detail.totalSeances > 0 && pourquoiPasPlusDeCheques(dureeMois, seancesLuxo) && (
           <p className="mt-3 text-xs text-ardoise-500">
-            Cette cure dure {dureeMois} mois : au-delà de {choixEcheances.length} chèques, le
-            dernier serait encaissé après la dernière séance.
-          </p>
-        )}
-        {methode === 'centre' && choixEcheances.length === 4 && dureeMois >= 5 && (
-          <p className="mt-3 text-xs text-ardoise-500">
-            Le cinquième chèque est réservé aux cures d’au moins {SEANCES_LUXO_POUR_CINQ_CHEQUES}{' '}
-            luxo.
+            {pourquoiPasPlusDeCheques(dureeMois, seancesLuxo)}
           </p>
         )}
 

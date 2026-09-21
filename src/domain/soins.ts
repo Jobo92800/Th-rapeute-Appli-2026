@@ -41,6 +41,18 @@ export function aUnProgrammeAppareil(t: Technologie): boolean {
   return SOINS_AVEC_PROGRAMME.includes(t);
 }
 
+/**
+ * La Mission Déclic n'accompagne que la Luxothérapie perte de poids
+ * (Jonathan, 21 septembre 2026). C'est un exercice par venue pour ancrer
+ * le changement d'habitudes, et c'est la luxo qui porte cet accompagnement :
+ * sur l'I-Shape, la presso, la relaxation, le Dôme et l'Advance Lift, la
+ * séance se clôture sur ses relevés et son commentaire, sans mission.
+ * Jusque-là, seul l'Advance Lift en était dispensé.
+ */
+export function aUneMissionDeclic(t: Technologie): boolean {
+  return t === 'luxo';
+}
+
 export const CENTRES_AVEC_DOME = ['grau-du-roi'];
 
 export function domeDisponible(centreId: string | null | undefined): boolean {

@@ -28,8 +28,8 @@ import {
 } from '../../domain/prescription';
 import {
   ECHEANCES_ALMA,
-  SEANCES_LUXO_POUR_CINQ_CHEQUES,
   creneauxParDefaut,
+  pourquoiPasPlusDeCheques,
   dureeCureEnMois,
   echeancesCentrePossibles,
   montantAcompte,
@@ -892,16 +892,9 @@ export default function CureEtDevis({
               La thérapeute doit comprendre pourquoi le 4× a disparu, sinon
               elle croit à une panne et cherche le bouton manquant.
             */}
-            {methode === 'centre' && choixEcheances.length < 4 && (
+            {methode === 'centre' && pourquoiPasPlusDeCheques(dureeMois, seancesLuxo) && (
               <p className="mx-auto mt-1.5 max-w-sm text-[11px] text-marine-300">
-                Cette cure dure {dureeMois} mois : au-delà de {choixEcheances.length} chèques, le
-                dernier serait encaissé après la dernière séance.
-              </p>
-            )}
-            {methode === 'centre' && choixEcheances.length === 4 && dureeMois >= 5 && (
-              <p className="mx-auto mt-1.5 max-w-sm text-[11px] text-marine-300">
-                Le cinquième chèque est réservé aux cures d’au moins{' '}
-                {SEANCES_LUXO_POUR_CINQ_CHEQUES} luxo.
+                {pourquoiPasPlusDeCheques(dureeMois, seancesLuxo)}
               </p>
             )}
           </div>

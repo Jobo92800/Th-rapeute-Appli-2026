@@ -225,11 +225,63 @@ export function dureeCureEnMois(seancesDuSoinLePlusLong: number, soinsPrincipaux
  * Alma n'est pas concerné : c'est un crédit avancé par Alma, le centre est
  * payé tout de suite, la durée de la cure ne l'engage pas.
  */
+/*
+  LE NOMBRE DE CHÈQUES SUIT AUSSI LES SÉANCES DE LUXO (Jonathan, 21 septembre
+  2026) — au centre seulement, Alma ne change pas :
+
+      10 ou 12 luxo   →  3 chèques au plus
+      15 luxo         →  4 au plus
+      20 luxo         →  5 au plus (la règle du 15 septembre)
+
+  La durée de la cure plafonnait déjà, mais elle suit le soin le plus long :
+  dix luxo avec quinze I-Shape duraient quatre mois et ouvraient quatre
+  chèques. La luxo est le soin qui porte la cure, c'est elle qui décide.
+  Les deux règles s'appliquent, la plus stricte gagne. Sans luxo, la durée
+  seule décide, comme avant.
+*/
+export const PALIERS_CHEQUES_LUXO: Array<{ des: number; cheques: number }> = [
+  { des: SEANCES_LUXO_POUR_CINQ_CHEQUES, cheques: 5 },
+  { des: 15, cheques: 4 },
+  { des: 1, cheques: 3 },
+];
+
+/** Le plafond de chèques que donnent les séances de luxo ; null sans luxo. */
+export function plafondChequesParLuxo(seancesLuxo: number): number | null {
+  if (seancesLuxo <= 0) return null;
+  return PALIERS_CHEQUES_LUXO.find((p) => seancesLuxo >= p.des)?.cheques ?? 3;
+}
+
 export function echeancesCentrePossibles(dureeMois: number, seancesLuxo = 0): number[] {
-  const plafond = Math.max(1, dureeMois);
+  const parLuxo = plafondChequesParLuxo(seancesLuxo);
+  const plafond = Math.max(1, Math.min(dureeMois, parLuxo ?? Number.POSITIVE_INFINITY));
   return ECHEANCES_CENTRE.filter(
     (n) => n <= plafond && (n < 5 || seancesLuxo >= SEANCES_LUXO_POUR_CINQ_CHEQUES),
   );
+}
+
+/**
+ * Pourquoi il n'y a pas plus de chèques que ça — la phrase que l'écran
+ * affiche sous les boutons. Sans elle, la thérapeute croit à une panne :
+ * le 4× était là il y a dix secondes. Null quand il n'y a rien à dire.
+ */
+export function pourquoiPasPlusDeCheques(dureeMois: number, seancesLuxo: number): string | null {
+  const choix = echeancesCentrePossibles(dureeMois, seancesLuxo);
+  const max = choix[choix.length - 1] ?? 1;
+  const parLuxo = plafondChequesParLuxo(seancesLuxo);
+
+  // Quatre chèques sur une cure de moins de cinq mois : le cas courant, rien à dire.
+  if (max >= 5 || (max === 4 && dureeMois < 5)) return null;
+
+  if (parLuxo != null && parLuxo === max) {
+    return `Avec ${seancesLuxo} séance${seancesLuxo > 1 ? 's' : ''} de luxothérapie, ${max} chèque${max > 1 ? 's' : ''} au plus — 15 luxo ouvrent le quatrième, 20 le cinquième.`;
+  }
+  if (max < 4) {
+    return `Cette cure dure ${dureeMois} mois : au-delà de ${max} chèque${max > 1 ? 's' : ''}, le dernier serait encaissé après la dernière séance.`;
+  }
+  if (max === 4 && dureeMois >= 5) {
+    return `Le cinquième chèque est réservé aux cures d’au moins ${SEANCES_LUXO_POUR_CINQ_CHEQUES} luxo.`;
+  }
+  return null;
 }
 
 export function modeReglement(methode: 'centre' | 'alma', n: number): ModeReglement {

@@ -19,7 +19,7 @@ import {
   seancesDuProgramme,
   supprimerSeance,
 } from '../../services/metier';
-import { aUnProgrammeAppareil, couleurSoin } from '../../domain/soins';
+import { aUnProgrammeAppareil, aUneMissionDeclic, couleurSoin } from '../../domain/soins';
 import { LIBELLES_TECHNOLOGIE } from '../../domain/tarification';
 import CourbePoids, { libelleDelta } from './CourbePoids';
 import ModaleSeance from './ModaleSeance';
@@ -169,12 +169,8 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
         clienteId,
         centreId,
         technologie,
-        /*
-          Pas de Mission Déclic sur l'Advance Lift : c'est une règle de la
-          perte de poids — un exercice par venue pour ancrer le changement.
-          L'anti-âge se suit au commentaire.
-        */
-        jeuCode: technologie === 'advance_lift' ? null : (choix.jeu?.code ?? null),
+        // La Mission Déclic n'accompagne que la luxothérapie perte de poids.
+        jeuCode: aUneMissionDeclic(technologie) ? (choix.jeu?.code ?? null) : null,
       });
       setEnCours(s);
     } catch {
@@ -232,8 +228,6 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
         return { technologie: t, seances_restantes: suivi ? suivi.seances_restantes : null };
       })
     : actif.suivi.filter((s) => s.seances_restantes > 0);
-  /* Une cure d'Advance Lift : ni Mission Déclic, ni pesée — un suivi au commentaire. */
-  const cureAntiAge = actif.suivi.length > 0 && actif.suivi.every((s) => s.technologie === 'advance_lift');
 
   return (
     <div className="space-y-5">
@@ -350,7 +344,7 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
             </div>
           )}
 
-          {!cureAntiAge && choix.jeu && restantes.length > 0 && (
+          {choix.jeu && restantes.some((r) => aUneMissionDeclic(r.technologie)) && (
             <div className="border-t border-ardoise-100 bg-marine-50/60 px-5 py-3">
               <p className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest text-marine-700">
                 <Dices className="h-3.5 w-3.5" />
@@ -545,7 +539,9 @@ function SeanceEnCours({
     observe sur la peau d'une séance à l'autre.
   */
   const antiAge = seance.technologie === 'advance_lift';
-  const bloque = !antiAge && Boolean(jeu) && !jeuFait;
+  // Seule la luxo perte de poids porte une mission ; les autres soins se clôturent sans.
+  const avecMission = aUneMissionDeclic(seance.technologie);
+  const bloque = avecMission && Boolean(jeu) && !jeuFait;
 
   return (
     <section className="carte overflow-hidden ring-2 ring-marine-500">
@@ -563,7 +559,7 @@ function SeanceEnCours({
       </div>
 
       {/* La Mission Déclic du jour, imposée */}
-      {antiAge ? null : jeu ? (
+      {!avecMission ? null : jeu ? (
         <div className="border-b border-ardoise-100 bg-marine-50/60 p-5">
           <p className="text-2xs font-semibold uppercase tracking-widest text-marine-700">
             Mission Déclic obligatoire de la séance · {LIBELLES_PHASE[phase]}
@@ -734,8 +730,8 @@ function SeanceEnCours({
                 commentaire,
                 programme_utilise: avecProgramme ? programmeUtilise.trim() || null : null,
                 photo_prise: photo,
-                jeu_valide: antiAge ? false : jeuFait,
-                jeu_reponse: !antiAge && reponseJeu ? { reponse: reponseJeu } : {},
+                jeu_valide: avecMission ? jeuFait : false,
+                jeu_reponse: avecMission && reponseJeu ? { reponse: reponseJeu } : {},
               })
             }
             disabled={bloque}

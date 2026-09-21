@@ -14,9 +14,10 @@ import {
 } from '../../services/metier';
 import type { ProgrammeComplet } from '../../services/metier';
 import {
+  ECHEANCES_CENTRE,
   LIBELLES_TECHNOLOGIE,
-  SEANCES_LUXO_POUR_CINQ_CHEQUES,
   formaterEuros,
+  plafondChequesParLuxo,
   formaterEurosJuste,
 } from '../../domain/tarification';
 import {
@@ -665,12 +666,14 @@ function Reechelonner({
   const unite = prix.length === 1 ? prix[0] : undefined;
 
   /*
-    Le même plafond qu'à la signature : cinq chèques seulement à partir de
-    vingt luxo. Sans quoi une cure signée en quatre se redécouperait en cinq
-    par la petite porte.
+    Le même plafond qu'à la signature : les séances de luxo décident — trois
+    chèques jusqu'à quatorze luxo, quatre à partir de quinze, cinq à partir
+    de vingt. Sans quoi une cure signée en trois se redécouperait en cinq
+    par la petite porte. Sans luxo, quatre au plus.
   */
   const seancesLuxo = lignes.find((l) => l.technologie === 'luxo')?.seances_prevues ?? 0;
-  const choix = seancesLuxo >= SEANCES_LUXO_POUR_CINQ_CHEQUES ? [1, 2, 3, 4, 5] : [1, 2, 3, 4];
+  const plafond = plafondChequesParLuxo(seancesLuxo) ?? 4;
+  const choix = ECHEANCES_CENTRE.filter((k) => k <= plafond);
 
   const apercu = reechelonner(
     echeances,
