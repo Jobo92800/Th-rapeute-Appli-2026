@@ -12,6 +12,7 @@ import {
   ETATS,
   STATUTS_SIGNALEMENT,
   aTraiter,
+  annoncesNonLues,
   lecture,
   parLecture,
   resume,
@@ -87,6 +88,24 @@ export function controlerMessages() {
     equipe.length,
   );
   egal('et le compte reste celui de la liste', lecture(equipe), { lus: 2, total: 4 });
+
+  section('Les annonces qui s’affichent sur l’accueil');
+
+  /*
+    Une annonce non ouverte par MOI s'affiche ; lue, ou adressée à d'autres,
+    ou un signalement, non.
+  */
+  const surAccueil = annoncesNonLues(
+    [
+      { message: msg({ id: 'a1', type: 'annonce' }), destinataires: [{ message_id: 'a1', therapeute_id: 't0', lu_le: null }] },
+      { message: msg({ id: 'a2', type: 'annonce' }), destinataires: [{ message_id: 'a2', therapeute_id: 't0', lu_le: '2026-09-05' }] },
+      { message: msg({ id: 'a3', type: 'annonce' }), destinataires: [{ message_id: 'a3', therapeute_id: 't1', lu_le: null }] },
+      { message: msg({ id: 's1', type: 'signalement' }), destinataires: [{ message_id: 's1', therapeute_id: 't0', lu_le: null }] },
+    ],
+    't0',
+  );
+  egal('seule l’annonce non lue qui m’est adressée', surAccueil.map((m) => m.id), ['a1']);
+  egal('sans identité, rien', annoncesNonLues([], null), []);
 
   section('Ce qu’une thérapeute lit de la même annonce');
 

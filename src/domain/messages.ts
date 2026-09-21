@@ -98,6 +98,29 @@ export function aTraiter(messages: Message[]): Message[] {
 }
 
 /**
+ * Les annonces qu'une thérapeute n'a pas encore ouvertes — celles qui
+ * s'affichent en carte sur son écran d'accueil.
+ *
+ * Une pastille sur le menu ne suffisait pas : on ne va dans le carnet que
+ * quand on y pense, et la direction veut qu'un message soit VU, pas
+ * seulement compté (Jonathan, 21 septembre 2026). Une annonce reste sur
+ * l'accueil tant qu'elle n'a pas été lue ; « J'ai lu » la retire, et c'est
+ * ce même geste qui dit à la direction que le message est passé.
+ */
+export function annoncesNonLues(
+  messages: Array<{ message: Message; destinataires: Destinataire[] }>,
+  moi: string | null,
+): Message[] {
+  if (!moi) return [];
+  return messages
+    .filter(({ message, destinataires }) =>
+      message.type === 'annonce' &&
+      destinataires.some((d) => d.therapeute_id === moi && d.lu_le === null),
+    )
+    .map(({ message }) => message);
+}
+
+/**
  * Combien de destinataires ont lu, sur combien.
  *
  * C'est le seul état qui vaille pour une annonce : la direction veut savoir

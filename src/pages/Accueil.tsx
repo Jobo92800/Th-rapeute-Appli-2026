@@ -24,6 +24,7 @@ import { etatDeTousLesCentres, etatDuCentre } from '../services/stock';
 import { libelleFinDeCure, niveauStock } from '../domain/stock';
 import { formaterEuros } from '../domain/tarification';
 import EtatSynchro from '../components/EtatSynchro';
+import AnnoncesDuJour from '../components/AnnoncesDuJour';
 import type { EtatStock } from '../types/db';
 
 /**
@@ -137,6 +138,9 @@ export default function Accueil() {
           </div>
         )}
       </header>
+
+      {/* Les annonces de la direction pas encore lues : en haut, en entier, jusqu'à « J'ai lu ». */}
+      <AnnoncesDuJour />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Tuile
