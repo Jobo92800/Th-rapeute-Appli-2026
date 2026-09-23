@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { BUSTE } from './buste3d.donnees';
 import {
   COULEUR_COTATION,
-  COULEUR_PORTEE,
   LIBELLES_COTATION,
   type CarteDesZones,
   type Cotation,
@@ -644,14 +643,14 @@ void main(){
               id={`trait-${z.code}`}
               fill="none"
               strokeWidth="1.3"
-              stroke={COULEUR_PORTEE[z.portee].fond}
+              stroke={COULEUR_COTATION[(carte[z.code] ?? 0) as Cotation].fond}
               style={{ opacity: 0 }}
             />
             <circle
               id={`point-${z.code}`}
               r="4.5"
               strokeWidth="2"
-              stroke={COULEUR_PORTEE[z.portee].fond}
+              stroke={COULEUR_COTATION[(carte[z.code] ?? 0) as Cotation].fond}
               fill="#fff"
               style={{ opacity: 0 }}
             />
@@ -668,7 +667,7 @@ void main(){
           type="button"
           hidden
           onClick={() => onFocus(focus === z.code ? null : z.code)}
-          style={{ borderColor: COULEUR_PORTEE[z.portee].fond }}
+          style={{ borderColor: COULEUR_COTATION[(carte[z.code] ?? 0) as Cotation].fond }}
           className="absolute left-0 top-0 max-w-[46%] rounded-xl border-[1.5px] bg-white/95 px-2 py-1 text-left shadow-flottante transition-opacity"
         >
           <span className="block text-[11px] font-semibold leading-tight text-ardoise-900">

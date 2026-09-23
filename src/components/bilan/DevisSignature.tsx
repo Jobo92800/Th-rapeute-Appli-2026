@@ -135,8 +135,8 @@ export default function DevisSignature({
 
       {/* La cure retenue ---------------------------------------------- */}
       <section className="carte overflow-hidden">
-        <div className="border-b border-violet-200 bg-violet-50 px-5 py-4">
-          <p className="text-2xs font-semibold uppercase tracking-widest text-violet-600">
+        <div className="border-b border-rose-200 bg-rose-50 px-5 py-4">
+          <p className="text-2xs font-semibold uppercase tracking-widest text-rose-600">
             {estPreconisee ? 'Votre cure préconisée' : 'Autre cure possible'}
           </p>
           <p className="mt-0.5 text-2xl font-light text-ardoise-900">
@@ -148,35 +148,57 @@ export default function DevisSignature({
         </div>
 
         {/*
-          Le calendrier : les séances, et elles seules.
+          Le calendrier, de la première séance à la dernière.
 
-          La première version dessinait treize semaines dont huit vides pour
-          une cure d'un mois : personne ne comprenait ces ronds blancs, et
-          le repère photos se retrouvait à l'autre bout de l'écran, comme
-          s'il n'avait rien à voir avec la cure (Jonathan, 23 septembre
-          2026). On montre donc ce qui a lieu, avec sa semaine écrite
-          dessous — l'espacement se lit dans les numéros de semaine, pas
-          dans des trous — et le bilan photos vient juste après, séparé par
-          un simple intervalle.
+          LES SEMAINES SANS SÉANCE COMPTENT : c'est le rythme de la cure —
+          quatre venues hebdomadaires, puis une semaine sur deux — et elles
+          se voient comme des ronds vides entre les séances. Ce qu'on a
+          retiré (Jonathan, 23 septembre 2026), ce sont les semaines
+          VIDES DE FIN : dessiner huit ronds entre la dernière séance d'une
+          cure d'un mois et le bilan photos éloignait celui-ci sans rien
+          apprendre. Le calendrier s'arrête donc à la dernière séance, et le
+          bilan photos vient juste après, séparé par un simple intervalle.
         */}
         <div className="flex flex-wrap items-start gap-2 px-5 py-4">
-          {cure.semaines.map((semaine, rang) => (
-            <span key={semaine} className="flex w-12 flex-col items-center gap-1">
-              <span className="chiffres flex h-10 w-10 items-center justify-center rounded-full bg-violet-500 text-base font-bold text-white">
-                {rang + 1}
-              </span>
-              <span className="text-[10px] leading-tight text-ardoise-500">sem. {semaine}</span>
+          {Array.from({ length: cure.semaines[cure.semaines.length - 1] }, (_, i) => i + 1).map(
+            (semaine) => {
+              const rang = cure.semaines.indexOf(semaine);
+              return rang >= 0 ? (
+                <span key={semaine} className="flex w-12 flex-col items-center gap-1">
+                  <span className="chiffres flex h-10 w-10 items-center justify-center rounded-full bg-rose-500 text-base font-bold text-white">
+                    {rang + 1}
+                  </span>
+                  <span className="text-[10px] leading-tight text-ardoise-500">sem. {semaine}</span>
+                </span>
+              ) : (
+                <span
+                  key={semaine}
+                  title={`Semaine ${semaine} — pas de séance`}
+                  className="flex w-12 flex-col items-center gap-1"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full border-[1.5px] border-ardoise-300 bg-white">
+                    <span className="h-2 w-2 rounded-full bg-ardoise-200" />
+                  </span>
+                  <span className="text-[10px] leading-tight text-ardoise-400">repos</span>
+                </span>
+              );
+            },
+          )}
+
+          {/*
+            L'intervalle et le repère photos ne se séparent jamais : à
+            l'étroit, le premier restait en fin de ligne et le second
+            passait tout seul à la suivante, sans rien pour l'expliquer.
+          */}
+          <span className="flex shrink-0 items-center gap-2">
+            <span className="flex h-10 items-center text-lg text-ardoise-300">⋯</span>
+            {/* La ligne sous le calendrier dit déjà à quoi sert ce repère. */}
+            <span
+              title="Bilan photos à 3 mois"
+              className="flex h-10 w-10 items-center justify-center rounded-full border-[1.5px] border-marine-400 bg-marine-50 text-marine-700"
+            >
+              <Camera className="h-5 w-5" />
             </span>
-          ))}
-
-          <span className="flex h-10 items-center px-1 text-lg text-ardoise-300">⋯</span>
-
-          {/* La ligne sous le calendrier dit déjà à quoi sert ce repère. */}
-          <span
-            title="Bilan photos à 3 mois"
-            className="flex h-10 w-10 items-center justify-center rounded-full border-[1.5px] border-marine-400 bg-marine-50 text-marine-700"
-          >
-            <Camera className="h-5 w-5" />
           </span>
         </div>
 
@@ -198,12 +220,12 @@ export default function DevisSignature({
                 key={c.code}
                 type="button"
                 onClick={() => setChoisie(c.code)}
-                className="rounded-2xl border border-ardoise-200 bg-white px-4 py-3 text-left transition-colors hover:border-violet-300 hover:bg-violet-50"
+                className="rounded-2xl border border-ardoise-200 bg-white px-4 py-3 text-left transition-colors hover:border-rose-300 hover:bg-rose-50"
               >
                 <span className="flex flex-wrap items-baseline gap-2">
                   <span className="text-base font-semibold text-ardoise-900">Cure {c.nom}</span>
                   {c.code === preconisation.cure.code && (
-                    <span className="rounded-full bg-violet-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                    <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
                       Préconisée
                     </span>
                   )}
@@ -211,7 +233,7 @@ export default function DevisSignature({
                 <span className="mt-0.5 block text-sm text-ardoise-600">
                   {c.seances} séances sur {c.mois} mois
                 </span>
-                <span className="chiffres mt-1 block text-sm font-bold text-violet-600">
+                <span className="chiffres mt-1 block text-sm font-bold text-rose-600">
                   {formaterEuros(c.seances * prixSeance)}
                 </span>
               </button>
@@ -241,8 +263,8 @@ export default function DevisSignature({
                 onClick={() => setAvecDecollete(f.avec)}
                 className={`rounded-2xl border px-4 py-3 text-left transition-colors ${
                   actif
-                    ? 'border-violet-500 bg-violet-50'
-                    : 'border-ardoise-200 bg-white hover:border-violet-200'
+                    ? 'border-rose-500 bg-rose-50'
+                    : 'border-ardoise-200 bg-white hover:border-rose-200'
                 }`}
               >
                 <span className="block text-sm font-semibold text-ardoise-900">{f.titre}</span>

@@ -130,21 +130,20 @@ d'un encaissement) restent hors palette DA, parce qu'elles portent une
 information et non une décoration. Le script d'audit de la skill donne
 95 % de jetons exacts sur `src/`, le reste étant ces couleurs-là.
 
-**Un troisième écart, décidé le 23 septembre 2026 : l'observation du
-Profil Signature.** Cet écran porte deux informations que l'œil doit
-séparer en une seconde devant une cliente — ce que la radiofréquence peut
-faire d'une zone, et à quel point cette zone est marquée —, et les teintes
-douces de la charte les rendaient presque identiques. Deux échelles vivent
-donc dans `profilSignature.ts` : **la portée** en pastilles pleines
-(violet `#8E6FC6`, bleu `#3D82C4`, gris `#7C9091` — trois familles de
-couleur, pas trois nuances d'une seule) et **l'intensité** sur la rampe
-d'évaluation que la maison connaît déjà, celle du score InBody (vert
-`#2A9D6A`, ambre `#D9932B`, brique `#B4472E`). Sur le buste, **c'est
-l'intensité qui s'allume**, pas la portée : le visage se lit comme une
-carte de sévérité, et une zone violette se perdait sur un visage violet
-pâle. Le mot reste écrit dans chaque pastille, pour un œil qui distingue
-mal le rouge du vert, et aucune de ces couleurs ne croise le rose des
-gestes qui engagent — une pastille ne doit jamais ressembler à un bouton.
+**L'intensité des zones du Profil Signature se dit en rose gradué**
+(23 septembre 2026, `COULEUR_COTATION`) : `#FBC7DF` discrète, `#F160A4`
+modérée, `#AB135D` marquée. Une gradation d'une seule couleur dit
+l'échelle sans qu'on ait à l'apprendre — plus c'est foncé, plus c'est
+marqué —, et le mot reste écrit dans chaque pastille. **C'est le
+troisième essai** : des violets pâles qu'on ne distinguait pas, puis un
+feu tricolore vert-ambre-brique qui séparait bien mais ne ressemblait
+plus à la marque (Jonathan : « en fin de compte les couleurs ne vont
+pas »). Sur le buste, **c'est cette intensité qui s'allume** : le visage
+se lit comme une carte de sévérité. **Ce que la radiofréquence fait d'une
+zone ne s'affiche plus du tout** — la portée décide toujours de la cure,
+mais une seconde échelle de couleur encombrait l'écran au moment de
+coter, et ce qu'elle disait est déjà écrit sous chaque zone (« Ridules :
+amélioration plus limitée », « Liés au volume : avis médical »).
 
 Le preset Tailwind de la DA n'est pas importé tel quel : la palette de
 l'application garde ses noms (`marine`, `rose`, `ardoise`, plus `violet`),

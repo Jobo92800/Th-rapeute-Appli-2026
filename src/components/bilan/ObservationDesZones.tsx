@@ -2,7 +2,6 @@ import { lazy, Suspense, useState } from 'react';
 import { Eye, Sparkles } from 'lucide-react';
 import {
   COULEUR_COTATION,
-  COULEUR_PORTEE,
   LIBELLES_COTATION,
   type BaremeSignature,
   type CarteDesZones,
@@ -92,26 +91,17 @@ export default function ObservationDesZones({
         {bareme.ZONES.map((zone) => {
           const valeur = carte[zone.code] ?? 0;
           const parLaTherapeute = ajustees[zone.code] !== undefined;
-          const portee = COULEUR_PORTEE[zone.portee];
 
           return (
             <div
               key={zone.code}
               onMouseEnter={() => !sansTroisD && setFocus(zone.code)}
               className={`flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 transition-colors ${
-                focus === zone.code ? 'bg-violet-50/60' : ''
+                focus === zone.code ? 'bg-rose-50' : ''
               }`}
             >
               <div className="min-w-0 flex-1 basis-56">
-                <p className="flex flex-wrap items-center gap-2 text-[15px] font-semibold text-ardoise-900">
-                  {zone.nom}
-                  <span
-                    style={{ background: portee.fond, color: portee.texte }}
-                    className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-                  >
-                    {portee.libelle}
-                  </span>
-                </p>
+                <p className="text-[15px] font-semibold text-ardoise-900">{zone.nom}</p>
                 <p className="mt-0.5 flex items-center gap-1 text-[11px] text-ardoise-400">
                   {parLaTherapeute ? (
                     <>

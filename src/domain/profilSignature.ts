@@ -71,38 +71,27 @@ export type Cotation = 0 | 1 | 2 | 3;
 export const LIBELLES_COTATION = ['non notée', 'discrète', 'modérée', 'marquée'] as const;
 
 /*
-  LES COULEURS DE L'OBSERVATION, ET POURQUOI ELLES SORTENT DE LA CHARTE.
+  L'INTENSITÉ D'UNE ZONE, EN UNE SEULE ÉCHELLE.
 
-  Cet écran porte deux informations que l'œil doit séparer en une seconde,
-  devant une cliente : ce que la radiofréquence peut faire d'une zone, et à
-  quel point cette zone est marquée. Les teintes douces de la charte les
-  rendaient presque identiques — trois violets pâles les uns à côté des
-  autres (Jonathan, 23 septembre 2026). On s'en écarte ici, et seulement
-  ici, avec deux échelles qui ne se ressemblent pas :
+  Le rose de la maison, du plus clair au plus foncé (Jonathan, 23 septembre
+  2026). Trois essais ont précédé celui-là : des violets pâles qu'on ne
+  distinguait pas, puis un feu tricolore vert-ambre-brique qui séparait
+  bien mais ne ressemblait plus à rien de la marque. Une gradation d'une
+  seule couleur dit l'échelle sans avoir à l'apprendre — plus c'est foncé,
+  plus c'est marqué —, et le mot reste écrit dans chaque pastille.
 
-    — LA PORTÉE, en pastilles pleines : violet, bleu, gris. Trois familles
-      de couleur, pas trois nuances d'une seule.
-    — L'INTENSITÉ, sur la rampe d'évaluation que la maison connaît déjà
-      (celle du score InBody du BioPortrait) : vert, ambre, brique. Elle se
-      lit d'un coup, et elle ne croise jamais le rose des gestes qui
-      engagent ni le violet du soin — une pastille colorée ne doit jamais
-      ressembler à un bouton sur lequel appuyer.
-
-  Le mot reste écrit dans chaque pastille : un œil qui distingue mal le
-  rouge du vert lit « marquée » aussi bien que les autres.
+  CE QUE LA RADIOFRÉQUENCE FAIT D'UNE ZONE NE S'AFFICHE PLUS. La portée
+  (`rf`, `pa`, `ot`) décide toujours de la cure — elle seule compte les
+  points —, mais elle encombrait l'écran d'une seconde échelle de couleur
+  au moment où la thérapeute cote. Ce qu'elle apportait est déjà dit en
+  toutes lettres sous chaque zone : « Ridules : amélioration plus
+  limitée », « Liés au volume : avis médical ».
 */
-export const COULEUR_PORTEE: Record<PorteeZone, { fond: string; texte: string; libelle: string }> = {
-  rf: { fond: '#8E6FC6', texte: '#FFFFFF', libelle: 'La radiofréquence agit' },
-  pa: { fond: '#3D82C4', texte: '#FFFFFF', libelle: 'Effet partiel' },
-  ot: { fond: '#7C9091', texte: '#FFFFFF', libelle: 'Autre approche conseillée' },
-};
-
-/** La rampe d'intensité : du signe discret au signe marqué. */
 export const COULEUR_COTATION: Record<Cotation, { fond: string; texte: string; pale: string; encre: string }> = {
   0: { fond: '#E6EFEF', texte: '#41595A', pale: '#F4FBFB', encre: '#7C9091' },
-  1: { fond: '#2A9D6A', texte: '#FFFFFF', pale: '#E8F5EE', encre: '#1F7A52' },
-  2: { fond: '#D9932B', texte: '#FFFFFF', pale: '#FBF1DF', encre: '#8A5D12' },
-  3: { fond: '#B4472E', texte: '#FFFFFF', pale: '#FBEAE6', encre: '#8E3522' },
+  1: { fond: '#FBC7DF', texte: '#8B124D', pale: '#FEF3F8', encre: '#C42872' },
+  2: { fond: '#F160A4', texte: '#FFFFFF', pale: '#FDE3EF', encre: '#AB135D' },
+  3: { fond: '#AB135D', texte: '#FFFFFF', pale: '#FBC7DF', encre: '#741343' },
 };
 
 /** Une option : [libellé, points par axe, points par terrain]. */
