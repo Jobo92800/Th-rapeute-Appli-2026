@@ -19,7 +19,13 @@ import {
   seancesDuProgramme,
   supprimerSeance,
 } from '../../services/metier';
-import { aUnProgrammeAppareil, aUneMissionDeclic, couleurSoin } from '../../domain/soins';
+import {
+  aUnProgrammeAppareil,
+  aUnRessentiSepare,
+  aUnePesee,
+  aUneMissionDeclic,
+  couleurSoin,
+} from '../../domain/soins';
 import { LIBELLES_TECHNOLOGIE } from '../../domain/tarification';
 import CourbePoids, { libelleDelta } from './CourbePoids';
 import ModaleSeance from './ModaleSeance';
@@ -117,7 +123,7 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
     manque sur une cure reprise du CRM.
   */
   const blocsParSoin = useMemo(() => {
-    const ordre: Technologie[] = ['luxo', 'relax', 'ishape', 'presso', 'dome', 'advance_lift'];
+    const ordre: Technologie[] = ['luxo', 'relax', 'ishape', 'presso', 'dome', 'advance_lift', 'radiofrequence'];
     return ordre
       .map((technologie) => ({
         technologie,
@@ -456,6 +462,11 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
                             {s.commentaire && (
                               <p className="mt-1 text-xs text-ardoise-600">{s.commentaire}</p>
                             )}
+                            {s.ressenti && (
+                              <p className="mt-1 text-xs italic text-ardoise-600">
+                                « {s.ressenti} »
+                              </p>
+                            )}
                           </div>
 
                           {s.poids != null && (
@@ -532,13 +543,16 @@ function SeanceEnCours({
   /* I-Shape et presso : le programme choisi sur l'appareil se note à part du ressenti. */
   const avecProgramme = aUnProgrammeAppareil(seance.technologie);
   const [reponseJeu, setReponseJeu] = useState('');
+  const [ressenti, setRessenti] = useState('');
 
   /*
     L'Advance Lift se clôture sur un commentaire : pas de Mission Déclic à
     valider, pas de poids à relever. Le suivi, c'est ce que la thérapeute
     observe sur la peau d'une séance à l'autre.
   */
-  const antiAge = seance.technologie === 'advance_lift';
+  /* Les soins du visage se clôturent sans pesée ; la radiofréquence sépare en plus le ressenti. */
+  const avecPesee = aUnePesee(seance.technologie);
+  const avecRessenti = aUnRessentiSepare(seance.technologie);
   // Seule la luxo perte de poids porte une mission ; les autres soins se clôturent sans.
   const avecMission = aUneMissionDeclic(seance.technologie);
   const bloque = avecMission && Boolean(jeu) && !jeuFait;
@@ -648,19 +662,36 @@ function SeanceEnCours({
       )}
 
       {/* Relevés de la séance */}
-      {antiAge ? (
-        <div className="p-5">
-          <label htmlFor="comm" className="etiquette">
-            Ce que vous observez
-          </label>
-          <textarea
-            id="comm"
-            rows={3}
-            value={commentaire}
-            onChange={(e) => setCommentaire(e.target.value)}
-            className="champ resize-y"
-            placeholder="L’état de la peau, la zone travaillée, ce qui a changé depuis la dernière fois…"
-          />
+      {!avecPesee ? (
+        <div className={`grid gap-4 p-5 ${avecRessenti ? 'sm:grid-cols-2' : ''}`}>
+          <div>
+            <label htmlFor="comm" className="etiquette">
+              Ce que vous observez
+            </label>
+            <textarea
+              id="comm"
+              rows={3}
+              value={commentaire}
+              onChange={(e) => setCommentaire(e.target.value)}
+              className="champ resize-y"
+              placeholder="L’état de la peau, la zone travaillée, ce qui a changé depuis la dernière fois…"
+            />
+          </div>
+          {avecRessenti && (
+            <div>
+              <label htmlFor="ress" className="etiquette">
+                Ce qu’elle ressent
+              </label>
+              <textarea
+                id="ress"
+                rows={3}
+                value={ressenti}
+                onChange={(e) => setRessenti(e.target.value)}
+                className="champ resize-y"
+                placeholder="Ses mots à elle : la chaleur, les tiraillements, ce qu’elle a remarqué depuis la dernière séance…"
+              />
+            </div>
+          )}
         </div>
       ) : (
         <div className={`grid gap-4 p-5 ${avecProgramme ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}>
@@ -726,8 +757,9 @@ function SeanceEnCours({
           <button
             onClick={() =>
               onCloturer({
-                poids: !antiAge && poids ? Number(poids) : null,
+                poids: avecPesee && poids ? Number(poids) : null,
                 commentaire,
+                ressenti: avecRessenti ? ressenti.trim() || null : null,
                 programme_utilise: avecProgramme ? programmeUtilise.trim() || null : null,
                 photo_prise: photo,
                 jeu_valide: avecMission ? jeuFait : false,

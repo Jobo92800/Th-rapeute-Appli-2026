@@ -108,7 +108,8 @@ function ordonnerPhases(depart: PhaseJeu): PhaseJeu[] {
 }
 
 function meilleurCandidat(candidats: Jeu[], ctx: ContexteJeu): { jeu: Jeu; motif: string } {
-  const themes = ctx.profilDominant ? THEMES_PAR_PROFIL[ctx.profilDominant] : [];
+  /* Un profil venu d'un autre bilan n'a pas de thèmes ici : on n'en oriente aucun. */
+  const themes = (ctx.profilDominant ? THEMES_PAR_PROFIL[ctx.profilDominant] : []) ?? [];
 
   // Deux venues la même semaine : on alterne pédagogique et action pour
   // éviter l'effet « cours » deux fois de suite.

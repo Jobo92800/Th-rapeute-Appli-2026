@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Loader2, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { majSeance, supprimerSeance } from '../../services/metier';
-import { aUnProgrammeAppareil } from '../../domain/soins';
+import { aUnProgrammeAppareil, aUnRessentiSepare } from '../../domain/soins';
 import type { Seance } from '../../types/db';
 
 /**
@@ -29,7 +29,9 @@ export default function ModaleSeance({
   const [poids, setPoids] = useState(seance.poids != null ? String(seance.poids) : '');
   const [commentaire, setCommentaire] = useState(seance.commentaire ?? '');
   const [programmeUtilise, setProgrammeUtilise] = useState(seance.programme_utilise ?? '');
+  const [ressenti, setRessenti] = useState(seance.ressenti ?? '');
   const avecProgramme = aUnProgrammeAppareil(seance.technologie);
+  const avecRessenti = aUnRessentiSepare(seance.technologie);
   const [enCours, setEnCours] = useState(false);
 
   useEffect(() => {
@@ -58,6 +60,7 @@ export default function ModaleSeance({
         poids: nombre,
         commentaire: commentaire.trim(),
         ...(avecProgramme ? { programme_utilise: programmeUtilise.trim() || null } : {}),
+        ...(avecRessenti ? { ressenti: ressenti.trim() || null } : {}),
       });
       toast.success('Séance corrigée');
       onEnregistre();
@@ -156,7 +159,11 @@ export default function ModaleSeance({
 
           <div>
             <label className="etiquette" htmlFor="seance-com">
-              {avecProgramme ? 'Commentaire / ressenti' : 'Commentaire'}
+              {avecRessenti
+                ? 'Ce que vous observez'
+                : avecProgramme
+                  ? 'Commentaire / ressenti'
+                  : 'Commentaire'}
             </label>
             <textarea
               id="seance-com"
@@ -166,6 +173,21 @@ export default function ModaleSeance({
               onChange={(e) => setCommentaire(e.target.value)}
             />
           </div>
+
+          {avecRessenti && (
+            <div>
+              <label className="etiquette" htmlFor="seance-ress">
+                Ce qu’elle ressent
+              </label>
+              <textarea
+                id="seance-ress"
+                rows={3}
+                className="champ resize-y"
+                value={ressenti}
+                onChange={(e) => setRessenti(e.target.value)}
+              />
+            </div>
+          )}
 
           <p className="text-xs text-ardoise-500">
             Le soin et la Mission Déclic ne se modifient pas : ils appartiennent à la séance qui a eu

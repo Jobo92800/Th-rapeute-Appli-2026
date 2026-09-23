@@ -295,6 +295,8 @@ export interface Seance {
   commentaire: string;
   /** Programme choisi sur l'appareil — I-Shape, Pressodynamie (064). */
   programme_utilise: string | null;
+  /** Ce que la cliente a dit de la séance, quand le soin sépare les deux (072). */
+  ressenti: string | null;
   photo_prise: boolean;
   jeu_code: string | null;
   jeu_valide: boolean;

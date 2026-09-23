@@ -112,11 +112,16 @@ export default function FicheCliente() {
 
   /*
     Le profil qui oriente la Mission Déclic est celui du BioPortrait de la
-    perte de poids — un Bio-Portrait Anti-Âge passé depuis n'y change rien :
-    ses profils ne parlent pas des mêmes choses.
+    perte de poids, ET LUI SEUL — les deux bilans anti-âge ont leurs propres
+    profils, qui ne parlent pas des mêmes choses. La liste se lisait
+    « tout sauf l'anti-âge », ce qui laissait passer un Profil Signature :
+    son « Fermeté & Ovale » n'existe dans aucune table de Missions Déclic,
+    et l'onglet Séances entier ne s'affichait plus (23 septembre 2026).
+    On nomme donc la famille qu'on veut au lieu d'exclure celles qu'on
+    connaît : une famille de plus ne cassera plus rien.
   */
   const profilDominant =
-    (bilans.find((b) => b.statut === 'termine' && b.famille !== 'anti_age')?.profil_dominant as
+    (bilans.find((b) => b.statut === 'termine' && b.famille === 'perte_de_poids')?.profil_dominant as
       | AxeProfil
       | null) ?? null;
 

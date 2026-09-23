@@ -42,6 +42,30 @@ export function aUnProgrammeAppareil(t: Technologie): boolean {
 }
 
 /**
+ * Les soins où la séance sépare CE QUE LA THÉRAPEUTE OBSERVE de CE QUE LA
+ * CLIENTE RESSENT (Jonathan, 23 septembre 2026).
+ *
+ * Sur la radiofréquence, les deux ne se confondent pas : la thérapeute note
+ * la chaleur supportée, les zones passées, la réaction de la peau ; la
+ * cliente dit si ça a tiré, chauffé, si elle a vu quelque chose depuis la
+ * dernière fois. Mélangées dans une seule case, la seconde disparaît —
+ * c'est toujours la technique qu'on écrit en premier.
+ */
+export const SOINS_AVEC_RESSENTI: readonly Technologie[] = ['radiofrequence'];
+
+export function aUnRessentiSepare(t: Technologie): boolean {
+  return SOINS_AVEC_RESSENTI.includes(t);
+}
+
+/**
+ * Les soins qui se clôturent sans pesée : les deux anti-âge. On ne monte
+ * pas sur la balance pour un soin du visage.
+ */
+export function aUnePesee(t: Technologie): boolean {
+  return t !== 'advance_lift' && t !== 'radiofrequence';
+}
+
+/**
  * La Mission Déclic n'accompagne que la Luxothérapie perte de poids
  * (Jonathan, 21 septembre 2026). C'est un exercice par venue pour ancrer
  * le changement d'habitudes, et c'est la luxo qui porte cet accompagnement :
