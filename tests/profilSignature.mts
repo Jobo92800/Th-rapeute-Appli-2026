@@ -8,6 +8,7 @@
   d'autres — en plus court.
 */
 
+import { readFileSync } from 'node:fs';
 import { section, verifie, egal } from './harnais.mts';
 import {
   CODE_SECURITE,
@@ -141,6 +142,14 @@ const BAREME: BaremeSignature = {
 /** Une carte de zones complète, à partir de ce qu'on veut coter. */
 const carte = (c: Partial<CarteDesZones>): CarteDesZones =>
   Object.fromEntries(BAREME.ZONES.map((z) => [z.code, c[z.code] ?? 0])) as CarteDesZones;
+
+/** Le questionnaire tel qu’il est réellement livré en base, pas une copie d’essai. */
+export function baremeSignatureLivre(): BaremeSignature {
+  const sql = readFileSync('supabase/migrations/071_bilan_profil_signature.sql', 'utf8');
+  const debut = sql.indexOf("(1, '") + "(1, '".length;
+  const fin = sql.indexOf("'::jsonb", debut);
+  return JSON.parse(sql.slice(debut, fin).replaceAll("''", "'")) as BaremeSignature;
+}
 
 export function controlerProfilSignature() {
   section('Le Profil Signature : où il se propose');
@@ -298,6 +307,71 @@ export function controlerProfilSignature() {
     'la date du dernier soin ne se pose pas si elle n’a jamais rien fait',
     !relire({ q10: 1 }).some((q) => q.code === 'q10c'),
   );
+
+  section('Le questionnaire réellement livré (migration 071)');
+
+  /*
+    Les mêmes règles, lues sur le barème de production : si une question
+    change et qu’un profil devient inatteignable, le banc le dit.
+  */
+  const livre = baremeSignatureLivre();
+  egal('sept zones', livre.ZONES.length, 7);
+  egal('vingt-deux questions', livre.QUESTIONS.length, 22);
+  egal('trois cures', livre.CURES.map((c) => c.seances), [4, 6, 10]);
+  egal('six contre-indications', livre.SECURITE.length, 6);
+  verifie(
+    'quatre zones où la radiofréquence agit, trois qui ne comptent pas dans la cure',
+    livre.ZONES.filter((z) => z.portee === 'rf').length === 4,
+  );
+
+  const maxLivre = maximaSignature(livre);
+  for (const axe of ['fermete', 'rides', 'hydratation', 'densite'] as const) {
+    verifie(`l’axe ${axe} peut monter`, maxLivre.axes[axe] > 0);
+  }
+  for (const t of ['hydratation', 'sensible', 'dense', 'fin'] as const) {
+    verifie(`le terrain ${t} peut se signaler`, maxLivre.terrains[t] > 0);
+  }
+
+  /* Chaque zone doit pouvoir être cotée par une question du miroir, sauf le grain qui l’est aussi. */
+  for (const zone of livre.ZONES) {
+    verifie(
+      `la zone « ${zone.nom} » est renseignée par une question`,
+      livre.QUESTIONS.some((q) => q.zone === zone.code) ||
+        livre.QUESTIONS.some((q) => (q.zonesVisees ?? []).some((zs) => zs.includes(zone.code))),
+    );
+  }
+
+  /*
+    Les quatre profils doivent rester atteignables sur le barème livré, en
+    passant par la chaîne entière : réponses → pré-cotation des zones →
+    profil. Un barème où l’un d’eux ne sortirait jamais serait un barème
+    qui ment sur ce qu’il propose.
+  */
+  const atteints = new Set<string>();
+  for (const v1 of [0, 2]) {
+    for (const v7 of [0, 1, 2]) {
+      for (const s1 of [0, 3]) {
+        for (const s7 of [0, 3]) {
+          for (const v8 of [0, 3]) {
+            for (const b1 of [0, 3, 4]) {
+              const rep = { v1, v7, s1, s7, v8, b1 };
+              atteints.add(calculerProfilSignature(livre, rep, precoterLesZones(livre, rep)).profil);
+            }
+          }
+        }
+      }
+    }
+  }
+  egal('les quatre profils restent atteignables', atteints.size, 4);
+
+  /* Et les trois cures, sur les seules zones traitées. */
+  const zonesRf = livre.ZONES.filter((z) => z.portee === 'rf').map((z) => z.code);
+  const cote = (n: number, valeur: number) =>
+    Object.fromEntries(livre.ZONES.map((z) => [z.code, zonesRf.indexOf(z.code) >= 0 && zonesRf.indexOf(z.code) < n ? valeur : 0]));
+  egal('rien de coté : Découverte', preconiserLaCure(livre, cote(0, 0) as never).cure.nom, 'Découverte');
+  egal('deux zones modérées : Équilibre', preconiserLaCure(livre, cote(2, 2) as never).cure.nom, 'Équilibre');
+  egal('quatre zones modérées : Intégrale', preconiserLaCure(livre, cote(4, 2) as never).cure.nom, 'Intégrale');
+  egal('une zone marquée : Intégrale', preconiserLaCure(livre, cote(1, 3) as never).cure.nom, 'Intégrale');
 }
 
 /** Les questions réellement posées, dans l'ordre. */
