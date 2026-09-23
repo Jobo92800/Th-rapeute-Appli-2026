@@ -537,7 +537,8 @@ void main(){
         const r = cv.getBoundingClientRect();
         if (r.width === 0) return;
         s.setAttribute('viewBox', `0 0 ${r.width} ${r.height}`);
-        const etroit = r.width < 600;
+        /* Sous cette largeur, les étiquettes mangeraient le visage : on les range. */
+        const etroit = r.width < 380;
 
         for (const cote of ['gauche', 'droite'] as const) {
           const visibles = zs2
@@ -545,9 +546,9 @@ void main(){
             .map((z) => ({ z, p: projeter(z.code) }))
             .sort((a, b) => a.p.y - b.p.y);
 
-          const haut = 40;
-          const bas = r.height - 40;
-          const ecart = 46;
+          const haut = 34;
+          const bas = r.height - 34;
+          const ecart = 42;
           const ys = visibles.map((v) => Math.max(haut, Math.min(bas, v.p.y)));
           for (let k = 1; k < ys.length; k++) ys[k] = Math.max(ys[k], ys[k - 1] + ecart);
           for (let k = ys.length - 1; k >= 0; k--) {
@@ -622,7 +623,7 @@ void main(){
   return (
     <div
       ref={cadre}
-      className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl border border-ardoise-200 bg-gradient-to-b from-white to-marine-50 sm:aspect-[5/4]"
+      className="relative h-full min-h-[340px] w-full overflow-hidden rounded-2xl border border-ardoise-200 bg-gradient-to-b from-white to-marine-50"
     >
       <canvas ref={toile} className="h-full w-full cursor-grab touch-none active:cursor-grabbing" />
 

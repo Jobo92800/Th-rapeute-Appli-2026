@@ -68,21 +68,29 @@ export default function ObservationDesZones({
         </p>
       </header>
 
-      <div className={sansTroisD ? '' : 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]'}>
+      <div className={sansTroisD ? '' : 'grid items-start gap-5 lg:grid-cols-2'}>
         {!sansTroisD && (
-          <Suspense
-            fallback={
-              <div className="aspect-[4/5] w-full rounded-2xl border border-ardoise-200 bg-marine-50 sm:aspect-[5/4]" />
-            }
-          >
-            <Buste3D
-              zones={bareme.ZONES}
-              carte={carte}
-              focus={focus}
-              onFocus={setFocus}
-              onIndisponible={() => setSansTroisD(true)}
-            />
-          </Suspense>
+          /*
+            Le buste ne défile pas avec la liste : on cote sept zones en
+            regardant le visage, et un visage qui sort de l'écran à la
+            troisième zone ne sert plus à rien. Il occupe la hauteur de la
+            fenêtre et reste en place.
+          */
+          <div className="h-[58vh] min-h-[340px] lg:sticky lg:top-4 lg:h-[calc(100vh-7rem)] lg:max-h-[780px]">
+            <Suspense
+              fallback={
+                <div className="h-full w-full rounded-2xl border border-ardoise-200 bg-marine-50" />
+              }
+            >
+              <Buste3D
+                zones={bareme.ZONES}
+                carte={carte}
+                focus={focus}
+                onFocus={setFocus}
+                onIndisponible={() => setSansTroisD(true)}
+              />
+            </Suspense>
+          </div>
         )}
 
       <section className="carte divide-y divide-ardoise-100">
@@ -95,12 +103,12 @@ export default function ObservationDesZones({
             <div
               key={zone.code}
               onMouseEnter={() => !sansTroisD && setFocus(zone.code)}
-              className={`flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-4 transition-colors ${
+              className={`flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 transition-colors ${
                 focus === zone.code ? 'bg-violet-50/60' : ''
               }`}
             >
               <div className="min-w-0 flex-1 basis-56">
-                <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-ardoise-900">
+                <p className="flex flex-wrap items-center gap-2 text-[15px] font-semibold text-ardoise-900">
                   {zone.nom}
                   <span
                     className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${portee.teinte}`}
@@ -108,8 +116,7 @@ export default function ObservationDesZones({
                     {portee.libelle}
                   </span>
                 </p>
-                <p className="mt-0.5 text-xs text-ardoise-500">{zone.detail}</p>
-                <p className="mt-1 flex items-center gap-1 text-[11px] text-ardoise-400">
+                <p className="mt-0.5 flex items-center gap-1 text-[11px] text-ardoise-400">
                   {parLaTherapeute ? (
                     <>
                       <Eye className="h-3 w-3" />
@@ -121,6 +128,8 @@ export default function ObservationDesZones({
                       Pré-cotée par le questionnaire
                     </>
                   )}
+                  <span className="text-ardoise-300">·</span>
+                  {zone.detail}
                 </p>
               </div>
 
@@ -135,7 +144,7 @@ export default function ObservationDesZones({
                     type="button"
                     onClick={() => onCoter(zone.code, n)}
                     aria-pressed={valeur === n}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold capitalize transition-colors ${
+                    className={`rounded-full border px-2.5 py-1 text-xs font-semibold capitalize transition-colors ${
                       valeur === n
                         ? 'border-violet-500 bg-violet-500 text-white'
                         : 'border-ardoise-200 bg-white text-ardoise-600 hover:border-violet-200 hover:bg-violet-50'
