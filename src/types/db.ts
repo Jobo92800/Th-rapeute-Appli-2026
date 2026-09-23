@@ -158,7 +158,12 @@ export interface Bilan {
    * De quel questionnaire le bilan est né. `bareme_version` se lit dans la
    * table de sa famille : `bareme_empreinte` ou `bareme_anti_age`.
    */
-  famille: 'perte_de_poids' | 'anti_age';
+  famille: 'perte_de_poids' | 'anti_age' | 'signature';
+  /**
+   * Profil Signature : la cotation des sept zones par la thérapeute.
+   * Vide sur les autres bilans, qui n’observent rien.
+   */
+  observation: Record<string, number>;
   bareme_version: number;
   reponses: Record<string, number>;
   curseur: number;
@@ -203,7 +208,14 @@ export type ModeReglement =
   | '4x_maison'
   | '10x_alma'
   | 'inconnu';
-export type Technologie = 'luxo' | 'relax' | 'ishape' | 'presso' | 'dome' | 'advance_lift';
+export type Technologie =
+  | 'luxo'
+  | 'relax'
+  | 'ishape'
+  | 'presso'
+  | 'dome'
+  | 'advance_lift'
+  | 'radiofrequence';
 
 export type TailleTenue = 'S' | 'M' | 'L' | 'XL';
 

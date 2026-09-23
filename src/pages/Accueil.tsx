@@ -17,6 +17,7 @@ import { format, startOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { usePerimetre, useSession } from '../lib/session';
 import { CENTRE_ANTI_AGE } from '../domain/antiAge';
+import { signatureDisponible } from '../domain/profilSignature';
 import { listerClientes } from '../services/clientes';
 import { etatSynchro, oublierErreursSynchro, relancerSynchro } from '../services/metier';
 import { aEncaisser, aRenouveler, seancesDuJour } from '../services/journee';
@@ -133,6 +134,13 @@ export default function Accueil() {
               <Link to="/bilan-anti-age" className="bouton-discret">
                 <Sparkles className="h-4 w-4 text-rose-600" />
                 Bilan anti-âge
+              </Link>
+            )}
+            {/* Le troisième, au Crès et à Sérignan : la radiofréquence visage. */}
+            {centre && signatureDisponible(centre.id) && (
+              <Link to="/bilan-signature" className="bouton-discret">
+                <Sparkles className="h-4 w-4 text-violet-600" />
+                Profil Signature
               </Link>
             )}
           </div>

@@ -17,6 +17,7 @@ import Clientes from './pages/Clientes';
 import FicheCliente from './pages/FicheCliente';
 import NouveauBilan from './pages/NouveauBilan';
 import NouveauBilanAntiAge from './pages/NouveauBilanAntiAge';
+import NouveauBilanSignature from './pages/NouveauBilanSignature';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -67,6 +68,7 @@ where lower(u.email) = lower(t.email)
         <Route path="/clientes/nouvelle" element={<FicheCliente />} />
         <Route path="/bilan" element={<NouveauBilan />} />
         <Route path="/bilan-anti-age" element={<NouveauBilanAntiAge />} />
+        <Route path="/bilan-signature" element={<NouveauBilanSignature />} />
         <Route path="/clientes/:id" element={<FicheCliente />} />
         <Route path="/stock" element={<Stock />} />
         <Route path="/messages" element={<Messages />} />

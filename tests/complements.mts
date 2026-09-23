@@ -27,6 +27,9 @@ const GRILLE: GrilleTarifaire = {
   bilan: 129,
   dome: 49,
   advance_lift: 85,
+  radiofrequence: 79,
+  radiofrequence_decollete: 139,
+  bilan_signature: 89,
   complement: 37,
 };
 

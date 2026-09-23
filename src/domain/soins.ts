@@ -124,6 +124,20 @@ export const COULEURS_SOIN: Record<Technologie, CouleurSoin> = {
     entete: 'border-rose-200 bg-rose-100',
     bouton: 'border-rose-300 bg-rose-50 hover:bg-rose-100',
   },
+  /*
+    La radiofréquence du Profil Signature, au Crès et à Sérignan : violet,
+    la troisième couleur de la charte. Elle ne croise jamais l'Advance Lift
+    dans un centre, mais le violet la distingue du rose des gestes qui
+    engagent — une couleur de soin ne dit aucun état.
+  */
+  radiofrequence: {
+    texte: 'text-violet-600',
+    bord: 'border-l-violet-500',
+    pastille: 'bg-violet-50 text-violet-600',
+    carte: 'border-violet-200 bg-violet-50',
+    entete: 'border-violet-200 bg-violet-50',
+    bouton: 'border-violet-200 bg-violet-50 hover:bg-violet-100',
+  },
   /* Le Dôme n'est plus prescrit : il reste lisible sur les cures passées. */
   dome: {
     texte: 'text-ardoise-600',

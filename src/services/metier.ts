@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import type { ComplementChoisi } from '../domain/complements';
 import type { Bareme } from '../domain/bioportrait';
 import type { BaremeAntiAge } from '../domain/antiAge';
+import type { BaremeSignature } from '../domain/profilSignature';
 import type {
   Bilan,
   Consentement,
@@ -52,6 +53,9 @@ export async function lireGrilleTarifaire(): Promise<GrilleTarifaire> {
     bilan: vus.get('bilan') ?? 87,
     dome: vus.get('dome') ?? 49,
     advance_lift: vus.get('advance_lift') ?? 85,
+    radiofrequence: vus.get('radiofrequence') ?? 79,
+    radiofrequence_decollete: vus.get('radiofrequence_decollete') ?? 139,
+    bilan_signature: vus.get('bilan_signature') ?? 89,
     complement: vus.get('complement') ?? 37,
   };
 }
@@ -98,6 +102,31 @@ export async function lireBaremeAntiAgeActif(): Promise<{ version: number; barem
   if (error) throw error;
   if (!data) throw new Error('Aucun barème anti-âge actif : la migration 056 a-t-elle été exécutée ?');
   return { version: data.version, bareme: data.contenu as BaremeAntiAge };
+}
+
+/** Le Profil Signature actif — le questionnaire du Crès et de Sérignan. */
+export async function lireBaremeSignatureActif(): Promise<{ version: number; bareme: BaremeSignature }> {
+  const { data, error } = await supabase
+    .from('bareme_signature')
+    .select('version, contenu')
+    .eq('actif', true)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error('Aucun questionnaire Profil Signature actif : la migration 071 a-t-elle été exécutée ?');
+  return { version: data.version, bareme: data.contenu as BaremeSignature };
+}
+
+export async function lireBaremeSignature(version: number): Promise<BaremeSignature> {
+  const { data, error } = await supabase
+    .from('bareme_signature')
+    .select('contenu')
+    .eq('version', version)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error(`Le questionnaire Profil Signature version ${version} est introuvable.`);
+  return data.contenu as BaremeSignature;
 }
 
 export async function lireBaremeAntiAge(version: number): Promise<BaremeAntiAge> {

@@ -17,7 +17,14 @@
   de sa validation, pour que les cures passées ne changent jamais de prix.
 */
 
-export type Technologie = 'luxo' | 'ishape' | 'presso' | 'dome' | 'relax' | 'advance_lift';
+export type Technologie =
+  | 'luxo'
+  | 'ishape'
+  | 'presso'
+  | 'dome'
+  | 'relax'
+  | 'advance_lift'
+  | 'radiofrequence';
 
 export const LIBELLES_TECHNOLOGIE: Record<Technologie, string> = {
   luxo: 'Luxothérapie Perte de poids',
@@ -27,6 +34,8 @@ export const LIBELLES_TECHNOLOGIE: Record<Technologie, string> = {
   dome: 'Dôme',
   /* Le soin du Bio-Portrait Anti-Âge, au Grau-du-Roi. 85 € la séance, ni guide ni tenue. */
   advance_lift: 'Advance Lift',
+  /* Le soin du Profil Signature, au Crès et à Sérignan. Deux formats, deux prix. */
+  radiofrequence: 'Radiofréquence visage',
 };
 
 export interface LigneProgramme {
@@ -44,6 +53,12 @@ export interface GrilleTarifaire {
   dome: number;
   /** La séance d'Advance Lift — le soin de l'anti-âge. */
   advance_lift: number;
+  /** La séance de radiofréquence, visage et cou : 30 minutes. */
+  radiofrequence: number;
+  /** La même, décolleté compris : une heure. La thérapeute la propose en option. */
+  radiofrequence_decollete: number;
+  /** Le premier rendez-vous du Profil Signature : le bilan et la première séance. */
+  bilan_signature: number;
   /** Une boîte de compléments, vendue à part de la cure. */
   complement: number;
 }
@@ -96,6 +111,12 @@ export function calculerMontant(
 export function prixUnitaireParDefaut(techno: Technologie, grille: GrilleTarifaire): number {
   if (techno === 'dome') return grille.dome;
   if (techno === 'advance_lift') return grille.advance_lift;
+  /*
+    La radiofréquence a deux prix selon le format ; celui-ci est le format
+    courant. Le devis du Profil Signature passe l'autre explicitement quand
+    la thérapeute retient le décolleté.
+  */
+  if (techno === 'radiofrequence') return grille.radiofrequence;
   return grille.seance;
 }
 
