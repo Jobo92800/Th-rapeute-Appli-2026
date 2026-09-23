@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { BUSTE } from './buste3d.donnees';
-import type { CarteDesZones, PorteeZone, ZoneSignature } from '../../domain/profilSignature';
+import {
+  COULEUR_COTATION,
+  COULEUR_PORTEE,
+  LIBELLES_COTATION,
+  type CarteDesZones,
+  type Cotation,
+  type ZoneSignature,
+} from '../../domain/profilSignature';
 
 /*
   Le buste, en trois dimensions, pour l'observation du Profil Signature.
@@ -51,24 +58,22 @@ const SCENE: Record<string, MiseEnScene> = {
 };
 
 /*
-  La couleur d'une zone allumée, prise dans la charte : le violet de la
-  radiofréquence pour ce qu'elle traite, l'aqua pour ce qu'elle effleure,
-  l'ardoise pour ce qui relève d'autre chose. Jamais le rose, qui ne dit
-  que les gestes qui engagent.
+  CE QUI S'ALLUME SUR LE VISAGE, C'EST L'INTENSITÉ — pas la portée.
+
+  Les deux informations ont chacune leur place : la portée se lit sur la
+  pastille de la liste et sur le bord de l'étiquette (violet, bleu, gris),
+  parce qu'elle ne change jamais pour une zone donnée. Ce qu'on cote, ce
+  qu'on corrige et ce qu'on montre à la cliente, c'est la SÉVÉRITÉ : le
+  visage se lit alors comme une carte, du vert au brique, et la zone la
+  plus marquée saute aux yeux sans qu'on ait à lire un mot.
+
+  Le visage lui-même étant violet pâle, une zone violette s'y perdait.
 */
-const COULEUR: Record<PorteeZone, [number, number, number]> = {
-  rf: [0.557, 0.435, 0.776],
-  pa: [0.231, 0.749, 0.749],
-  ot: [0.608, 0.671, 0.671],
-};
-
-const COULEUR_CSS: Record<PorteeZone, string> = {
-  rf: '#8E6FC6',
-  pa: '#3BBFBF',
-  ot: '#9BABAB',
-};
-
-const INTENSITES = ['', 'Discrète', 'Modérée', 'Marquée'];
+const versRvb = (hex: string): [number, number, number] => [
+  parseInt(hex.slice(1, 3), 16) / 255,
+  parseInt(hex.slice(3, 5), 16) / 255,
+  parseInt(hex.slice(5, 7), 16) / 255,
+];
 
 export default function Buste3D({
   zones,
@@ -197,9 +202,9 @@ void main(){
   if(uPart>2.5){zid=6.0;float d=sqrt(ell(p,vec3(0.0,-19.5,4.6),vec3(8.5,3.2,5.0)));zw=clamp((1.0-d)/0.5,0.0,1.0);}
   for(int i=0;i<7;i++){ if(abs(zid-float(i))<0.5){ float f=(uFocus<-0.5||abs(uFocus-float(i))<0.5)?1.0:0.22; glow=uZS[i]*zw*f; zc=uZC[i]; } }
   glow*=0.85+0.15*sin(uTime*2.3);
-  col=mix(col,zc,clamp(glow*1.15,0.0,1.0));
-  col+=zc*glow*0.12;
-  a+=glow*0.55;
+  col=mix(col,zc,clamp(glow*1.45,0.0,1.0));
+  col+=zc*glow*0.18;
+  a+=glow*0.72;
   a*=keep*smoothstep(0.35,1.0,uReveal);
   if(a<0.004)discard;
   gl_FragColor=vec4(col,a);
@@ -494,12 +499,17 @@ void main(){
         U.uTime.value = doux ? 0 : t;
         if (!doux) U.uReveal.value = Math.min(1, t / 2.2);
 
-        /* La cotation en cours : couleur par portée, intensité sur trois crans. */
+        /*
+          La cotation en cours. Une zone discrète s'allume déjà franchement :
+          ce qu'on veut voir, c'est QUELLES zones sont cotées, et l'échelle
+          des couleurs dit ensuite à quel point.
+        */
         zs2.forEach((z, i) => {
           if (i > 6) return;
-          const col = COULEUR[z.portee];
+          const cotation = (c[z.code] ?? 0) as Cotation;
+          const col = versRvb(COULEUR_COTATION[cotation].fond);
           zc[i].set(col[0], col[1], col[2]);
-          zs[i] = (c[z.code] ?? 0) / 3;
+          zs[i] = cotation === 0 ? 0 : 0.55 + 0.15 * cotation;
         });
         U.uFocus.value = f ? zs2.findIndex((z) => z.code === f) : -1;
 
@@ -634,14 +644,14 @@ void main(){
               id={`trait-${z.code}`}
               fill="none"
               strokeWidth="1.3"
-              stroke={COULEUR_CSS[z.portee]}
+              stroke={COULEUR_PORTEE[z.portee].fond}
               style={{ opacity: 0 }}
             />
             <circle
               id={`point-${z.code}`}
               r="4.5"
               strokeWidth="2"
-              stroke={COULEUR_CSS[z.portee]}
+              stroke={COULEUR_PORTEE[z.portee].fond}
               fill="#fff"
               style={{ opacity: 0 }}
             />
@@ -658,12 +668,20 @@ void main(){
           type="button"
           hidden
           onClick={() => onFocus(focus === z.code ? null : z.code)}
-          style={{ borderColor: COULEUR_CSS[z.portee] }}
-          className="absolute left-0 top-0 rounded-xl border bg-white/95 px-2.5 py-1.5 text-left shadow-flottante transition-opacity"
+          style={{ borderColor: COULEUR_PORTEE[z.portee].fond }}
+          className="absolute left-0 top-0 max-w-[46%] rounded-xl border-[1.5px] bg-white/95 px-2 py-1 text-left shadow-flottante transition-opacity"
         >
-          <span className="block text-xs font-semibold text-ardoise-900">{z.nom}</span>
-          <span className="block text-[10px]" style={{ color: COULEUR_CSS[z.portee] }}>
-            {INTENSITES[carte[z.code] ?? 0]}
+          <span className="block text-[11px] font-semibold leading-tight text-ardoise-900">
+            {z.nom}
+          </span>
+          <span
+            style={{
+              background: COULEUR_COTATION[(carte[z.code] ?? 0) as Cotation].fond,
+              color: COULEUR_COTATION[(carte[z.code] ?? 0) as Cotation].texte,
+            }}
+            className="mt-0.5 inline-block rounded-full px-1.5 py-px text-[9px] font-semibold uppercase leading-tight tracking-wide"
+          >
+            {LIBELLES_COTATION[(carte[z.code] ?? 0) as Cotation]}
           </span>
         </button>
       ))}

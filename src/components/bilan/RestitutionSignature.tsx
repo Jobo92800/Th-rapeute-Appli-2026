@@ -2,11 +2,14 @@ import { useState } from 'react';
 import { AlertTriangle, ArrowRight, ChevronLeft, ListChecks } from 'lucide-react';
 import {
   AXES_SIGNATURE,
+  COULEUR_COTATION,
+  LIBELLES_COTATION,
   contreIndications,
   nomDuTerrainSignature,
   soinRecent,
   type BaremeSignature,
   type CarteDesZones,
+  type Cotation,
   type ProfilSignatureCalcule,
   type ReponsesSignature,
 } from '../../domain/profilSignature';
@@ -170,13 +173,13 @@ export default function RestitutionSignature({
                 <li key={z.code} className="flex items-center justify-between gap-3 text-sm">
                   <span className="text-ardoise-800">{z.nom}</span>
                   <span
-                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                      (carte[z.code] ?? 0) === 3
-                        ? 'bg-violet-500 text-white'
-                        : 'bg-violet-50 text-violet-600'
-                    }`}
+                    style={{
+                      background: COULEUR_COTATION[(carte[z.code] ?? 0) as Cotation].fond,
+                      color: COULEUR_COTATION[(carte[z.code] ?? 0) as Cotation].texte,
+                    }}
+                    className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize"
                   >
-                    {(carte[z.code] ?? 0) === 3 ? 'marquée' : 'modérée'}
+                    {LIBELLES_COTATION[(carte[z.code] ?? 0) as Cotation]}
                   </span>
                 </li>
               ))}

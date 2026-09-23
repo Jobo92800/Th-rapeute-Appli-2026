@@ -70,6 +70,41 @@ export type Cotation = 0 | 1 | 2 | 3;
 
 export const LIBELLES_COTATION = ['non notée', 'discrète', 'modérée', 'marquée'] as const;
 
+/*
+  LES COULEURS DE L'OBSERVATION, ET POURQUOI ELLES SORTENT DE LA CHARTE.
+
+  Cet écran porte deux informations que l'œil doit séparer en une seconde,
+  devant une cliente : ce que la radiofréquence peut faire d'une zone, et à
+  quel point cette zone est marquée. Les teintes douces de la charte les
+  rendaient presque identiques — trois violets pâles les uns à côté des
+  autres (Jonathan, 23 septembre 2026). On s'en écarte ici, et seulement
+  ici, avec deux échelles qui ne se ressemblent pas :
+
+    — LA PORTÉE, en pastilles pleines : violet, bleu, gris. Trois familles
+      de couleur, pas trois nuances d'une seule.
+    — L'INTENSITÉ, sur la rampe d'évaluation que la maison connaît déjà
+      (celle du score InBody du BioPortrait) : vert, ambre, brique. Elle se
+      lit d'un coup, et elle ne croise jamais le rose des gestes qui
+      engagent ni le violet du soin — une pastille colorée ne doit jamais
+      ressembler à un bouton sur lequel appuyer.
+
+  Le mot reste écrit dans chaque pastille : un œil qui distingue mal le
+  rouge du vert lit « marquée » aussi bien que les autres.
+*/
+export const COULEUR_PORTEE: Record<PorteeZone, { fond: string; texte: string; libelle: string }> = {
+  rf: { fond: '#8E6FC6', texte: '#FFFFFF', libelle: 'La radiofréquence agit' },
+  pa: { fond: '#3D82C4', texte: '#FFFFFF', libelle: 'Effet partiel' },
+  ot: { fond: '#7C9091', texte: '#FFFFFF', libelle: 'Autre approche conseillée' },
+};
+
+/** La rampe d'intensité : du signe discret au signe marqué. */
+export const COULEUR_COTATION: Record<Cotation, { fond: string; texte: string; pale: string; encre: string }> = {
+  0: { fond: '#E6EFEF', texte: '#41595A', pale: '#F4FBFB', encre: '#7C9091' },
+  1: { fond: '#2A9D6A', texte: '#FFFFFF', pale: '#E8F5EE', encre: '#1F7A52' },
+  2: { fond: '#D9932B', texte: '#FFFFFF', pale: '#FBF1DF', encre: '#8A5D12' },
+  3: { fond: '#B4472E', texte: '#FFFFFF', pale: '#FBEAE6', encre: '#8E3522' },
+};
+
 /** Une option : [libellé, points par axe, points par terrain]. */
 export type OptionSignature = [
   string,

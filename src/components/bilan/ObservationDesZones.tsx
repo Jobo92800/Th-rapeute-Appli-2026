@@ -1,11 +1,12 @@
 import { lazy, Suspense, useState } from 'react';
 import { Eye, Sparkles } from 'lucide-react';
 import {
+  COULEUR_COTATION,
+  COULEUR_PORTEE,
   LIBELLES_COTATION,
   type BaremeSignature,
   type CarteDesZones,
   type Cotation,
-  type PorteeZone,
 } from '../../domain/profilSignature';
 
 /*
@@ -30,12 +31,6 @@ const Buste3D = lazy(() => import('./Buste3D'));
  * la cure — proposer des séances pour une zone que le soin ne traite pas
  * serait vendre du vent.
  */
-
-const PORTEE: Record<PorteeZone, { libelle: string; teinte: string }> = {
-  rf: { libelle: 'La radiofréquence agit', teinte: 'border-violet-200 bg-violet-50 text-violet-600' },
-  pa: { libelle: 'Effet partiel', teinte: 'border-marine-200 bg-marine-50 text-marine-700' },
-  ot: { libelle: 'Autre approche conseillée', teinte: 'border-ardoise-200 bg-ardoise-50 text-ardoise-600' },
-};
 
 export default function ObservationDesZones({
   bareme,
@@ -97,7 +92,7 @@ export default function ObservationDesZones({
         {bareme.ZONES.map((zone) => {
           const valeur = carte[zone.code] ?? 0;
           const parLaTherapeute = ajustees[zone.code] !== undefined;
-          const portee = PORTEE[zone.portee];
+          const portee = COULEUR_PORTEE[zone.portee];
 
           return (
             <div
@@ -111,7 +106,8 @@ export default function ObservationDesZones({
                 <p className="flex flex-wrap items-center gap-2 text-[15px] font-semibold text-ardoise-900">
                   {zone.nom}
                   <span
-                    className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${portee.teinte}`}
+                    style={{ background: portee.fond, color: portee.texte }}
+                    className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
                   >
                     {portee.libelle}
                   </span>
@@ -138,21 +134,26 @@ export default function ObservationDesZones({
                 role="group"
                 aria-label={`Intensité — ${zone.nom}`}
               >
-                {([0, 1, 2, 3] as Cotation[]).map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => onCoter(zone.code, n)}
-                    aria-pressed={valeur === n}
-                    className={`rounded-full border px-2.5 py-1 text-xs font-semibold capitalize transition-colors ${
-                      valeur === n
-                        ? 'border-violet-500 bg-violet-500 text-white'
-                        : 'border-ardoise-200 bg-white text-ardoise-600 hover:border-violet-200 hover:bg-violet-50'
-                    }`}
-                  >
-                    {LIBELLES_COTATION[n]}
-                  </button>
-                ))}
+                {([0, 1, 2, 3] as Cotation[]).map((n) => {
+                  const teinte = COULEUR_COTATION[n];
+                  const actif = valeur === n;
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => onCoter(zone.code, n)}
+                      aria-pressed={actif}
+                      style={
+                        actif
+                          ? { background: teinte.fond, color: teinte.texte, borderColor: teinte.fond }
+                          : { background: teinte.pale, color: teinte.encre, borderColor: teinte.pale }
+                      }
+                      className="rounded-full border px-2.5 py-1 text-xs font-semibold capitalize transition-colors"
+                    >
+                      {LIBELLES_COTATION[n]}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           );
