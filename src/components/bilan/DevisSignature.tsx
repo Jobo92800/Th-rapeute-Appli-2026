@@ -147,37 +147,39 @@ export default function DevisSignature({
           </p>
         </div>
 
-        {/* Le calendrier, semaine par semaine */}
-        <div className="flex flex-wrap gap-1.5 px-5 py-4">
-          {Array.from({ length: 13 }, (_, i) => i + 1).map((semaine) => {
-            const rang = cure.semaines.indexOf(semaine);
-            if (semaine === 13) {
-              return (
-                <span
-                  key={semaine}
-                  title="Bilan photos à 3 mois"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-marine-300 bg-marine-50 text-marine-700"
-                >
-                  <Camera className="h-4 w-4" />
-                </span>
-              );
-            }
-            return rang >= 0 ? (
-              <span
-                key={semaine}
-                title={`Séance ${rang + 1} — semaine ${semaine}`}
-                className="chiffres flex h-9 w-9 items-center justify-center rounded-full bg-violet-500 text-sm font-bold text-white"
-              >
+        {/*
+          Le calendrier : les séances, et elles seules.
+
+          La première version dessinait treize semaines dont huit vides pour
+          une cure d'un mois : personne ne comprenait ces ronds blancs, et
+          le repère photos se retrouvait à l'autre bout de l'écran, comme
+          s'il n'avait rien à voir avec la cure (Jonathan, 23 septembre
+          2026). On montre donc ce qui a lieu, avec sa semaine écrite
+          dessous — l'espacement se lit dans les numéros de semaine, pas
+          dans des trous — et le bilan photos vient juste après, séparé par
+          un simple intervalle.
+        */}
+        <div className="flex flex-wrap items-start gap-2 px-5 py-4">
+          {cure.semaines.map((semaine, rang) => (
+            <span key={semaine} className="flex w-12 flex-col items-center gap-1">
+              <span className="chiffres flex h-10 w-10 items-center justify-center rounded-full bg-violet-500 text-base font-bold text-white">
                 {rang + 1}
               </span>
-            ) : (
-              <span
-                key={semaine}
-                title={`Semaine ${semaine}`}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-dashed border-ardoise-200"
-              />
-            );
-          })}
+              <span className="text-[10px] leading-tight text-ardoise-500">sem. {semaine}</span>
+            </span>
+          ))}
+
+          <span className="flex h-10 items-center px-1 text-lg text-ardoise-300">⋯</span>
+
+          <span className="flex w-16 flex-col items-center gap-1">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full border-[1.5px] border-marine-400 bg-marine-50 text-marine-700">
+              <Camera className="h-5 w-5" />
+            </span>
+            <span className="text-center text-[10px] leading-tight text-marine-700">
+              bilan photos
+              <br />3 mois
+            </span>
+          </span>
         </div>
 
         <p className="border-t border-ardoise-100 px-5 py-2.5 text-xs text-ardoise-500">
@@ -185,19 +187,38 @@ export default function DevisSignature({
           cure.
         </p>
 
-        {/* Les deux autres cures */}
-        <div className="flex flex-wrap gap-2 border-t border-ardoise-100 px-5 py-3">
-          {bareme.CURES.filter((c) => c.code !== cure.code).map((c) => (
-            <button
-              key={c.code}
-              type="button"
-              onClick={() => setChoisie(c.code)}
-              className="bouton-discret text-xs"
-            >
-              Cure {c.nom} · {c.seances} séances
-              {c.code === preconisation.cure.code ? ' (préconisée)' : ''}
-            </button>
-          ))}
+        {/*
+          Les deux autres cures, en cartes et non en petits boutons : la
+          thérapeute propose parfois plus court, et ce choix se fait devant
+          la cliente — il mérite d'être lisible à un mètre.
+        */}
+        <div className="border-t border-ardoise-100 px-5 py-4">
+          <p className="surtitre mb-2.5">Les autres cures</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {bareme.CURES.filter((c) => c.code !== cure.code).map((c) => (
+              <button
+                key={c.code}
+                type="button"
+                onClick={() => setChoisie(c.code)}
+                className="rounded-2xl border border-ardoise-200 bg-white px-4 py-3 text-left transition-colors hover:border-violet-300 hover:bg-violet-50"
+              >
+                <span className="flex flex-wrap items-baseline gap-2">
+                  <span className="text-base font-semibold text-ardoise-900">Cure {c.nom}</span>
+                  {c.code === preconisation.cure.code && (
+                    <span className="rounded-full bg-violet-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                      Préconisée
+                    </span>
+                  )}
+                </span>
+                <span className="mt-0.5 block text-sm text-ardoise-600">
+                  {c.seances} séances sur {c.mois} mois
+                </span>
+                <span className="chiffres mt-1 block text-sm font-bold text-violet-600">
+                  {formaterEuros(c.seances * prixSeance)}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
