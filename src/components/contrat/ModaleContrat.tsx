@@ -71,6 +71,7 @@ const TITRE_CONSENTEMENT: Record<string, string> = {
   ishape: 'Consentement Électrostimulation',
   presso: 'Consentement Pressodynamie',
   'advance-lift': 'Consentement Soin visage',
+  radiofrequence: 'Consentement Radiofréquence visage',
 };
 
 export default function ModaleContrat({

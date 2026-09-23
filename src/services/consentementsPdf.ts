@@ -357,6 +357,77 @@ export function generateSoinVisageConsent(ctx: ConsentContext): string {
   return doc.output('datauristring').split(',')[1];
 }
 
+// ─── RADIOFRÉQUENCE VISAGE (MESOJET) ─────────────────────────────────────────
+/*
+  Le consentement du Profil Signature, au Crès et à Sérignan.
+
+  Repris du « Soin visage » du Grau-du-Roi — même structure, même ton, même
+  engagement — et adapté au seul appareil utilisé ici : le Mesojet en
+  RADIOFRÉQUENCE SEULE, sans ultrasons ni hydroporation. Les
+  contre-indications sont celles que la thérapeute coche à l'écran de
+  sécurité du bilan, augmentées de celles qui figuraient déjà au
+  consentement du soin visage et qui valent pour la radiofréquence.
+
+  À CONFIRMER AVEC LA NOTICE DU FABRICANT avant la première signature :
+  la liste et les délais après peeling, laser ou injection.
+*/
+export function generateRadiofrequenceConsent(ctx: ConsentContext): string {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+  let y = header(doc, 'Consentement mutuel - Radiofréquence visage', ctx.clientName, ctx.date);
+
+  y = para(doc,
+    'Certifie avoir été informé(e) concernant les soins par Radiofréquence (Mesojet®) auxquels je vais me soumettre dans le but d\'un traitement du visage, du cou et, le cas échéant, du décolleté. La radiofréquence réchauffe le derme de façon contrôlée, entre 40 et 42 °C : les fibres de collagène se resserrent pendant la séance, et la peau fabrique du nouveau collagène au fil des semaines qui suivent.',
+    y);
+
+  y = para(doc,
+    'Les effets attendus portent sur la fermeté, la tonicité, l\'aspect de l\'ovale et la texture de la peau. La radiofréquence n\'améliore pas l\'hydratation, qui relève des soins et de la routine à domicile. Les rides d\'expression marquées répondent moins que les ridules.',
+    y);
+
+  y = para(doc,
+    'Il est recommandé de réaliser une cure, dont le nombre de séances est défini lors du Profil Signature : 4, 6 ou 10 séances, au rythme d\'une séance par semaine puis d\'une séance toutes les deux semaines. Un premier bilan en photographies est proposé à trois mois.',
+    y);
+
+  y = para(doc,
+    'Comme pour tout soin du visage, une bonne hygiène de vie et un entretien quotidien de la peau sont vivement recommandés afin d\'optimiser les résultats.\nPour une réussite optimale de la cure, je m\'engage à respecter les recommandations et conseils des thérapeutes, ainsi qu\'à respecter le rythme des rendez-vous fixés pour les séances.',
+    y);
+
+  y = para(doc,
+    'Je suis informé(e) que parfois les résultats sont inférieurs à ceux attendus et cela ne me donne droit à la possibilité d\'être remboursé(e) du montant crédité.',
+    y) + 2;
+
+  y = sectionTitle(doc, 'Les contre-indications à la radiofréquence :', y);
+  y = para(doc, 'Il est interdit d\'effectuer les séances de radiofréquence en cas de :', y);
+  y = bullets(doc, [
+    'Stimulateur cardiaque ou autre dispositif électronique implanté',
+    'Implant métallique, plaque, fil d\'or ou prothèse sur la zone de traitement',
+    'Grossesse',
+    'Lésion, infection, plaie ou maladie cutanée sur la zone de traitement',
+    'Perte de sensibilité à la chaleur sur la zone de traitement',
+    'Cancer en cours de traitement, ou suite de cancer',
+    'Épilepsie',
+    'Insuffisance cardiaque et veineuse, tension artérielle élevée',
+    'Problèmes thyroïdiens pour les soins du cou',
+    'Couperose, hypervascularisation',
+    'Après toute intervention chirurgicale de moins de 6 mois',
+    'Traitement par médicaments anti-inflammatoires',
+  ], y);
+
+  y = para(doc,
+    'Après un peeling, un laser ou des injections, aucune séance n\'est réalisée avant un délai d\'un mois.\nSelon les cas, un certificat médical écrit pourra être demandé par le centre de soins.',
+    y) + 2;
+
+  imageRightSection(doc,
+    'Signature, nom et prénom du/de la client(e)',
+    [
+      'J\'autorise la prise de photographies avant/après et leur utilisation interne, une fois anonymisées, à des fins de présentation par les thérapeutes du centre MAbeautyplus.',
+      'J\'autorise la diffusion de ces photographies sur les réseaux sociaux du centre MAbeautyplus.',
+    ],
+    ctx.photoChecked, ctx.signatureDataUrl, y);
+
+  footer(doc);
+  return doc.output('datauristring').split(',')[1];
+}
+
 // ─── PRESSODYNAMIE ────────────────────────────────────────────────────────────
 export function generatePressoConsent(ctx: ConsentContext): string {
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
@@ -590,6 +661,7 @@ const CONSENT_GENERATORS: Record<string, (ctx: ConsentContext) => string> = {
   'cavitalyse':   generateMesojetCorpsConsent,
   'meso-visage':  generateMesojetVisageConsent,
   'advance-lift': generateSoinVisageConsent,
+  radiofrequence: generateRadiofrequenceConsent,
   'presso':       generatePressoConsent,
   'ishape':       generateIShapeConsent,
   'luxo-meno':    generateLuxoMenopauseConsent,
@@ -603,6 +675,7 @@ const CONSENT_FILENAMES: Record<string, string> = {
   'cavitalyse':   'Consentement_Mesojet_Corps',
   'meso-visage':  'Consentement_Mesojet_Visage',
   'advance-lift': 'Consentement_Soin_Visage',
+  radiofrequence: 'Consentement_Radiofrequence',
   'presso':       'Consentement_Pressodynamie',
   'ishape':       'Consentement_IShape',
   'luxo-meno':    'Consentement_Luxo_Menopause',

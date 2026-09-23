@@ -37,6 +37,7 @@ const LIBELLE_TECHNO: Record<string, string> = {
   presso: 'Pressodynamie',
   dome: 'Dôme',
   advance_lift: 'Advance Lift',
+  radiofrequence: 'Radiofréquence visage',
 };
 
 /*
@@ -119,6 +120,13 @@ const CHAMP_RECAP_DATE = 'Récap envoyé le';
   déclenche l'envoi du mail, et ce document-là ne s'envoie pas tout seul.
 */
 const CHAMP_BIOPORTRAIT_NOM = 'BioPortrait';
+/*
+  Le Profil Signature a son propre champ de pièce jointe : c'est un autre
+  bilan, avec ses zones observées et sa cure de radiofréquence, et on veut
+  pouvoir ressortir l'un sans fouiller dans l'autre. Le récapitulatif, lui,
+  passe par le champ commun — c'est sa date qui déclenche le mail.
+*/
+const CHAMP_SIGNATURE_NOM = 'Profil Signature';
 const CHAMP_CONSENTEMENTS = 'fldn4f3NScLrXj31C';
 
 /** « Montant Cure » pour la première, « Montant cure N » ensuite. */
@@ -346,12 +354,15 @@ Deno.serve(async (req: Request) => {
   async function traiterBioPortrait(bilanId: string) {
     const { data: b } = await db
       .from('bilans')
-      .select('id, cliente_id, bioportrait_pdf, date_bilan')
+      .select('id, cliente_id, bioportrait_pdf, date_bilan, famille')
       .eq('id', bilanId)
       .maybeSingle();
 
     if (!b) throw new Error('Bilan introuvable.');
     if (!b.bioportrait_pdf) throw new Error("Aucun BioPortrait n'a été établi pour ce bilan.");
+
+    /* Chaque famille de bilan a son champ : on ne mélange pas les documents. */
+    const signature = b.famille === 'signature';
 
     const { data: cliente } = await db
       .from('clientes')
@@ -366,11 +377,12 @@ Deno.serve(async (req: Request) => {
 
     const suffixe = `${cliente.nom}_${cliente.prenom}`.replace(/[^\w\-]+/g, '_');
     const jour = String(b.date_bilan ?? '').slice(0, 10);
+    const nomDuDocument = signature ? 'ProfilSignature' : 'BioPortrait';
 
     await joindrePdf(
       cliente.airtable_record_id,
-      await idDuChamp(CHAMP_BIOPORTRAIT_NOM),
-      `BioPortrait_${suffixe}${jour ? `_${jour}` : ''}.pdf`,
+      await idDuChamp(signature ? CHAMP_SIGNATURE_NOM : CHAMP_BIOPORTRAIT_NOM),
+      `${nomDuDocument}_${suffixe}${jour ? `_${jour}` : ''}.pdf`,
       b.bioportrait_pdf,
     );
 
@@ -703,7 +715,9 @@ Deno.serve(async (req: Request) => {
       'Mode de règlement': LIBELLE_MODE[p.mode_reglement] ?? p.mode_reglement,
       'Statut programme': LIBELLE_STATUT[p.statut] ?? p.statut,
       /* Ce que la cure soigne : la perte de poids, ou l'anti-âge — l'Advance Lift ne se mélange pas aux autres. */
-      Soins: utiles.some((l) => l.technologie === 'advance_lift') ? 'Anti-âge' : 'Perte de poids',
+      Soins: utiles.some((l) => l.technologie === 'advance_lift' || l.technologie === 'radiofrequence')
+        ? 'Anti-âge'
+        : 'Perte de poids',
     };
 
     if (p.date_validation) champs['Date validation'] = p.date_validation;

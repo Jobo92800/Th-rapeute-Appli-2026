@@ -122,6 +122,8 @@ const LIGNES_CONTRAT: Array<{ label: string; technologies: Technologie[] }> = [
   { label: 'Pressodynamie', technologies: ['presso'] },
   { label: 'Dôme', technologies: ['dome'] },
   { label: 'Advance Lift', technologies: ['advance_lift'] },
+  /* Le soin du Profil Signature : radiofréquence Mesojet, au Crès et à Sérignan. */
+  { label: 'Radiofréquence visage (Mesojet)', technologies: ['radiofrequence'] },
 ];
 
 /** Technologie → consentement à faire signer. Le Dôme n'en a pas. */
@@ -136,6 +138,8 @@ export const CONSENTEMENT_PAR_TECHNOLOGIE: Partial<Record<Technologie, string>> 
   presso: 'presso',
   /* Le soin visage du Grau-du-Roi : ultrasons et radiofréquence, son propre consentement. */
   advance_lift: 'advance-lift',
+  /* La radiofréquence Mesojet du Crès et de Sérignan : le sien, adapté à cet appareil. */
+  radiofrequence: 'radiofrequence',
 };
 
 const LIBELLE_MOYEN: Record<string, string> = {

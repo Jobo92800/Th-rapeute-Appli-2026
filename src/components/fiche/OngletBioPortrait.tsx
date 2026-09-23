@@ -12,6 +12,7 @@ import { CENTRE_ANTI_AGE } from '../../domain/antiAge';
 import { useSession } from '../../lib/session';
 import ReponsesDuBilan from './ReponsesDuBilan';
 import BioPortraitAntiAgeSurFiche from './BioPortraitAntiAgeSurFiche';
+import ProfilSignatureSurFiche from './ProfilSignatureSurFiche';
 import { LeBioPortraitSeul, Recapitulatif } from './DocumentsDuBilan';
 
 export default function OngletBioPortrait({
@@ -81,6 +82,28 @@ export default function OngletBioPortrait({
   if (bilan.famille === 'anti_age') {
     return (
       <BioPortraitAntiAgeSurFiche
+        bilan={bilan}
+        bilans={termines}
+        clienteId={clienteId}
+        civilite={civilite}
+        qc={qc}
+        confirme={confirme}
+        setConfirme={setConfirme}
+        onChoisir={(id) => {
+          setBilanRegarde(id);
+          setReponsesOuvertes(false);
+        }}
+      />
+    );
+  }
+
+  /*
+    Un Profil Signature se lit encore autrement : des axes en pourcentage
+    et, surtout, la carte des zones que la thérapeute a observées.
+  */
+  if (bilan.famille === 'signature') {
+    return (
+      <ProfilSignatureSurFiche
         bilan={bilan}
         bilans={termines}
         clienteId={clienteId}

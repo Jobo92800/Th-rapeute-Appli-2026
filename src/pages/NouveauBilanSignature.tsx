@@ -14,6 +14,8 @@ import {
 } from '../services/metier';
 import { creerCliente, lireCliente, modifierCliente } from '../services/clientes';
 import { etatDuCentre } from '../services/stock';
+import { envoyerDocumentRecap, rangerDocumentBioPortrait } from '../services/recap';
+import { construireRecapSignature } from '../domain/recapitulatif';
 import { formaterEuros } from '../domain/tarification';
 import {
   CODE_SECURITE,
@@ -268,11 +270,65 @@ export default function NouveauBilanSignature() {
         });
       }
 
-      toast.success(
-        issue === 'valider'
-          ? 'Cure validée et enregistrée'
-          : `Premier rendez-vous enregistré (${formaterEuros(grille.bilan_signature)} à facturer)`,
-      );
+      const donnees = construireRecapSignature({
+        bareme,
+        resultat,
+        carte,
+        proposition: {
+          lignes: proposition?.lignes ?? [],
+          guide: false,
+          tenue: false,
+          prixGuide: 0,
+          prixTenue: 0,
+          complements: proposition?.complements ?? [],
+          montantTotal: proposition?.montantTotal ?? 0,
+          modeReglement: proposition?.modeReglement ?? 'inconnu',
+          frais: proposition?.frais ?? 0,
+          echeances: proposition?.echeances ?? [],
+        },
+        cliente: { civilite: contact.civilite, prenom: contact.prenom.trim(), nom: contact.nom.trim() },
+        centre: {
+          nom: centre.nom,
+          adresse: centre.adresse,
+          codePostal: centre.code_postal,
+          ville: centre.ville,
+          telephone: centre.telephone,
+          email: centre.email,
+        },
+        dateBilan: new Date().toISOString().slice(0, 10),
+      });
+
+      /*
+        Le Profil Signature seul part au dossier dans le CRM, quoi qu'elle
+        décide — champ « Profil Signature », comme le BioPortrait a le sien.
+        Son échec n'arrête rien : la tâche reste en file.
+      */
+      try {
+        await rangerDocumentBioPortrait(bilan.id, donnees);
+      } catch (err) {
+        console.error(err);
+      }
+
+      /* Sans cure, elle repart avec son Profil Signature et la proposition, par mail. */
+      if (issue === 'seul' && proposition) {
+        try {
+          await envoyerDocumentRecap(bilan.id, donnees);
+          toast.success(
+            `Premier rendez-vous enregistré (${formaterEuros(grille.bilan_signature)} à facturer) · le récapitulatif part par mail`,
+          );
+        } catch (err) {
+          console.error(err);
+          toast.error(
+            "Le bilan est enregistré, mais le récapitulatif n'a pas pu partir. Renvoyez-le depuis sa fiche.",
+          );
+        }
+      } else {
+        toast.success(
+          issue === 'valider'
+            ? 'Cure validée et enregistrée'
+            : `Premier rendez-vous enregistré (${formaterEuros(grille.bilan_signature)} à facturer)`,
+        );
+      }
       navigate(`/clientes/${cliente.id}`);
     } catch (e) {
       console.error(e);
@@ -507,7 +563,7 @@ export default function NouveauBilanSignature() {
           setVue('restitution');
           window.scrollTo(0, 0);
         }}
-        onBilanSeul={() => enregistrerTout(null, 'seul')}
+        onBilanSeul={(p) => enregistrerTout(p, 'seul')}
         onValider={(p) => enregistrerTout(p, 'valider')}
       />
     );

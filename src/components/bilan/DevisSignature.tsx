@@ -63,7 +63,7 @@ export default function DevisSignature({
   differee: boolean;
   enregistrement: boolean;
   onRetour: () => void;
-  onBilanSeul: () => void;
+  onBilanSeul: (p: PrescriptionValidee) => void;
   onValider: (p: PrescriptionValidee) => void;
 }) {
   const preconisation = useMemo(() => preconiserLaCure(bareme, carte), [bareme, carte]);
@@ -377,7 +377,7 @@ export default function DevisSignature({
 
         <div className="flex flex-wrap gap-3">
           <button
-            onClick={onBilanSeul}
+            onClick={() => onBilanSeul(proposition())}
             disabled={enregistrement}
             className="bouton-discret"
             title="Le premier rendez-vous est facturé, aucune cure n'est ouverte, et son Profil Signature part par mail."

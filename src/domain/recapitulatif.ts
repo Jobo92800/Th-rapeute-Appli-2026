@@ -14,6 +14,22 @@ import { SEUIL_PRESENCE, type Axe, type Bareme, type BioPortrait, type MesureInb
 import type { BaremeAntiAge, BioPortraitAntiAge } from './antiAge';
 import { LIBELLES_TECHNOLOGIE, formaterEuros } from './tarification';
 import { libelleComplements, nombreDeBoites, type ComplementChoisi } from './complements';
+import {
+  AXES_SIGNATURE,
+  LIBELLES_COTATION,
+  type BaremeSignature,
+  type CarteDesZones,
+  type Cotation,
+  type ProfilSignatureCalcule,
+} from './profilSignature';
+
+/** Les quatre axes du Profil Signature, en toutes lettres. */
+const LIBELLES_AXES_SIGNATURE: Record<(typeof AXES_SIGNATURE)[number], string> = {
+  fermete: 'Fermeté',
+  rides: 'Rides',
+  hydratation: 'Hydratation / Qualité',
+  densite: 'Densité',
+};
 import type { ModeReglement, Technologie } from '../types/db';
 
 /**
@@ -78,6 +94,16 @@ export const LIBELLES_ANTI_AGE: LibellesRecap = {
   titreDocument: 'Bio-Portrait Anti-Âge',
   nomDuBilan: 'Bio-Portrait Anti-Âge',
   titreProfil: 'Votre profil anti-âge',
+  etiquetteProfil: 'Ce dont votre peau a besoin',
+  titreTerrain: 'Votre terrain cutané',
+  etiquetteTerrain: 'Comment votre peau réagit',
+  impacts: 'Vos besoins',
+};
+
+export const LIBELLES_SIGNATURE: LibellesRecap = {
+  titreDocument: 'Profil Signature anti-âge',
+  nomDuBilan: 'Profil Signature',
+  titreProfil: 'Votre profil',
   etiquetteProfil: 'Ce dont votre peau a besoin',
   titreTerrain: 'Votre terrain cutané',
   etiquetteTerrain: 'Comment votre peau réagit',
@@ -250,6 +276,96 @@ export function construireRecap(args: {
  * d'InBody, pas d'axes secondaires. La cure est celle que la thérapeute a
  * composée — de l'Advance Lift, autant de séances qu'elle a dit.
  */
+/**
+ * Le même document, pour un Profil Signature.
+ *
+ * Ce qu'il a de plus : LES ZONES OBSERVÉES, qui ne viennent d'aucune
+ * réponse — la thérapeute les a cotées en regardant la cliente, et elles
+ * expliquent le nombre de séances. Elles prennent la place des mesures
+ * InBody, qui n'existent pas ici.
+ *
+ * Les axes sont déjà des pourcentages : ils s'affichent comme ceux de la
+ * perte de poids, sans conversion.
+ */
+export function construireRecapSignature(args: {
+  bareme: BaremeSignature;
+  resultat: ProfilSignatureCalcule;
+  carte: CarteDesZones;
+  proposition: Proposition;
+  cliente: { civilite: string; prenom: string; nom: string };
+  centre: DonneesRecap['centre'];
+  dateBilan: string;
+}): DonneesRecap {
+  const { bareme, resultat: r, carte, proposition: p } = args;
+  const profil = bareme.PROFILS[r.profil];
+
+  const terrain: AxeRecap =
+    r.terrains.length === 0
+      ? {
+          nom: 'Pas de terrain particulier signalé',
+          signature: 'Ni tiraillement, ni réactivité, ni fragilité marqués.',
+          pourcentage: null,
+          texte: 'Vos réponses ne signalent aucune réactivité particulière de la peau.',
+          impacts: [],
+        }
+      : {
+          nom: r.terrains.map((t) => bareme.TERRAINS[t].nom).join(' et '),
+          signature: r.terrains.length > 1 ? 'Terrain mixte' : '',
+          pourcentage: null,
+          texte: r.terrains
+            .map((t) => bareme.TERRAINS[t].texte + (bareme.TERRAINS[t].consigne ? ' ' + bareme.TERRAINS[t].consigne : ''))
+            .join(' '),
+          impacts: [],
+        };
+
+  const soins = p.lignes
+    .filter((l) => l.seances > 0)
+    .map((l) => ({ libelle: LIBELLES_TECHNOLOGIE[l.technologie] ?? l.technologie, seances: l.seances }));
+
+  /*
+    Les zones observées prennent la place des mesures InBody : même
+    emplacement sur le document, même rôle — ce que la thérapeute a relevé
+    ce jour-là, et qui ne se déduit d'aucune réponse.
+  */
+  const zones: MesureInbody[] = bareme.ZONES.filter((z) => (carte[z.code] ?? 0) > 0).map((z) => ({
+    libelle: z.nom,
+    valeur: LIBELLES_COTATION[(carte[z.code] ?? 0) as Cotation],
+  }));
+
+  return {
+    civilite: args.cliente.civilite,
+    prenom: args.cliente.prenom,
+    nom: args.cliente.nom,
+    dateBilan: args.dateBilan,
+    centre: args.centre,
+    profil: {
+      nom: profil.nom,
+      signature: profil.radiofrequence,
+      pourcentage: r.axes[AXES_SIGNATURE.reduce((a, b) => (r.axes[b] > r.axes[a] ? b : a))],
+      texte: profil.texte,
+      impacts: profil.besoins,
+    },
+    terrain,
+    aussiPresents: AXES_SIGNATURE.filter((a) => r.axes[a] >= SEUIL_PRESENCE).map((a) => ({
+      nom: LIBELLES_AXES_SIGNATURE[a],
+      pourcentage: r.axes[a],
+    })),
+    inbody: zones,
+    soins,
+    options:
+      nombreDeBoites(p.complements ?? []) > 0
+        ? [{ libelle: `Compléments alimentaires — ${libelleComplements(p.complements ?? [])}` }]
+        : [],
+    totalSeances: soins.reduce((n, s) => n + s.seances, 0),
+    montantTotal: Number(p.montantTotal),
+    montantRegle: Number(p.montantTotal) + Number(p.frais),
+    reglement: LIBELLE_REGLEMENT[p.modeReglement] ?? 'À définir ensemble',
+    echeances: p.echeances.filter((e) => e.type !== 'bilan'),
+    inclus: [],
+    libelles: { ...LIBELLES_SIGNATURE, mention: bareme.MENTION },
+  };
+}
+
 export function construireRecapAntiAge(args: {
   bareme: BaremeAntiAge;
   resultat: BioPortraitAntiAge;
