@@ -171,14 +171,12 @@ export default function DevisSignature({
 
           <span className="flex h-10 items-center px-1 text-lg text-ardoise-300">⋯</span>
 
-          <span className="flex w-16 flex-col items-center gap-1">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full border-[1.5px] border-marine-400 bg-marine-50 text-marine-700">
-              <Camera className="h-5 w-5" />
-            </span>
-            <span className="text-center text-[10px] leading-tight text-marine-700">
-              bilan photos
-              <br />3 mois
-            </span>
+          {/* La ligne sous le calendrier dit déjà à quoi sert ce repère. */}
+          <span
+            title="Bilan photos à 3 mois"
+            className="flex h-10 w-10 items-center justify-center rounded-full border-[1.5px] border-marine-400 bg-marine-50 text-marine-700"
+          >
+            <Camera className="h-5 w-5" />
           </span>
         </div>
 
