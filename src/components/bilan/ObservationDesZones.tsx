@@ -1,3 +1,4 @@
+import { lazy, Suspense, useState } from 'react';
 import { Eye, Sparkles } from 'lucide-react';
 import {
   LIBELLES_COTATION,
@@ -6,6 +7,12 @@ import {
   type Cotation,
   type PorteeZone,
 } from '../../domain/profilSignature';
+
+/*
+  Le buste ne part du serveur que si quelqu'un ouvre cet écran : il porte
+  la bibliothèque 3D, dix fois le poids du reste de la page.
+*/
+const Buste3D = lazy(() => import('./Buste3D'));
 
 /**
  * L'observation : la thérapeute cote les sept zones, devant la cliente.
@@ -43,8 +50,13 @@ export default function ObservationDesZones({
   ajustees: CarteDesZones;
   onCoter: (code: string, valeur: Cotation) => void;
 }) {
+  /* La zone qu'on regarde : le buste s'y tourne, les autres s'atténuent. */
+  const [focus, setFocus] = useState<string | null>(null);
+  /* Une machine sans 3D ne montre pas un carré vide : on revient à la liste seule. */
+  const [sansTroisD, setSansTroisD] = useState(false);
+
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="mx-auto max-w-5xl space-y-5">
       <header>
         <div className="surtitre">Votre observation</div>
         <h1 className="mt-1 text-3xl font-light tracking-tight text-ardoise-900">
@@ -56,6 +68,23 @@ export default function ObservationDesZones({
         </p>
       </header>
 
+      <div className={sansTroisD ? '' : 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]'}>
+        {!sansTroisD && (
+          <Suspense
+            fallback={
+              <div className="aspect-[4/5] w-full rounded-2xl border border-ardoise-200 bg-marine-50 sm:aspect-[5/4]" />
+            }
+          >
+            <Buste3D
+              zones={bareme.ZONES}
+              carte={carte}
+              focus={focus}
+              onFocus={setFocus}
+              onIndisponible={() => setSansTroisD(true)}
+            />
+          </Suspense>
+        )}
+
       <section className="carte divide-y divide-ardoise-100">
         {bareme.ZONES.map((zone) => {
           const valeur = carte[zone.code] ?? 0;
@@ -63,7 +92,13 @@ export default function ObservationDesZones({
           const portee = PORTEE[zone.portee];
 
           return (
-            <div key={zone.code} className="flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-4">
+            <div
+              key={zone.code}
+              onMouseEnter={() => !sansTroisD && setFocus(zone.code)}
+              className={`flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-4 transition-colors ${
+                focus === zone.code ? 'bg-violet-50/60' : ''
+              }`}
+            >
               <div className="min-w-0 flex-1 basis-56">
                 <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-ardoise-900">
                   {zone.nom}
@@ -114,6 +149,7 @@ export default function ObservationDesZones({
           );
         })}
       </section>
+      </div>
     </div>
   );
 }
