@@ -33,10 +33,12 @@ import {
   cou, trente minutes ; le décolleté en plus, une heure. Le décolleté ne
   s'impose jamais tout seul, c'est une option qui se propose.
 
-  Le premier rendez-vous — le Profil Signature et la première séance —
-  vaut 89 €. Dès qu'une cure démarre, il EN EST la première séance et son
-  montant est compris dans le prix de la cure. Sans cure, ce sont 89 € et
-  rien d'autre.
+  LE PREMIER RENDEZ-VOUS SE RÈGLE DANS TOUS LES CAS (Jonathan, 24
+  septembre 2026) : 89 €, le Profil Signature et le premier soin. Il ne
+  fait pas partie de la cure et ne s'en déduit pas — la cliente repart
+  avec quelque chose le jour même, et décide ensuite, sans que ce choix
+  change ce qu'elle a déjà payé. Une cure de six séances vaut donc ses
+  six séances, en plus des 89 € du jour.
 */
 
 export default function DevisSignature({
@@ -203,8 +205,8 @@ export default function DevisSignature({
         </div>
 
         <p className="border-t border-ardoise-100 px-5 py-2.5 text-xs text-ardoise-500">
-          {cure.note} Le premier rendez-vous est la séance n° 1 : son montant est compris dans la
-          cure.
+          {cure.note} Le premier rendez-vous d’aujourd’hui se règle à part : cette cure vient à la
+          suite.
         </p>
 
         {/*
@@ -391,8 +393,11 @@ export default function DevisSignature({
         <p className="mx-auto mt-4 max-w-sm border-t border-white/15 pt-3 text-[11px] text-marine-200">
           {cure.seances} séances × {formaterEuros(prixSeance)}
           {montantBoites > 0 ? ` + compléments ${formaterEuros(montantBoites)}` : ''} ={' '}
-          <b className="text-white">{formaterEurosJuste(montantTotal)}</b>, premier rendez-vous
-          compris.
+          <b className="text-white">{formaterEurosJuste(montantTotal)}</b>.
+          <span className="mt-0.5 block text-marine-300">
+            Le premier rendez-vous ({formaterEuros(grille.bilan_signature)}) se règle à part, il
+            n’est pas compris ici.
+          </span>
         </p>
       </section>
 
@@ -424,7 +429,7 @@ export default function DevisSignature({
             title="Le premier rendez-vous est facturé, aucune cure n'est ouverte, et son Profil Signature part par mail."
           >
             <Mail className="h-4 w-4" />
-            Premier rendez-vous seul · {formaterEuros(grille.bilan_signature)}
+            Sans cure · {formaterEuros(grille.bilan_signature)}
           </button>
           <button
             onClick={() => onValider(proposition())}

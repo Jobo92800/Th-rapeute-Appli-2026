@@ -25,9 +25,12 @@
       choisit, comme une option — le décolleté ne s’impose pas tout seul.
 
     — LE PREMIER RENDEZ-VOUS VAUT 89 € et comprend le Profil Signature et
-      la première séance. S’il débouche sur une cure, il en EST la
-      première séance : la cure vaut son prix plein (6 × 79 = 474 €) et
-      les 89 € y sont compris. Sans cure, ce sont 89 € et rien d’autre.
+      le premier soin. IL SE RÈGLE DANS TOUS LES CAS (24 septembre 2026) :
+      il ne fait pas partie de la cure et ne s’en déduit pas. La cliente
+      repart avec quelque chose le jour même, et décide ensuite — une cure
+      de six séances vaut alors 6 × 79 = 474 €, en plus des 89 €. C’est ce
+      qui distingue ce bilan des deux autres, où le bilan devient offert
+      dès que la cure démarre.
 
   Contenu
     1. Les trois tarifs

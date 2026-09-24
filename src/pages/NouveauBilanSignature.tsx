@@ -202,10 +202,10 @@ export default function NouveauBilanSignature() {
   /**
    * L'enregistrement.
    *
-   * Sans cure, la cliente règle son premier rendez-vous — 89 €, le Profil
-   * Signature et la première séance. Avec une cure, ce rendez-vous EN EST
-   * la première séance : la cure vaut son prix plein, le bilan n'est pas
-   * facturé à part.
+   * Le premier rendez-vous — le Profil Signature et le premier soin — se
+   * règle dans tous les cas : 89 €, cure ou pas. La cure, si elle est
+   * validée, s'ajoute pour ce qu'elle vaut ; elle ne rembourse ni ne
+   * remplace ce qui a déjà été payé.
    */
   async function enregistrerTout(proposition: PrescriptionValidee | null, issue: 'valider' | 'seul') {
     if (!contact.prenom.trim() || !contact.nom.trim()) {
@@ -245,8 +245,15 @@ export default function NouveauBilanSignature() {
         terrain_dominant: resultat.terrains[0] ?? null,
         profils_secondaires: [],
         terrains_secondaires: resultat.terrains.slice(1),
-        facturation: issue === 'seul' ? 'facture' : 'offert',
-        montant_facture: issue === 'seul' ? grille.bilan_signature : 0,
+        /*
+          LE PREMIER RENDEZ-VOUS SE FACTURE TOUJOURS, cure ou pas : elle a
+          reçu son Profil Signature et son premier soin le jour même, et
+          ce qu'elle décide ensuite n'y change rien. C'est la différence
+          avec les deux autres bilans, où le bilan devient offert dès que
+          la cure démarre.
+        */
+        facturation: 'facture',
+        montant_facture: grille.bilan_signature,
         proposition: proposition ? (proposition as unknown as Record<string, unknown>) : null,
       });
 
@@ -325,7 +332,7 @@ export default function NouveauBilanSignature() {
       } else {
         toast.success(
           issue === 'valider'
-            ? 'Cure validée et enregistrée'
+            ? `Cure validée · ${formaterEuros(grille.bilan_signature)} du premier rendez-vous à facturer en plus`
             : `Premier rendez-vous enregistré (${formaterEuros(grille.bilan_signature)} à facturer)`,
         );
       }
