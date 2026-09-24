@@ -21,7 +21,7 @@ import type { Bilan, Civilite } from '../../types/db';
 import { LeBioPortraitSeul, Recapitulatif } from './DocumentsDuBilan';
 
 /*
-  Le Bio-Portrait Anti-Âge, tel qu'il se relit sur la fiche.
+  Le Profil Signature anti-âge, tel qu'il se relit sur la fiche.
 
   Même place que le BioPortrait de la perte de poids, autre lecture : un
   profil anti-âge et un terrain cutané, des scores en points plutôt qu'en
@@ -119,7 +119,7 @@ export default function BioPortraitAntiAgeSurFiche({
             <div>
               <h2 className="text-sm font-semibold text-ardoise-900">Ses réponses au questionnaire</h2>
               <p className="text-xs text-ardoise-500">
-                Bio-Portrait Anti-Âge du {format(new Date(bilan.date_bilan), 'd MMMM yyyy', { locale: fr })}
+                Profil Signature du {format(new Date(bilan.date_bilan), 'd MMMM yyyy', { locale: fr })}
               </p>
             </div>
             <button type="button" onClick={() => setReponsesOuvertes(false)} className="bouton-discret text-xs">
@@ -150,7 +150,7 @@ export default function BioPortraitAntiAgeSurFiche({
 
       <section className="carte px-6 py-7 text-center">
         <p className="text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
-          Bio-Portrait Anti-Âge du {format(new Date(bilan.date_bilan), 'd MMMM yyyy', { locale: fr })}
+          Profil Signature du {format(new Date(bilan.date_bilan), 'd MMMM yyyy', { locale: fr })}
         </p>
         <p className="mt-3 flex flex-wrap items-center justify-center gap-3 text-xl font-bold">
           <span className="text-marine-700">{profil.nom}</span>

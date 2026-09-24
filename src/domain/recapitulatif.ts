@@ -91,8 +91,8 @@ export const LIBELLES_PERTE_DE_POIDS: LibellesRecap = {
 };
 
 export const LIBELLES_ANTI_AGE: LibellesRecap = {
-  titreDocument: 'Bio-Portrait Anti-Âge',
-  nomDuBilan: 'Bio-Portrait Anti-Âge',
+  titreDocument: 'Profil Signature anti-âge',
+  nomDuBilan: 'Profil Signature',
   titreProfil: 'Votre profil anti-âge',
   etiquetteProfil: 'Ce dont votre peau a besoin',
   titreTerrain: 'Votre terrain cutané',

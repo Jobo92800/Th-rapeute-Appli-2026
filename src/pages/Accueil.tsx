@@ -133,7 +133,7 @@ export default function Accueil() {
             {centre?.id === CENTRE_ANTI_AGE && (
               <Link to="/bilan-anti-age" className="bouton-discret">
                 <Sparkles className="h-4 w-4 text-rose-600" />
-                Bilan anti-âge
+                Profil Signature
               </Link>
             )}
             {/* Le troisième, au Crès et à Sérignan : la radiofréquence visage. */}

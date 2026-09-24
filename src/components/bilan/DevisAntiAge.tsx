@@ -22,7 +22,7 @@ import type { EtatStock } from '../../types/db';
   Le devis d'une cure d'Advance Lift.
 
   Plus simple que celui de la perte de poids, et c'est voulu : le
-  Bio-Portrait Anti-Âge ne prescrit rien — « le soin et le nombre de
+  Profil Signature anti-âge ne prescrit rien — « le soin et le nombre de
   séances restent à la décision de la praticienne ». Il n'y a donc ni
   formules, ni prestations à écarter, ni guide, ni tenue : un soin, un
   nombre de séances que la thérapeute tape, et le règlement.
@@ -112,7 +112,7 @@ export default function DevisAntiAge({
           Ce que nous proposons à {prenom}
         </h1>
         <p className="mt-1 text-sm text-ardoise-500">
-          Le nombre de séances d’Advance Lift se décide avec elle : le Bio-Portrait éclaire, il ne
+          Le nombre de séances d’Advance Lift se décide avec elle : le Profil Signature éclaire, il ne
           prescrit pas.
         </p>
       </div>
@@ -313,20 +313,20 @@ export default function DevisAntiAge({
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ardoise-200 pt-5">
         <button onClick={onRetour} disabled={enregistrement} className="bouton-discret">
-          Revenir au Bio-Portrait
+          Revenir au Profil Signature
         </button>
 
         <div className="flex flex-wrap gap-3">
           {/*
             La cliente qui ne démarre pas repart avec sa première séance —
-            85 €, le prix d'une séance d'Advance Lift — et son Bio-Portrait
+            85 €, le prix d'une séance d'Advance Lift — et son Profil Signature
             par mail. Pas de bilan à part : c'est la séance qui se règle.
           */}
           <button
             onClick={onBilanSeul}
             disabled={enregistrement}
             className="bouton-discret"
-            title="Le prix d'une séance est facturé, aucune cure n'est ouverte, et son Bio-Portrait part par mail."
+            title="Le prix d'une séance est facturé, aucune cure n'est ouverte, et son Profil Signature part par mail."
           >
             <Mail className="h-4 w-4" />
             Bilan seul · {formaterEuros(prix)}

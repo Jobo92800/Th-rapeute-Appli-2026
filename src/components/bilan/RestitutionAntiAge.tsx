@@ -11,7 +11,7 @@ import {
 } from '../../domain/antiAge';
 
 /*
-  La restitution du Bio-Portrait Anti-Âge, tournée vers la cliente.
+  La restitution du Profil Signature anti-âge, tournée vers la cliente.
 
   Deux cartes — le profil, le terrain — avec les mots du document : signes,
   besoins, texte cliente. Les scores se lisent en barres, sans pourcentage :
@@ -52,7 +52,7 @@ export default function RestitutionAntiAge({
           La conclusion de votre bilan
         </p>
         <h1 className="mt-3 text-2xl font-bold tracking-tight text-ardoise-900 sm:text-3xl">
-          Le Bio-Portrait Anti-Âge de {prenom}
+          Le Profil Signature de {prenom}
         </h1>
         <p className="mt-4 flex flex-wrap items-center justify-center gap-3 text-lg font-semibold">
           <span className="text-marine-700">{profil.nom}</span>
@@ -198,10 +198,10 @@ export default function RestitutionAntiAge({
               onClick={onEnregistrerSeulement}
               disabled={enregistrement}
               className="bouton-discret"
-              title="Le nouveau Bio-Portrait est enregistré sur sa fiche. Aucune cure n'est ouverte, rien n'est facturé."
+              title="Le nouveau Profil Signature est enregistré sur sa fiche. Aucune cure n'est ouverte, rien n'est facturé."
             >
               <Check className="h-4 w-4" />
-              Enregistrer ce Bio-Portrait
+              Enregistrer ce Profil Signature
             </button>
           )}
           <button onClick={onSuite} disabled={enregistrement} className="bouton-fort">

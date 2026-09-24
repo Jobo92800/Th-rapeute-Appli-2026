@@ -121,10 +121,14 @@ const CHAMP_RECAP_DATE = 'Récap envoyé le';
 */
 const CHAMP_BIOPORTRAIT_NOM = 'BioPortrait';
 /*
-  Le Profil Signature a son propre champ de pièce jointe : c'est un autre
-  bilan, avec ses zones observées et sa cure de radiofréquence, et on veut
-  pouvoir ressortir l'un sans fouiller dans l'autre. Le récapitulatif, lui,
-  passe par le champ commun — c'est sa date qui déclenche le mail.
+  Le Profil Signature a son propre champ de pièce jointe : c'est le
+  diagnostic de la peau, et on veut pouvoir le ressortir sans fouiller
+  parmi les BioPortraits de la perte de poids. LES DEUX BILANS ANTI-ÂGE Y
+  VONT — celui du Grau-du-Roi avec l'Advance Lift comme celui du Crès et
+  de Sérignan avec la radiofréquence (Jonathan, 24 septembre 2026) : ils
+  portent le même nom devant la thérapeute, ils se rangent au même endroit.
+  Le récapitulatif, lui, passe par le champ commun — c'est sa date qui
+  déclenche le mail.
 */
 const CHAMP_SIGNATURE_NOM = 'Profil Signature';
 const CHAMP_CONSENTEMENTS = 'fldn4f3NScLrXj31C';
@@ -361,8 +365,8 @@ Deno.serve(async (req: Request) => {
     if (!b) throw new Error('Bilan introuvable.');
     if (!b.bioportrait_pdf) throw new Error("Aucun BioPortrait n'a été établi pour ce bilan.");
 
-    /* Chaque famille de bilan a son champ : on ne mélange pas les documents. */
-    const signature = b.famille === 'signature';
+    /* Le diagnostic de la peau va dans son champ ; la perte de poids dans le sien. */
+    const signature = b.famille === 'signature' || b.famille === 'anti_age';
 
     const { data: cliente } = await db
       .from('clientes')

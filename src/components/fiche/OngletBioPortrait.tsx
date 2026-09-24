@@ -75,7 +75,7 @@ export default function OngletBioPortrait({
   }
 
   /*
-    Un Bio-Portrait Anti-Âge se lit autrement : quatre axes en points, un
+    Un Profil Signature anti-âge se lit autrement : quatre axes en points, un
     terrain cutané, pas d'InBody. Il a son propre écran, mais partage la
     barre des dates, le récapitulatif et le document au dossier.
   */

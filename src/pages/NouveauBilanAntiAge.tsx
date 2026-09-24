@@ -118,7 +118,7 @@ export default function NouveauBilanAntiAge() {
       <div className="carte px-5 py-12 text-center">
         <h1 className="text-lg font-semibold text-ardoise-900">Réservé au Grau-du-Roi</h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-ardoise-500">
-          Le Bio-Portrait Anti-Âge et l’Advance Lift ne se proposent qu’au Grau-du-Roi.
+          Le Profil Signature anti-âge et l’Advance Lift ne se proposent qu’au Grau-du-Roi.
         </p>
       </div>
     );
@@ -181,7 +181,7 @@ export default function NouveauBilanAntiAge() {
 
   /**
    * L'enregistrement, dans ses trois issues : elle démarre une cure, elle
-   * repart avec sa première séance et son Bio-Portrait par mail, ou — sur
+   * repart avec sa première séance et son Profil Signature par mail, ou — sur
    * une cliente déjà suivie — on refait le point sans rien facturer.
    */
   async function enregistrerTout(proposition: PrescriptionValidee | null, issue: 'valider' | 'seul' | 'suivi') {
@@ -274,7 +274,7 @@ export default function NouveauBilanAntiAge() {
         dateBilan: new Date().toISOString().slice(0, 10),
       });
 
-      /* Le Bio-Portrait seul, au dossier, quoi qu'elle décide. Son échec n'arrête rien. */
+      /* Le Profil Signature seul, au dossier, quoi qu'elle décide. Son échec n'arrête rien. */
       try {
         await rangerDocumentBioPortrait(bilan.id, donnees);
       } catch (err) {
@@ -292,7 +292,7 @@ export default function NouveauBilanAntiAge() {
       } else {
         toast.success(
           issue === 'suivi'
-            ? 'Nouveau Bio-Portrait enregistré sur sa fiche'
+            ? 'Nouveau Profil Signature enregistré sur sa fiche'
             : issue === 'valider'
               ? 'Cure validée et enregistrée'
               : `Bilan enregistré (${formaterEuros(grille.advance_lift)} à facturer)`,
@@ -323,7 +323,7 @@ export default function NouveauBilanAntiAge() {
           <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-rose-50">
             <Sparkles className="h-6 w-6 text-rose-600" />
           </span>
-          <h1 className="mt-5 text-2xl font-bold tracking-tight text-ardoise-900">Bio-Portrait Anti-Âge</h1>
+          <h1 className="mt-5 text-2xl font-bold tracking-tight text-ardoise-900">Profil Signature anti-âge</h1>
           <p className="mt-1 text-sm text-ardoise-500">Le Grau-du-Roi · Advance Lift</p>
 
           {clienteExistante && (
@@ -364,7 +364,7 @@ export default function NouveauBilanAntiAge() {
           <div className="bg-gradient-to-br from-rose-50 via-white to-marine-50 px-7 py-10 text-center sm:px-12">
             <p className="text-2xs font-semibold uppercase tracking-widest text-rose-600">Avant de commencer</p>
             <h1 className="mt-3 text-2xl font-bold tracking-tight text-ardoise-900 sm:text-3xl">
-              Votre Bio-Portrait <span className="text-rose-600">Anti-Âge</span>
+              Votre Profil <span className="text-rose-600">Signature</span>
             </h1>
             <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-ardoise-700">
               Quatorze questions sur votre peau : ce dont elle a besoin, et comment elle réagit. Vos
@@ -448,7 +448,7 @@ export default function NouveauBilanAntiAge() {
       <div className="carte p-6 sm:p-8">
         <QuestionBioPortrait
           etape={etapeAffichee}
-          theme={['Bio-Portrait Anti-Âge', '#FEF0F6', '#C42872']}
+          theme={['Profil Signature anti-âge', '#FEF0F6', '#C42872']}
           choisis={choixAntiAge(reponses, q.code)}
           onChoisir={repondre}
         />

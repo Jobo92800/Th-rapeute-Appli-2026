@@ -139,7 +139,7 @@ export default function NouveauBilanSignature() {
         <h1 className="text-lg font-semibold text-ardoise-900">Au Crès et à Sérignan</h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-ardoise-500">
           Le Bilan Profil Signature et la radiofréquence ne se proposent que dans ces deux centres.
-          Le Grau-du-Roi a son Bio-Portrait Anti-Âge.
+          Le Grau-du-Roi a son Profil Signature avec l’Advance Lift.
         </p>
       </div>
     );

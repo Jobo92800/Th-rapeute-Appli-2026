@@ -17,17 +17,29 @@ import { messagesEnAttente } from '../services/messages';
 import { TOUS_LES_CENTRES, useSession } from '../lib/session';
 import MonMotDePasse from './MonMotDePasse';
 import { CENTRE_ANTI_AGE } from '../domain/antiAge';
+import { CENTRES_SIGNATURE } from '../domain/profilSignature';
 
 const LIENS = [
   { to: '/', libelle: 'Accueil', icone: LayoutDashboard, exact: true, direction: false },
   { to: '/clientes', libelle: 'Clientes', icone: Users, exact: false, direction: false },
   { to: '/bilan', libelle: 'Nouveau bilan', icone: Sparkles, exact: false, direction: false },
   /*
-    Le Bio-Portrait Anti-Âge : au Grau-du-Roi seulement, le seul centre qui
-    tient l'Advance Lift. Le lien n'apparaît que là — et sur « Tous les
-    centres », où la page demandera de choisir.
+    LE PROFIL SIGNATURE, sous deux formes qui ne se croisent jamais : avec
+    l'Advance Lift au Grau-du-Roi, avec la radiofréquence au Crès et à
+    Sérignan. Chaque lien n'apparaît que dans ses centres — et sur « Tous
+    les centres », où la page demandera d'en choisir un. Les deux portent
+    le même nom devant la thérapeute : c'est le même diagnostic de la
+    peau, seul le soin diffère.
   */
-  { to: '/bilan-anti-age', libelle: 'Bilan anti-âge', icone: Sparkles, exact: false, direction: false, centre: CENTRE_ANTI_AGE },
+  { to: '/bilan-anti-age', libelle: 'Profil Signature', icone: Sparkles, exact: false, direction: false, centre: CENTRE_ANTI_AGE },
+  ...CENTRES_SIGNATURE.map((id) => ({
+    to: '/bilan-signature',
+    libelle: 'Profil Signature',
+    icone: Sparkles,
+    exact: false,
+    direction: false,
+    centre: id,
+  })),
   { to: '/stock', libelle: 'Stock', icone: Package, exact: false, direction: true },
   { to: '/messages', libelle: 'Messages', icone: MessageSquare, exact: false, direction: false },
   // Les chiffres ne concernent pas les thérapeutes : le lien ne leur est
