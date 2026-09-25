@@ -690,7 +690,7 @@ Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
 `AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`,
 `FIREBASE_SERVICE_ACCOUNT`.
 
-Migrations passées jusqu’à **058** incluse (la 054, la 057, la 059, la **060** à la **075** sont écrites, à passer ; la 060 et la 062 demandent aussi de redéployer `synchro-airtable`), fonction Edge `gerer-les-comptes` déployée et vérifiée de bout en bout, `synchro-airtable` redéployée,
+Migrations passées **jusqu'à la 075 incluse**, vérifié le 25 septembre 2026 depuis l'extérieur, objet par objet (voir `supabase/diagnostics/migrations_passees.sql`) ; la seule inconnue reste la **041**, qui ne se voit pas. Fonction Edge `gerer-les-comptes` déployée et vérifiée de bout en bout, `synchro-airtable` redéployée,
 et les deux champs du récapitulatif créés dans Airtable. Vérifié le
 5 septembre 2026 depuis l'extérieur : `renvoyer_au_crm`,
 `est_destinataire`, `a_ecrit_le_message`, `envoyer_annonce` et
@@ -722,7 +722,11 @@ et l'application connectée fonctionne normalement.
 Les diagnostics, dans `supabase/diagnostics/`, ne modifient rien et se
 relancent à volonté : `controle_coherence.sql` (quinze vérifications),
 `qui_est_en_retard.sql` (les impayés, nom par nom),
-`qui_peut_se_connecter.sql`, `fiches_de_test.sql` et
+`qui_peut_se_connecter.sql`, `fiches_de_test.sql`,
+**`migrations_passees.sql`** — celui-là répond à « je crois les avoir
+faites » : les migrations ne passant pas par GitHub, il cherche pour chacune
+l'objet qu'elle a laissé (une colonne, une commande, une contrainte, un
+tarif, un mot dans un barème) et rend une ligne par migration — et
 `alma_encaisse.sql` — celui-là doit rendre `encore_dues = 0`, sans quoi une
 cure Alma réclame encore un argent déjà reçu.
 
