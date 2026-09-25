@@ -274,20 +274,39 @@ export function controlerPrescription() {
 
     Il a été élargi (051) parce qu'une cliente sujette à la diarrhée ne se
     reconnaissait dans aucune réponse et cochait « Réguliers » — ce qui
-    effaçait un terrain digestif. Ce contrôle tient les deux bouts : le texte
-    affiché, et le fait que les points n'ont pas bougé au passage.
+    effaçait un terrain digestif. La 074 a ajouté « Irrégulier » pour la
+    même raison. Ce contrôle tient les deux bouts : les réponses affichées,
+    et le fait que les points montent sans jamais redescendre.
+
+    LES RÉPONSES SE CHERCHENT PAR LEUR LIBELLÉ, jamais par leur rang : une
+    réponse insérée au milieu décalerait toutes les suivantes, et le
+    contrôle se mettrait à parler d'autre chose sans rien dire.
   */
   section('La question du transit couvre les deux sens du désordre');
 
-  const transit = bareme.STEPS[16];
-  egal('c’est bien la question du transit', transit.t, 'Votre digestion / transit :');
+  const transit = bareme.STEPS.find((e) => e.t === 'Votre digestion / transit :');
+  verifie('la question du transit est bien au questionnaire', Boolean(transit));
+
+  const reponsesTransit = (transit?.o ?? []).map((o) => String(o[0]));
   egal(
-    'sa troisième réponse nomme les trois troubles',
-    transit.o?.[2][0],
-    'Constipation / Diarrhée / Ventre gonflé',
+    'elle va du plus léger au plus marqué',
+    reponsesTransit.join(' · '),
+    'Réguliers · Irrégulier · Ballonnements fréquents · Constipation / Diarrhée / Ventre gonflé',
   );
-  egal('elle pèse toujours trois points de terrain digestif', transit.o?.[2][1]?.T5, 3);
-  egal('et deux de pressodynamie', transit.o?.[2][2]?.PRESSO, 2);
+
+  const pointsTransit = (libelle: string) =>
+    (transit?.o ?? []).find((o) => o[0] === libelle);
+
+  egal(
+    'le terrain digestif monte d’un cran à chaque réponse',
+    reponsesTransit.map((l) => pointsTransit(l)?.[1]?.T5 ?? 0).join('·'),
+    '0·1·2·3',
+  );
+  egal(
+    'la pressodynamie suit, sans redescendre',
+    reponsesTransit.map((l) => pointsTransit(l)?.[2]?.PRESSO ?? 0).join('·'),
+    '0·1·1·2',
+  );
 
   section('Les paliers, un par un');
 

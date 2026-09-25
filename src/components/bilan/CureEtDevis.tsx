@@ -1,6 +1,13 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Ban, Eye, Loader2, Mail, Minus, Pencil, Plus, Stethoscope, X } from 'lucide-react';
-import type { Bareme, Prestation } from '../../domain/bioportrait';
+import {
+  relireLesReponses,
+  type Bareme,
+  type Prestation,
+  type Reponses,
+} from '../../domain/bioportrait';
+import { CorpsDesReponses } from '../fiche/ReponsesDuBilan';
+import { BoutonMesReponses, CarteMesReponses } from './MesReponses';
 import { detailInclus, type DetailInclus } from '../../domain/inclus';
 import {
   complementsChoisis,
@@ -78,6 +85,14 @@ interface Props {
   depouillement: Depouillement;
   grille: GrilleTarifaire;
   prenom: string;
+  /**
+   * Ce qu'elle vient de répondre, pour la carte « Mes réponses ». Elle est
+   * sur l'écran de restitution ET ici : la question « pourquoi ce profil ? »
+   * se repose au moment de parler des séances, et revenir en arrière pour la
+   * vérifier remettrait la cure à zéro.
+   */
+  reponses: Reponses;
+  curseur: number | null;
   /** Le Dôme se propose à l'ajout — au Grau-du-Roi seulement. */
   avecDome?: boolean;
   /** Le rayon du centre, pour proposer les boîtes de compléments avec la cure. */
@@ -112,6 +127,8 @@ export default function CureEtDevis({
   depouillement,
   grille,
   prenom,
+  reponses,
+  curseur,
   avecDome = false,
   catalogue = [],
   complementRecommande = null,
@@ -178,6 +195,13 @@ export default function CureEtDevis({
     thérapeute les fait apparaître quand elle en a besoin.
   */
   const [edition, setEdition] = useState(false);
+  const [reponsesOuvertes, setReponsesOuvertes] = useState(false);
+
+  /** Les couleurs des thèmes du questionnaire, pour la carte des réponses. */
+  const couleursDuTheme = (cle: string) => {
+    const c = bareme.CAT?.[cle];
+    return c ? { fond: c[1], encre: c[2] } : { fond: '#E6EFEF', encre: '#41595A' };
+  };
 
   const base = useMemo(() => prescrire(bareme, depouillement), [bareme, depouillement]);
 
@@ -334,12 +358,30 @@ export default function CureEtDevis({
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <header>
-        <div className="surtitre">Votre programme sur mesure</div>
-        <h1 className="mt-1 text-3xl font-light tracking-tight text-ardoise-900">
-          La cure {prenom ? <b className="font-semibold">de {prenom}</b> : null}
-        </h1>
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <div className="surtitre">Votre programme sur mesure</div>
+          <h1 className="mt-1 text-3xl font-light tracking-tight text-ardoise-900">
+            La cure {prenom ? <b className="font-semibold">de {prenom}</b> : null}
+          </h1>
+        </div>
+        <BoutonMesReponses
+          ouvert={reponsesOuvertes}
+          onBascule={() => setReponsesOuvertes((o) => !o)}
+        />
       </header>
+
+      {reponsesOuvertes && (
+        <CarteMesReponses
+          sousTitre="Ce qui a produit ce BioPortrait, et cette cure"
+          onFermer={() => setReponsesOuvertes(false)}
+        >
+          <CorpsDesReponses
+            lues={relireLesReponses(bareme, reponses, curseur)}
+            couleurs={couleursDuTheme}
+          />
+        </CarteMesReponses>
+      )}
 
       {/* Les soins ------------------------------------------------------ */}
       <section className="space-y-2.5">

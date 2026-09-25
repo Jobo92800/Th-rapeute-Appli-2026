@@ -17,6 +17,12 @@ import {
   montantComplements,
 } from '../../domain/complements';
 import type { EtatStock } from '../../types/db';
+import {
+  relireLesReponsesAntiAge,
+  type BaremeAntiAge,
+  type ReponsesAntiAge,
+} from '../../domain/antiAge';
+import { BoutonMesReponses, CarteMesReponses, ListeDesReponses } from './MesReponses';
 
 /*
   Le devis d'une cure d'Advance Lift.
@@ -37,6 +43,8 @@ import type { EtatStock } from '../../types/db';
 const SEANCES_PAR_DEFAUT = 6;
 
 export default function DevisAntiAge({
+  bareme,
+  reponses,
   grille,
   prenom,
   catalogue = [],
@@ -45,6 +53,9 @@ export default function DevisAntiAge({
   onBilanSeul,
   onValider,
 }: {
+  bareme: BaremeAntiAge;
+  /** Ce qu'elle vient de répondre : la carte « Mes réponses » se rouvre ici aussi. */
+  reponses: ReponsesAntiAge;
   grille: GrilleTarifaire;
   prenom: string;
   /** Le rayon du centre, pour proposer les boîtes de compléments avec la cure. */
@@ -58,6 +69,7 @@ export default function DevisAntiAge({
   const [seances, setSeances] = useState(SEANCES_PAR_DEFAUT);
   const [methode, setMethode] = useState<'centre' | 'alma'>('centre');
   const [n, setN] = useState(4);
+  const [reponsesOuvertes, setReponsesOuvertes] = useState(false);
   const [acompte, setAcompte] = useState(false);
   // Les boîtes de compléments choisies avec la cure : dans le montant, sur la première échéance.
   const [boites, setBoites] = useState<Record<string, number>>({});
@@ -106,16 +118,31 @@ export default function DevisAntiAge({
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
-      <div>
-        <p className="surtitre">Votre cure</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-ardoise-900">
-          Ce que nous proposons à {prenom}
-        </h1>
-        <p className="mt-1 text-sm text-ardoise-500">
-          Le nombre de séances d’Advance Lift se décide avec elle : le Profil Signature éclaire, il ne
-          prescrit pas.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="surtitre">Votre cure</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-ardoise-900">
+            Ce que nous proposons à {prenom}
+          </h1>
+          <p className="mt-1 text-sm text-ardoise-500">
+            Le nombre de séances d’Advance Lift se décide avec elle : le Profil Signature éclaire,
+            il ne prescrit pas.
+          </p>
+        </div>
+        <BoutonMesReponses
+          ouvert={reponsesOuvertes}
+          onBascule={() => setReponsesOuvertes((o) => !o)}
+        />
       </div>
+
+      {reponsesOuvertes && (
+        <CarteMesReponses
+          sousTitre="Ce qui a produit ce Profil Signature"
+          onFermer={() => setReponsesOuvertes(false)}
+        >
+          <ListeDesReponses lignes={relireLesReponsesAntiAge(bareme, reponses)} teinte="marine" />
+        </CarteMesReponses>
+      )}
 
       {/* Le nombre de séances, à la main de la thérapeute. */}
       <section className="carte flex flex-wrap items-center justify-between gap-4 p-5">

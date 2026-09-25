@@ -560,6 +560,7 @@ export default function NouveauBilanSignature() {
       <DevisSignature
         bareme={bareme}
         carte={carte}
+        reponses={reponses}
         grille={grille}
         prenom={prenomAffiche}
         catalogue={rayon}

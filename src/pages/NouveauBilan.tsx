@@ -680,6 +680,8 @@ export default function NouveauBilan() {
         depouillement={depouiller(bareme, reponses)}
         grille={grille}
         prenom={prenomAffiche}
+        reponses={reponses}
+        curseur={curseur}
         avecDome={domeDisponible(centre.id)}
         catalogue={rayon}
         complementRecommande={complementRecommande(bareme, bioportrait)}

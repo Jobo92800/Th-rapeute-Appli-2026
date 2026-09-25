@@ -15,10 +15,13 @@ import { complementsChoisis, montantComplements } from '../../domain/complements
 import type { EtatStock } from '../../types/db';
 import {
   preconiserLaCure,
+  relireLesReponsesSignature,
   type BaremeSignature,
   type CarteDesZones,
   type CureSignature,
+  type ReponsesSignature,
 } from '../../domain/profilSignature';
+import { BoutonMesReponses, CarteMesReponses, ListeDesReponses } from './MesReponses';
 
 /*
   La cure du Profil Signature.
@@ -44,6 +47,7 @@ import {
 export default function DevisSignature({
   bareme,
   carte,
+  reponses,
   grille,
   prenom,
   catalogue = [],
@@ -56,6 +60,8 @@ export default function DevisSignature({
 }: {
   bareme: BaremeSignature;
   carte: CarteDesZones;
+  /** Ce qu'elle vient de répondre : la carte « Mes réponses » se rouvre ici aussi. */
+  reponses: ReponsesSignature;
   grille: GrilleTarifaire;
   prenom: string;
   catalogue?: EtatStock[];
@@ -74,6 +80,7 @@ export default function DevisSignature({
   const [methode, setMethode] = useState<'centre' | 'alma'>('centre');
   const [n, setN] = useState(1);
   const [boites, setBoites] = useState<Record<string, number>>({});
+  const [reponsesOuvertes, setReponsesOuvertes] = useState(false);
 
   const cure: CureSignature =
     bareme.CURES.find((c) => c.code === choisie) ?? preconisation.cure;
@@ -128,12 +135,27 @@ export default function DevisSignature({
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <header>
-        <div className="surtitre">Votre cure</div>
-        <h1 className="mt-1 text-3xl font-light tracking-tight text-ardoise-900">
-          Ce que nous proposons {prenom ? <b className="font-semibold">à {prenom}</b> : null}
-        </h1>
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <div className="surtitre">Votre cure</div>
+          <h1 className="mt-1 text-3xl font-light tracking-tight text-ardoise-900">
+            Ce que nous proposons {prenom ? <b className="font-semibold">à {prenom}</b> : null}
+          </h1>
+        </div>
+        <BoutonMesReponses
+          ouvert={reponsesOuvertes}
+          onBascule={() => setReponsesOuvertes((o) => !o)}
+        />
       </header>
+
+      {reponsesOuvertes && (
+        <CarteMesReponses
+          sousTitre="Ce qui a produit ce Profil Signature, et cette cure"
+          onFermer={() => setReponsesOuvertes(false)}
+        >
+          <ListeDesReponses lignes={relireLesReponsesSignature(bareme, reponses)} />
+        </CarteMesReponses>
+      )}
 
       {/* La cure retenue ---------------------------------------------- */}
       <section className="carte overflow-hidden">

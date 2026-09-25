@@ -411,6 +411,8 @@ export default function NouveauBilanAntiAge() {
   if (vue === 'devis' && grille) {
     return (
       <DevisAntiAge
+        bareme={bareme}
+        reponses={reponses}
         grille={grille}
         prenom={prenomAffiche}
         catalogue={rayon}
