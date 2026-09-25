@@ -9,6 +9,7 @@ import { fr } from 'date-fns/locale';
 import { bilansDeLaCliente, lireBaremeActif } from '../../services/metier';
 import { SEUIL_PRESENCE, type Axe, AXES_PROFIL, AXES_TERRAIN } from '../../domain/bioportrait';
 import { CENTRE_ANTI_AGE } from '../../domain/antiAge';
+import { signatureDisponible } from '../../domain/profilSignature';
 import { useSession } from '../../lib/session';
 import ReponsesDuBilan from './ReponsesDuBilan';
 import BioPortraitAntiAgeSurFiche from './BioPortraitAntiAgeSurFiche';
@@ -25,6 +26,20 @@ export default function OngletBioPortrait({
   const qc = useQueryClient();
   const { centre, tousCentres } = useSession();
   const [confirme, setConfirme] = useState(false);
+
+  /*
+    Les bilans anti-âge que ce centre tient. Deux centres, deux soins, deux
+    questionnaires — et le même nom devant la cliente. La direction, qui
+    voit les cinq centres, les voit tous les deux : le soin les départage.
+  */
+  const profilsSignature = [
+    ...(centre?.id === CENTRE_ANTI_AGE || tousCentres
+      ? [{ to: '/bilan-anti-age', soin: 'Advance Lift' }]
+      : []),
+    ...(signatureDisponible(centre?.id ?? '') || tousCentres
+      ? [{ to: '/bilan-signature', soin: 'radiofréquence' }]
+      : []),
+  ];
   /*
     Quel bilan on regarde. Null veut dire « le plus récent », et c'est la
     valeur de départ : on ouvre la fiche pour voir où en est la cliente
@@ -183,13 +198,29 @@ export default function OngletBioPortrait({
             <Sparkles className="h-4 w-4" />
             Refaire le point
           </Link>
-          {/* Au Grau-du-Roi, une cliente suivie en perte de poids peut aussi passer un bilan anti-âge. */}
-          {(centre?.id === CENTRE_ANTI_AGE || tousCentres) && (
-            <Link to={`/bilan-anti-age?cliente=${clienteId}`} className="bouton-discret" title="Le Bio-Portrait Anti-Âge, sur cette même fiche">
+          {/*
+            Une cliente suivie en perte de poids peut aussi passer son Profil
+            Signature, là où le centre tient l'anti-âge : l'Advance Lift au
+            Grau-du-Roi, la radiofréquence au Crès et à Sérignan. Le lien
+            existait dans un seul sens et pour un seul centre — depuis le
+            Profil Signature on revenait à la perte de poids, mais pas
+            l'inverse (Jonathan, 25 septembre 2026).
+          */}
+          {profilsSignature.map((b) => (
+            <Link
+              key={b.to}
+              to={`${b.to}?cliente=${clienteId}`}
+              className="bouton-discret"
+              title={`Le Profil Signature anti-âge (${b.soin}), sur cette même fiche`}
+            >
               <Sparkles className="h-4 w-4 text-rose-600" />
-              Bilan anti-âge
+              Profil Signature
+              {/* Deux bilans anti-âge à l'écran, il faut dire lequel. */}
+              {profilsSignature.length > 1 && (
+                <span className="opacity-70"> · {b.soin}</span>
+              )}
             </Link>
-          )}
+          ))}
         </div>
       </div>
 
