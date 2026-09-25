@@ -117,8 +117,11 @@ export interface QuestionSignature {
   intensites?: Cotation[];
   /** Les zones qu'une réponse « allume » sans les coter — les besoins. */
   zonesVisees?: string[][];
-  /** Ne se pose que si telle option a été choisie à telle question. */
-  si?: { code: string; option: number };
+  /**
+   * Ne se pose que si telle réponse a été donnée à telle question.
+   * `options` en accepte plusieurs : une seule suffit à poser la question.
+   */
+  si?: { code: string; option?: number; options?: number[] };
 }
 
 export interface GroupeSignature {
@@ -183,7 +186,9 @@ export function choixSignature(reponses: ReponsesSignature, code: string): numbe
 
 export function questionPosee(q: QuestionSignature, reponses: ReponsesSignature): boolean {
   if (!q.si) return true;
-  return choixSignature(reponses, q.si.code).includes(q.si.option);
+  const donnees = choixSignature(reponses, q.si.code);
+  const attendues = q.si.options ?? (q.si.option != null ? [q.si.option] : []);
+  return attendues.some((o) => donnees.includes(o));
 }
 
 export function questionsAPoser(bareme: BaremeSignature, reponses: ReponsesSignature): QuestionSignature[] {
@@ -469,8 +474,16 @@ export const OPTION_MOINS_DUN_MOIS = 0;
  * Peeling, laser ou injection de moins d'un mois : le bilan se fait, la
  * cure se vend, mais aucune séance aujourd'hui — elle démarre au plus tôt
  * un mois après ce soin. Ce n'est donc pas bloquant, c'est un décalage.
+ *
+ * LA QUESTION DE LA DATE DOIT ENCORE ÊTRE POSÉE. Elle ne l'est que si la
+ * cliente a coché un peeling, un laser ou une injection — c'est ce que la
+ * question demande, et un soin visage classique ou un « Autre » ne décale
+ * rien. Une réponse restée en mémoire après qu'on a décoché le soin ne
+ * doit pas décaler la cure dans son dos : on relit la condition.
  */
-export function soinRecent(reponses: ReponsesSignature): boolean {
+export function soinRecent(bareme: BaremeSignature, reponses: ReponsesSignature): boolean {
+  const question = bareme.QUESTIONS.find((q) => q.code === CODE_SOIN_RECENT);
+  if (!question || !questionPosee(question, reponses)) return false;
   return choixSignature(reponses, CODE_SOIN_RECENT).includes(OPTION_MOINS_DUN_MOIS);
 }
 

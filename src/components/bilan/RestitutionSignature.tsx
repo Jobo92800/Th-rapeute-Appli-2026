@@ -59,7 +59,7 @@ export default function RestitutionSignature({
   const [reponsesOuvertes, setReponsesOuvertes] = useState(false);
   const p = bareme.PROFILS[resultat.profil];
   const interdits = contreIndications(bareme, reponses);
-  const recent = soinRecent(reponses);
+  const recent = soinRecent(bareme, reponses);
 
   /* Les zones à travailler, des plus marquées aux plus discrètes. */
   const prioritaires = bareme.ZONES.filter((z) => (carte[z.code] ?? 0) >= 2).sort(

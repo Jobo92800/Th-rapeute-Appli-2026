@@ -20,6 +20,7 @@ import {
   preconiserLaCure,
   securiteBloquante,
   signatureDisponible,
+  questionsAPoser,
   soinRecent,
   type BaremeSignature,
   type CarteDesZones,
@@ -112,10 +113,18 @@ const BAREME: BaremeSignature = {
     },
     { code: 'q10', groupe: 'hist', t: 'Avez-vous déjà réalisé des soins esthétiques ?', o: [['Oui'], ['Non']] },
     {
+      code: 'q10b',
+      groupe: 'hist',
+      t: 'Lesquels ?',
+      multi: true,
+      si: { code: 'q10', option: 0 },
+      o: [['Soins visage classiques'], ['Technologies esthétiques'], ['Peelings'], ['Laser'], ['Injections'], ['Autre']],
+    },
+    {
       code: 'q10c',
       groupe: 'hist',
       t: 'Date du dernier peeling, laser ou injection :',
-      si: { code: 'q10', option: 0 },
+      si: { code: 'q10b', options: [2, 3, 4] },
       o: [["Moins d'un mois"], ['1 à 6 mois'], ['Plus de 6 mois'], ['Jamais']],
     },
   ],
@@ -300,12 +309,37 @@ export function controlerProfilSignature() {
     ['Stimulateur cardiaque', 'Grossesse'],
   );
 
-  verifie('un peeling de moins d’un mois décale la cure', soinRecent({ q10: 0, q10c: 0 }));
-  verifie('un peeling d’il y a six mois ne décale rien', !soinRecent({ q10: 0, q10c: 1 }));
-  verifie('sans historique, rien à décaler', !soinRecent({ q10: 1 }));
+  /*
+    Le délai d'un mois ne vient que d'un peeling, d'un laser ou d'une
+    injection. Il se déclenchait sur un simple « oui » à l'historique :
+    une cliente qui n'avait coché que « Autre » voyait sa cure reculée
+    d'un mois (Jonathan, 25 septembre 2026, migration 075).
+  */
+  const peeling = { q10: 0, q10b: [2] };
+  const autre = { q10: 0, q10b: [5] };
+
+  verifie('un peeling de moins d’un mois décale la cure', soinRecent(BAREME, { ...peeling, q10c: 0 }));
+  verifie('un peeling d’il y a six mois ne décale rien', !soinRecent(BAREME, { ...peeling, q10c: 1 }));
+  verifie('sans historique, rien à décaler', !soinRecent(BAREME, { q10: 1 }));
   verifie(
     'la date du dernier soin ne se pose pas si elle n’a jamais rien fait',
     !relire({ q10: 1 }).some((q) => q.code === 'q10c'),
+  );
+  verifie(
+    '« Autre » ne fait pas poser la question de la date',
+    !relire(autre).some((q) => q.code === 'q10c'),
+  );
+  verifie(
+    'et une réponse restée en mémoire ne décale rien',
+    !soinRecent(BAREME, { ...autre, q10c: 0 }),
+  );
+  verifie(
+    'un soin visage classique non plus',
+    !soinRecent(BAREME, { q10: 0, q10b: [0], q10c: 0 }),
+  );
+  verifie(
+    'une injection, si',
+    soinRecent(BAREME, { q10: 0, q10b: [4, 5], q10c: 0 }),
   );
 
   section('Le questionnaire réellement livré (migration 071)');
@@ -375,6 +409,12 @@ export function controlerProfilSignature() {
 }
 
 /** Les questions réellement posées, dans l'ordre. */
+/*
+  Les questions réellement posées. Elles se demandent au domaine, jamais à
+  une copie de la règle : cette fonction refaisait le test de la condition
+  à la main, et elle a continué de répondre « oui » après que la règle a
+  changé (075).
+*/
 function relire(reponses: Record<string, number | number[]>) {
-  return BAREME.QUESTIONS.filter((q) => !q.si || (reponses[q.si.code] === q.si.option));
+  return questionsAPoser(BAREME, reponses);
 }

@@ -167,7 +167,7 @@ export default function NouveauBilanSignature() {
   const derniere = indexEtape >= questions.length - 1;
   const prenomAffiche = contact.prenom.trim() || 'vous';
   const bloque = securiteBloquante(bareme, reponses);
-  const differee = soinRecent(reponses);
+  const differee = soinRecent(bareme, reponses);
   const groupe = bareme.GROUPES.find((g) => g.id === q?.groupe);
 
   function suivant() {
