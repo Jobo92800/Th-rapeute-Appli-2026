@@ -14,6 +14,7 @@ import ChoixComplements from '../cure/ChoixComplements';
 import { complementsChoisis, montantComplements } from '../../domain/complements';
 import type { EtatStock } from '../../types/db';
 import {
+  GROUPE_SECURITE,
   preconiserLaCure,
   relireLesReponsesSignature,
   type BaremeSignature,
@@ -153,7 +154,12 @@ export default function DevisSignature({
           sousTitre="Ce qui a produit ce Profil Signature, et cette cure"
           onFermer={() => setReponsesOuvertes(false)}
         >
-          <ListeDesReponses lignes={relireLesReponsesSignature(bareme, reponses)} />
+          <ListeDesReponses
+            lignes={relireLesReponsesSignature(bareme, reponses).filter(
+              (r) => r.groupe !== GROUPE_SECURITE,
+            )}
+            groupes={bareme.GROUPES}
+          />
         </CarteMesReponses>
       )}
 

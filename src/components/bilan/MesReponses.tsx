@@ -60,45 +60,83 @@ export function CarteMesReponses({
   );
 }
 
+export interface LigneDeReponse {
+  code: string;
+  /** Le groupe du questionnaire, quand il y en a un. */
+  groupe?: string;
+  question: string;
+  reponses: string[];
+}
+
 /**
  * La liste des questions et de ce qui a été répondu, pour les deux bilans
  * anti-âge — dont les questionnaires n'ont pas de thèmes colorés. Le
- * BioPortrait de la perte de poids a sa propre mise en page, rangée par
- * thème : `CorpsDesReponses`.
+ * BioPortrait de la perte de poids a la sienne, rangée par thème à sa
+ * couleur : `CorpsDesReponses`.
+ *
+ * ELLE SE RANGE PAR GROUPE, comme le questionnaire l'a posée : « Ce que
+ * vous ressentez au quotidien », « Ce que vous voyez dans le miroir »…
+ * Sans eux, c'était un mur de trente lignes où l'œil ne se posait nulle
+ * part, et la thérapeute devait relire tout le bloc pour retrouver une
+ * réponse (Jonathan, 25 septembre 2026). Un questionnaire sans groupes —
+ * l'Advance Lift — garde une seule liste, sans titre inventé.
+ *
+ * La mise en page est celle de la DA et de la carte du BioPortrait : des
+ * blocs blancs à filet sur un fond lavé, le titre du groupe en sur-titre
+ * aqua, la question en petit et la réponse en pastille juste en dessous.
+ * Aligner la question à gauche et la réponse à droite faisait faire à
+ * l'œil un aller-retour à chaque ligne.
  */
 export function ListeDesReponses({
   lignes,
-  teinte = 'violet',
+  groupes = [],
 }: {
-  lignes: Array<{ code: string; question: string; reponses: string[] }>;
-  teinte?: 'violet' | 'marine';
+  lignes: LigneDeReponse[];
+  groupes?: Array<{ id: string; titre: string }>;
 }) {
-  const pastille =
-    teinte === 'marine'
-      ? 'bg-marine-50 text-marine-700'
-      : 'bg-violet-50 text-violet-600';
+  /*
+    Les groupes dans l'ordre du questionnaire, puis ce qui n'appartient à
+    aucun — une question ajoutée hors groupe ne doit pas disparaître.
+  */
+  const connus = groupes
+    .map((g) => ({ titre: g.titre, lignes: lignes.filter((l) => l.groupe === g.id) }))
+    .filter((b) => b.lignes.length > 0);
+  const orphelines = lignes.filter((l) => !groupes.some((g) => g.id === l.groupe));
+  const blocs = orphelines.length > 0 ? [...connus, { titre: '', lignes: orphelines }] : connus;
 
   return (
-    <dl className="p-4 sm:columns-2 sm:gap-4">
-      {lignes.map((l) => (
-        <div key={l.code} className="mb-3 break-inside-avoid">
-          <dt className="text-[13px] leading-snug text-ardoise-600">{l.question}</dt>
-          <dd className="mt-1.5 flex flex-wrap gap-1.5">
-            {l.reponses.length === 0 ? (
-              <span className="text-xs text-ardoise-400">Sans réponse</span>
-            ) : (
-              l.reponses.map((r) => (
-                <span
-                  key={r}
-                  className={`inline-block rounded-full px-2.5 py-1 text-[13px] font-semibold leading-tight ${pastille}`}
-                >
-                  {r}
-                </span>
-              ))
-            )}
-          </dd>
-        </div>
-      ))}
-    </dl>
+    <div className="bg-ardoise-50/60 px-4 py-4">
+      <div className="sm:columns-2 sm:gap-4">
+        {blocs.map((bloc, rang) => (
+          <section
+            key={bloc.titre || `bloc-${rang}`}
+            className="mb-4 break-inside-avoid rounded-2xl border border-ardoise-100 bg-white p-4"
+          >
+            {bloc.titre && <h3 className="surtitre">{bloc.titre}</h3>}
+            <dl className={bloc.titre ? 'mt-3 space-y-3' : 'space-y-3'}>
+              {bloc.lignes.map((l) => (
+                <div key={l.code}>
+                  <dt className="text-[12.5px] leading-snug text-ardoise-500">{l.question}</dt>
+                  <dd className="mt-1 flex flex-wrap gap-1.5">
+                    {l.reponses.length === 0 ? (
+                      <span className="text-xs italic text-ardoise-400">Sans réponse</span>
+                    ) : (
+                      l.reponses.map((r) => (
+                        <span
+                          key={r}
+                          className="inline-block rounded-full bg-marine-50 px-2.5 py-1 text-[13px] font-semibold leading-tight text-marine-700"
+                        >
+                          {r}
+                        </span>
+                      ))
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ))}
+      </div>
+    </div>
   );
 }

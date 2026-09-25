@@ -448,6 +448,13 @@ export function preconiserLaCure(bareme: BaremeSignature, carte: CarteDesZones):
 export const CODE_SECURITE = 'secu';
 
 /**
+ * Le groupe de l'écran de sécurité. Il ne se tourne pas vers la cliente et
+ * ne figure pas dans la carte « Ses réponses » : ce sont les cases de la
+ * thérapeute, et elles ont leur propre bandeau.
+ */
+export const GROUPE_SECURITE = 'secu';
+
+/**
  * Une seule case cochée et la séance ne se fait pas.
  *
  * Ce n'est pas un avis médical, c'est une interdiction : pacemaker,
@@ -491,6 +498,8 @@ export function soinRecent(bareme: BaremeSignature, reponses: ReponsesSignature)
 
 export interface ReponseSignatureLue {
   code: string;
+  /** Le groupe du questionnaire d'où vient la question, pour la ranger. */
+  groupe: string;
   question: string;
   reponses: string[];
 }
@@ -502,6 +511,7 @@ export function relireLesReponsesSignature(
 ): ReponseSignatureLue[] {
   return questionsAPoser(bareme, reponses).map((q) => ({
     code: q.code,
+    groupe: q.groupe,
     question: q.t,
     reponses: choixSignature(reponses, q.code)
       .map((i) => q.o[i]?.[0])

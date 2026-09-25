@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useQuery, type useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { ListChecks, Sparkles, X } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { laCliente } from '../../domain/civilite';
 import {
   AXES_SIGNATURE,
   COULEUR_COTATION,
+  GROUPE_SECURITE,
   LIBELLES_COTATION,
   nomDuTerrainSignature,
   relireLesReponsesSignature,
@@ -22,6 +23,7 @@ import { lireBaremeSignature } from '../../services/metier';
 import { texteErreur } from '../../lib/erreurs';
 import type { Bilan, Civilite } from '../../types/db';
 import { LeBioPortraitSeul, Recapitulatif } from './DocumentsDuBilan';
+import { BoutonMesReponses, CarteMesReponses, ListeDesReponses } from '../bilan/MesReponses';
 
 /*
   Le Profil Signature, tel qu'il se relit sur la fiche.
@@ -118,15 +120,11 @@ export default function ProfilSignatureSurFiche({
           <span />
         )}
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setReponsesOuvertes((o) => !o)}
-            aria-pressed={reponsesOuvertes}
-            className="bouton-discret"
-          >
-            <ListChecks className="h-4 w-4" />
-            Ses réponses
-          </button>
+          <BoutonMesReponses
+            ouvert={reponsesOuvertes}
+            onBascule={() => setReponsesOuvertes((o) => !o)}
+            libelle="Ses réponses"
+          />
           <Link to={`/bilan-signature?cliente=${clienteId}`} className="bouton-discret">
             <Sparkles className="h-4 w-4 text-violet-600" />
             Refaire le point
@@ -143,45 +141,15 @@ export default function ProfilSignatureSurFiche({
       </div>
 
       {reponsesOuvertes && (
-        <section className="carte">
-          <div className="flex items-start justify-between gap-3 border-b border-ardoise-100 px-5 py-3.5">
-            <div>
-              <h2 className="text-sm font-semibold text-ardoise-900">Ses réponses au questionnaire</h2>
-              <p className="text-xs text-ardoise-500">
-                Profil Signature du {format(new Date(bilan.date_bilan), 'd MMMM yyyy', { locale: fr })}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setReponsesOuvertes(false)}
-              className="bouton-discret text-xs"
-            >
-              <X className="h-4 w-4" />
-              Fermer
-            </button>
-          </div>
-          <dl className="p-4 sm:columns-2 sm:gap-4">
-            {relues.map((r) => (
-              <div key={r.code} className="mb-3 break-inside-avoid">
-                <dt className="text-[13px] leading-snug text-ardoise-600">{r.question}</dt>
-                <dd className="mt-1.5 flex flex-wrap gap-1.5">
-                  {r.reponses.length === 0 ? (
-                    <span className="text-xs text-ardoise-400">Sans réponse</span>
-                  ) : (
-                    r.reponses.map((rep) => (
-                      <span
-                        key={rep}
-                        className="inline-block rounded-full bg-violet-50 px-2.5 py-1 text-[13px] font-semibold leading-tight text-violet-600"
-                      >
-                        {rep}
-                      </span>
-                    ))
-                  )}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </section>
+        <CarteMesReponses
+          sousTitre={`Profil Signature du ${format(new Date(bilan.date_bilan), 'd MMMM yyyy', { locale: fr })}`}
+          onFermer={() => setReponsesOuvertes(false)}
+        >
+          <ListeDesReponses
+            lignes={relues.filter((r) => r.groupe !== GROUPE_SECURITE)}
+            groupes={bareme.GROUPES}
+          />
+        </CarteMesReponses>
       )}
 
       <section className="carte px-6 py-7 text-center">

@@ -140,7 +140,7 @@ export default function DevisAntiAge({
           sousTitre="Ce qui a produit ce Profil Signature"
           onFermer={() => setReponsesOuvertes(false)}
         >
-          <ListeDesReponses lignes={relireLesReponsesAntiAge(bareme, reponses)} teinte="marine" />
+          <ListeDesReponses lignes={relireLesReponsesAntiAge(bareme, reponses)} />
         </CarteMesReponses>
       )}
 

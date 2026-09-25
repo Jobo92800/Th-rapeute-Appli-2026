@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { AlertTriangle, ArrowRight, ChevronLeft, ListChecks } from 'lucide-react';
+import { AlertTriangle, ArrowRight, ChevronLeft } from 'lucide-react';
+import { BoutonMesReponses, CarteMesReponses, ListeDesReponses } from './MesReponses';
 import {
   AXES_SIGNATURE,
   COULEUR_COTATION,
   LIBELLES_COTATION,
   contreIndications,
+  GROUPE_SECURITE,
   nomDuTerrainSignature,
   soinRecent,
   type BaremeSignature,
@@ -189,36 +191,27 @@ export default function RestitutionSignature({
       </div>
 
       {/* Ses réponses, à rouvrir devant elle --------------------------- */}
-      <section className="carte">
-        <button
-          type="button"
-          onClick={() => setReponsesOuvertes((v) => !v)}
-          className="flex w-full items-center justify-between gap-3 px-5 py-3.5 text-left"
-        >
-          <span className="flex items-center gap-2 text-sm font-semibold text-ardoise-900">
-            <ListChecks className="h-4 w-4 text-marine-700" />
-            Ses réponses
-          </span>
-          <span className="text-xs text-ardoise-500">
-            {reponsesOuvertes ? 'Fermer' : 'Voir ce qui a produit ce profil'}
-          </span>
-        </button>
+      <div className="flex justify-end">
+        <BoutonMesReponses
+          ouvert={reponsesOuvertes}
+          onBascule={() => setReponsesOuvertes((v) => !v)}
+          libelle="Ses réponses"
+        />
+      </div>
 
-        {reponsesOuvertes && (
-          <div className="border-t border-ardoise-100 px-5 py-4 sm:columns-2 sm:gap-6">
-            {relireLesReponsesSignature(bareme, reponses)
-              .filter((r) => r.reponses.length > 0)
-              .map((r) => (
-                <div key={r.code} className="mb-3 break-inside-avoid">
-                  <p className="text-xs text-ardoise-500">{r.question}</p>
-                  <p className="mt-0.5 text-sm font-semibold text-ardoise-900">
-                    {r.reponses.join(' · ')}
-                  </p>
-                </div>
-              ))}
-          </div>
-        )}
-      </section>
+      {reponsesOuvertes && (
+        <CarteMesReponses
+          sousTitre="Ce qui a produit ce Profil Signature"
+          onFermer={() => setReponsesOuvertes(false)}
+        >
+          <ListeDesReponses
+            lignes={relireLesReponsesSignature(bareme, reponses).filter(
+              (r) => r.groupe !== GROUPE_SECURITE,
+            )}
+            groupes={bareme.GROUPES}
+          />
+        </CarteMesReponses>
+      )}
 
       <p className="text-xs text-ardoise-400">{bareme.MENTION}</p>
 
