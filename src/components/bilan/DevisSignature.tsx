@@ -93,7 +93,25 @@ export default function DevisSignature({
     [boites, catalogue, grille.complement],
   );
   const montantBoites = montantComplements(complements);
-  const montantTotal = cure.seances * prixSeance + montantBoites;
+
+  /*
+    LE PREMIER RENDEZ-VOUS ENTRE DANS LE TOTAL (Jonathan, 25 septembre 2026).
+
+    Il ne fait toujours pas partie de la cure et ne s'en déduit pas : la
+    cliente le règle dans tous les cas, cure ou pas. Mais quand elle
+    démarre, ce qu'elle veut savoir c'est ce qu'elle sort en tout — et une
+    note en bas de page qui prévient que 89 € manquent au grand chiffre
+    n'est pas une réponse. Le total annoncé est donc la cure PLUS le
+    premier rendez-vous, et cette somme est exacte.
+
+    Mécaniquement c'est la ligne « déjà réglé » de la perte de poids : elle
+    entre dans le montant, sort réglée du jour, et vient en moins de la
+    première échéance — les chèques restent ronds, et le contrat retombe
+    sur le total.
+  */
+  const premierRendezVous = grille.bilan_signature;
+  const montantCure = cure.seances * prixSeance + montantBoites;
+  const montantTotal = montantCure + premierRendezVous;
 
   /*
     Les chèques ne dépassent pas la durée de la cure : on n'encaisse pas un
@@ -108,16 +126,33 @@ export default function DevisSignature({
       construireEcheancierCure({
         seances: cure.seances,
         prixSeance,
-        options: montantBoites,
+        options: montantBoites + premierRendezVous,
         methode,
         n: nRetenu,
+        bilanDejaRegle: premierRendezVous,
       }),
-    [cure.seances, prixSeance, montantBoites, methode, nRetenu],
+    [cure.seances, prixSeance, montantBoites, premierRendezVous, methode, nRetenu],
   );
 
-  const premier = echeancier.echeances[0];
-  const suite = echeancier.echeances.slice(1);
+  /*
+    La ligne du premier rendez-vous vient en tête de l'échéancier. Elle est
+    réglée, elle ne se réclame pas : les chèques, eux, sont les échéances
+    qui suivent.
+  */
+  const aRegler = echeancier.echeances.filter((e) => e.type === 'echeance');
+  const premier = aRegler[0];
+  const suite = aRegler.slice(1);
   const mensualitesEgales = methode === 'alma' && echeancier.n >= 10;
+
+  /* Ce que la thérapeute saisit sur Alma : le crédit ne finance pas le jour même. */
+  const montantAFinancer = echeancier.montantARegler - echeancier.frais - premierRendezVous;
+
+  /*
+    Le total annoncé : tout ce qu'elle sort, frais Alma compris. C'est la
+    somme des lignes affichées juste en dessous — un grand chiffre auquel
+    il manque quelque chose est un grand chiffre faux.
+  */
+  const totalAffiche = echeancier.montantARegler;
 
   function proposition(): PrescriptionValidee {
     return {
@@ -127,10 +162,14 @@ export default function DevisSignature({
       tenue: false,
       complements,
       montantTotal,
-      bilanDejaRegle: 0,
+      bilanDejaRegle: premierRendezVous,
       modeReglement: echeancier.mode,
       frais: echeancier.frais,
-      echeances: echeancier.echeances,
+      echeances: echeancier.echeances.map((e) =>
+        e.type === 'bilan'
+          ? { ...e, note: 'Premier rendez-vous réglé au centre le jour même' }
+          : e,
+      ),
     };
   }
 
@@ -233,7 +272,7 @@ export default function DevisSignature({
         </div>
 
         <p className="border-t border-ardoise-100 px-5 py-2.5 text-xs text-ardoise-500">
-          {cure.note} Le premier rendez-vous d’aujourd’hui se règle à part : cette cure vient à la
+          {cure.note} Le premier rendez-vous a eu lieu aujourd’hui : ces séances viennent à la
           suite.
         </p>
 
@@ -340,42 +379,47 @@ export default function DevisSignature({
           ))}
         </div>
 
-        {methode === 'centre' && echeancier.n === 1 ? (
-          <>
-            <div className="chiffres mt-5 text-5xl font-bold">
-              {formaterEurosJuste(montantTotal)}
-            </div>
-            <div className="mt-1.5 text-sm text-marine-200">en une fois · sans frais</div>
-          </>
-        ) : (
-          <>
-            <div className="mt-5 text-[11px] font-semibold uppercase tracking-[0.15em] text-marine-300">
-              {methode === 'centre'
-                ? '1re échéance · sans frais'
-                : mensualitesEgales
-                  ? `${echeancier.n} mensualités égales · via Alma`
-                  : `1er versement · ${echeancier.n} fois via Alma`}
-            </div>
-            <div className="chiffres mt-1 text-5xl font-bold">
-              {formaterEurosJuste(premier?.montant ?? 0)}
-              {mensualitesEgales && <span className="text-xl font-semibold"> /mois</span>}
-            </div>
+        {/*
+          LE GRAND CHIFFRE EST LE TOTAL, toujours : le premier rendez-vous
+          compris. C'est la question que la cliente pose — « ça me fait
+          combien ? » — et y répondre par le montant d'une échéance
+          obligeait à une note en bas de page. Le détail de qui tombe
+          quand se lit juste en dessous.
+        */}
+        <div className="chiffres mt-5 text-5xl font-bold">
+          {formaterEurosJuste(totalAffiche)}
+        </div>
+        <div className="mt-1.5 text-sm text-marine-200">
+          {methode === 'centre'
+            ? echeancier.n === 1
+              ? 'en une fois · sans frais'
+              : `en ${echeancier.n} fois · sans frais`
+            : mensualitesEgales
+              ? `${echeancier.n} mensualités égales · via Alma`
+              : `${echeancier.n} versements · via Alma`}
+        </div>
 
-            <div className="mx-auto mt-4 max-w-xs">
+        <div className="mx-auto mt-4 max-w-xs">
+          <LigneDuJour montant={premierRendezVous} />
+          {methode === 'centre' && echeancier.n === 1 ? (
+            <LigneDeReglement libelle="La cure" montant={premier?.montant ?? montantCure} fort />
+          ) : (
+            <>
+              <LigneDeReglement
+                libelle={methode === 'centre' ? '1re échéance' : '1er versement'}
+                montant={premier?.montant ?? 0}
+                fort
+              />
               {suite.map((e) => (
-                <div
+                <LigneDeReglement
                   key={e.rang}
-                  className="flex justify-between border-b border-white/15 py-1 text-[13px] text-marine-100"
-                >
-                  <span>Échéance {e.rang}</span>
-                  <span className="chiffres font-semibold text-white">
-                    {formaterEurosJuste(e.montant)}
-                  </span>
-                </div>
+                  libelle={methode === 'centre' ? `Échéance ${e.rang}` : `Versement ${e.rang}`}
+                  montant={e.montant}
+                />
               ))}
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
 
         <div className="mt-4 flex flex-wrap justify-center gap-2">
           {(methode === 'centre' ? choixCentre : ECHEANCES_ALMA).map((k) => (
@@ -397,7 +441,7 @@ export default function DevisSignature({
         <p className="mx-auto mt-3 max-w-sm text-[11px] text-marine-300">
           {methode === 'centre'
             ? `Par chèques au centre. Chaque chèque couvre un nombre entier de séances, et la cure dure ${cure.mois} mois : on n’encaisse pas après la dernière séance.`
-            : `Frais Alma de ${String(tauxFraisAlma(echeancier.n, montantTotal)).replace('.', ',')} %, à sa charge${
+            : `Frais Alma de ${String(tauxFraisAlma(echeancier.n, montantAFinancer)).replace('.', ',')} %, à sa charge${
                 mensualitesEgales
                   ? ', répartis sur les mensualités.'
                   : ', pris en totalité sur le premier versement.'
@@ -410,22 +454,21 @@ export default function DevisSignature({
               À saisir sur Alma
             </div>
             <div className="chiffres mt-0.5 text-xl font-bold">
-              {formaterEuros(montantTotal, 2)}
+              {formaterEuros(montantAFinancer, 2)}
             </div>
             <div className="text-[11px] text-marine-200">
-              le montant de la cure, sans les frais — Alma les ajoute lui-même
+              la cure seule, sans les frais et sans le premier rendez-vous — il se règle au
+              centre, Alma ne le finance pas
             </div>
           </div>
         )}
 
         <p className="mx-auto mt-4 max-w-sm border-t border-white/15 pt-3 text-[11px] text-marine-200">
           {cure.seances} séances × {formaterEuros(prixSeance)}
-          {montantBoites > 0 ? ` + compléments ${formaterEuros(montantBoites)}` : ''} ={' '}
-          <b className="text-white">{formaterEurosJuste(montantTotal)}</b>.
-          <span className="mt-0.5 block text-marine-300">
-            Le premier rendez-vous ({formaterEuros(grille.bilan_signature)}) se règle à part, il
-            n’est pas compris ici.
-          </span>
+          {montantBoites > 0 ? ` + compléments ${formaterEuros(montantBoites)}` : ''} +{' '}
+          premier rendez-vous {formaterEuros(premierRendezVous)}
+          {echeancier.frais > 0 ? ` + frais Alma ${formaterEuros(echeancier.frais, 2)}` : ''} ={' '}
+          <b className="text-white">{formaterEurosJuste(totalAffiche)}</b>.
         </p>
       </section>
 
@@ -473,6 +516,39 @@ export default function DevisSignature({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* Ce qu'elle règle aujourd'hui : le Profil Signature et le premier soin. */
+function LigneDuJour({ montant }: { montant: number }) {
+  return (
+    <div className="flex justify-between gap-3 border-b border-white/15 py-1 text-[13px] text-marine-100">
+      <span>
+        Premier rendez-vous <span className="text-marine-300">· aujourd’hui</span>
+      </span>
+      <span className="chiffres font-semibold text-white">{formaterEurosJuste(montant)}</span>
+    </div>
+  );
+}
+
+function LigneDeReglement({
+  libelle,
+  montant,
+  fort = false,
+}: {
+  libelle: string;
+  montant: number;
+  fort?: boolean;
+}) {
+  return (
+    <div
+      className={`flex justify-between gap-3 border-b border-white/15 py-1 text-[13px] ${
+        fort ? 'text-white' : 'text-marine-100'
+      }`}
+    >
+      <span>{libelle}</span>
+      <span className="chiffres font-semibold text-white">{formaterEurosJuste(montant)}</span>
     </div>
   );
 }

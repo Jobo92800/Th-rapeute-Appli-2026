@@ -223,6 +223,16 @@ export function construireContrat(args: {
 
   const acompte = echeances.find((e) => e.type === 'acompte') ?? null;
   const bilanRegle = echeances.find((e) => e.type === 'bilan') ?? null;
+
+  /*
+    La même ligne ne dit pas la même chose selon le bilan. Sur la perte de
+    poids, c'est le BioPortrait réglé en ligne à la prise de rendez-vous.
+    Sur le Profil Signature, c'est LE PREMIER RENDEZ-VOUS — le bilan et le
+    premier soin —, réglé au centre le jour même et compté dans le total
+    de la cure. Écrire « réglé en ligne » sur un contrat signé au comptoir
+    serait faux.
+  */
+  const premierRendezVous = lignes.some((l) => l.technologie === 'radiofrequence');
   const suite = echeances
     .filter((e) => e.type === 'echeance')
     .sort((a, b) => a.rang - b.rang);
@@ -282,7 +292,9 @@ export function construireContrat(args: {
     installmentCount: alma ? suite.length : (acompte ? 1 : 0) + suite.length,
     bilanRegle: bilanRegle
       ? {
-          label: 'Bilan réglé en ligne',
+          label: premierRendezVous
+            ? 'Premier rendez-vous (Profil Signature et 1er soin)'
+            : 'Bilan réglé en ligne',
           amount: euros(Number(bilanRegle.montant)),
           date: jour(bilanRegle.date_prevue),
           method: LIBELLE_MOYEN[bilanRegle.moyen ?? ''] ?? '',

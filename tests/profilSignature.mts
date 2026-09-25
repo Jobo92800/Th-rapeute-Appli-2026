@@ -9,7 +9,8 @@
 */
 
 import { readFileSync } from 'node:fs';
-import { section, verifie, egal } from './harnais.mts';
+import { section, verifie, egal, egalEuros } from './harnais.mts';
+import { construireEcheancierCure } from '../src/domain/tarification.ts';
 import {
   CODE_SECURITE,
   calculerProfilSignature,
@@ -406,6 +407,78 @@ export function controlerProfilSignature() {
   egal('deux zones modérées : Équilibre', preconiserLaCure(livre, cote(2, 2) as never).cure.nom, 'Équilibre');
   egal('quatre zones modérées : Intégrale', preconiserLaCure(livre, cote(4, 2) as never).cure.nom, 'Intégrale');
   egal('une zone marquée : Intégrale', preconiserLaCure(livre, cote(1, 3) as never).cure.nom, 'Intégrale');
+}
+
+/*
+  Le règlement du Profil Signature.
+
+  LE PREMIER RENDEZ-VOUS ENTRE DANS LE TOTAL (Jonathan, 25 septembre 2026).
+  Il ne se déduit toujours pas de la cure — elle le règle dans tous les
+  cas —, mais le devis annonce ce qu'elle sort en tout, et il sort de
+  l'échéancier DÉJÀ RÉGLÉ, sur la ligne du jour. Ce qui compte, et ce que
+  ces contrôles verrouillent : la somme des lignes retombe sur le total,
+  et les chèques restent des nombres entiers de séances.
+*/
+export function controlerReglementSignature() {
+  section('Le règlement du Profil Signature');
+
+  const PREMIER = 89;
+  const PRIX = 79;
+  const cure = (seances: number, n: number, methode: 'centre' | 'alma' = 'centre') =>
+    construireEcheancierCure({
+      seances,
+      prixSeance: PRIX,
+      options: PREMIER,
+      methode,
+      n,
+      bilanDejaRegle: PREMIER,
+    });
+
+  const comptant = cure(6, 1);
+  egalEuros('six séances et le premier rendez-vous font 563 €', comptant.montantARegler, 563);
+  egal(
+    'le premier rendez-vous sort déjà réglé',
+    comptant.echeances.filter((e) => e.type === 'bilan').map((e) => e.montant),
+    [89],
+  );
+  egal(
+    'et il reste la cure seule à régler',
+    comptant.echeances.filter((e) => e.type === 'echeance').map((e) => e.montant),
+    [474],
+  );
+
+  const deux = cure(6, 2);
+  egal(
+    'en deux fois, deux chèques de trois séances',
+    deux.echeances.filter((e) => e.type === 'echeance').map((e) => e.montant),
+    [237, 237],
+  );
+  egalEuros(
+    'et la somme des lignes retombe sur le total',
+    deux.echeances.reduce((t, e) => t + e.montant, 0),
+    563,
+  );
+
+  const dix = cure(10, 3);
+  egalEuros('dix séances : 879 € en tout', dix.montantARegler, 879);
+  egal(
+    'trois chèques, un nombre entier de séances chacun',
+    dix.echeances.filter((e) => e.type === 'echeance').map((e) => e.montant),
+    [316, 237, 237],
+  );
+
+  /*
+    Chez Alma, le premier rendez-vous se règle au centre : le crédit ne le
+    finance pas, et il ne porte donc pas de frais.
+  */
+  const alma = cure(6, 4, 'alma');
+  const finance = alma.montantARegler - alma.frais - PREMIER;
+  egalEuros('Alma ne finance que la cure', finance, 474);
+  egalEuros(
+    'le total annoncé est la somme de tout ce qu’elle sort',
+    alma.echeances.reduce((t, e) => t + e.montant, 0),
+    alma.montantARegler,
+  );
 }
 
 /** Les questions réellement posées, dans l'ordre. */

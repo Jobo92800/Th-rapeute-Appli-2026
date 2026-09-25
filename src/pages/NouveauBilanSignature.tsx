@@ -246,14 +246,19 @@ export default function NouveauBilanSignature() {
         profils_secondaires: [],
         terrains_secondaires: resultat.terrains.slice(1),
         /*
-          LE PREMIER RENDEZ-VOUS SE FACTURE TOUJOURS, cure ou pas : elle a
-          reçu son Profil Signature et son premier soin le jour même, et
-          ce qu'elle décide ensuite n'y change rien. C'est la différence
-          avec les deux autres bilans, où le bilan devient offert dès que
-          la cure démarre.
+          LE PREMIER RENDEZ-VOUS SE RÈGLE TOUJOURS, cure ou pas : elle a reçu
+          son Profil Signature et son premier soin le jour même, et ce
+          qu'elle décide ensuite n'y change rien.
+
+          OÙ il se compte, en revanche, dépend de la suite. SANS CURE, il se
+          facture ici, comme un bilan seul. AVEC UNE CURE, il est dans le
+          total de la cure (Jonathan, 25 septembre 2026) : le devis annonce
+          la somme entière, la ligne sort déjà réglée de l'échéancier et le
+          contrat la porte. Le facturer une seconde fois ici le compterait
+          deux fois dans le tableau de bord.
         */
-        facturation: 'facture',
-        montant_facture: grille.bilan_signature,
+        facturation: issue === 'valider' && proposition ? 'offert' : 'facture',
+        montant_facture: issue === 'valider' && proposition ? 0 : grille.bilan_signature,
         proposition: proposition ? (proposition as unknown as Record<string, unknown>) : null,
       });
 

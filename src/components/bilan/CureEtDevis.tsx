@@ -63,7 +63,12 @@ export interface PrescriptionValidee {
   bilanDejaRegle: number;
   modeReglement: ModeReglement;
   frais: number;
-  echeances: Array<{ rang: number; montant: number; type?: 'acompte' | 'echeance' | 'bilan' }>;
+  echeances: Array<{
+    rang: number;
+    montant: number;
+    type?: 'acompte' | 'echeance' | 'bilan';
+    note?: string;
+  }>;
 }
 
 const TECHNO: Record<Prestation, Technologie> = {

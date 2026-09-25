@@ -225,7 +225,13 @@ export interface NouveauProgramme {
   montantTotal: number;
   modeReglement: Programme['mode_reglement'];
   fraisFinancement: number;
-  echeances: Array<{ rang: number; montant: number; type?: 'acompte' | 'echeance' | 'bilan' }>;
+  echeances: Array<{
+    rang: number;
+    montant: number;
+    type?: 'acompte' | 'echeance' | 'bilan';
+    /** Ce que l'échéancier de la fiche écrit sur la ligne déjà réglée. */
+    note?: string;
+  }>;
   complementRecommande: string | null;
   /** Séances gagnées par parrainage, posées sur une technologie. Jamais facturées. */
   offertes?: { technologie: Technologie; seances: number } | null;
@@ -382,7 +388,7 @@ export async function creerProgramme(n: NouveauProgramme): Promise<Programme> {
             moyen: 'cb' as const,
             statut: 'paye' as const,
             date_reglement: aujourdhui,
-            note: 'Réglé en ligne à la prise de rendez-vous',
+            note: ech.note ?? 'Réglé en ligne à la prise de rendez-vous',
           };
         }
 

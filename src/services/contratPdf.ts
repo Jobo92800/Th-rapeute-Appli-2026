@@ -322,7 +322,7 @@ export async function generateSignedContractPdf(
   */
   if (data.bilanRegle) {
     ligneReglement(
-      'Bilan réglé en ligne',
+      data.bilanRegle.label,
       data.bilanRegle.amount,
       data.bilanRegle.date,
       data.bilanRegle.method,

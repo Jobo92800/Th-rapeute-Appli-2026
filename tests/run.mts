@@ -23,7 +23,7 @@ import { controlerSante } from './sante.mts';
 import { controlerAntiAge } from './antiAge.mts';
 import { controlerPodcasts } from './podcasts.mts';
 import { controlerComplements, controlerCureSansSeance } from './complements.mts';
-import { controlerProfilSignature } from './profilSignature.mts';
+import { controlerProfilSignature, controlerReglementSignature } from './profilSignature.mts';
 
 console.log('\n  MAbeautyplus V2 — contrôle des règles métier');
 
@@ -40,5 +40,6 @@ controlerPodcasts();
 controlerComplements();
 controlerCureSansSeance();
 controlerProfilSignature();
+controlerReglementSignature();
 
 process.exit(bilan());
