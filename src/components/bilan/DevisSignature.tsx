@@ -82,6 +82,13 @@ export default function DevisSignature({
   const [n, setN] = useState(1);
   const [boites, setBoites] = useState<Record<string, number>>({});
   const [reponsesOuvertes, setReponsesOuvertes] = useState(false);
+  /*
+    Le premier rendez-vous réglé en ligne, à la prise de rendez-vous sur
+    Planity. Il ne change ni le total ni la cure : ces 89 € sont dus de
+    toute façon, ils ont simplement été versés ailleurs, avant qu'on la
+    voie. Ce qui change, c'est ce qu'elle sort au comptoir aujourd'hui.
+  */
+  const [regleEnLigne, setRegleEnLigne] = useState(false);
 
   const cure: CureSignature =
     bareme.CURES.find((c) => c.code === choisie) ?? preconisation.cure;
@@ -154,6 +161,13 @@ export default function DevisSignature({
   */
   const totalAffiche = echeancier.montantARegler;
 
+  /*
+    Et ce qu'elle sort à partir d'aujourd'hui. Sans la case, le premier
+    rendez-vous se règle au comptoir et les deux se confondent ; avec, ces
+    89 € sont déjà entrés et le grand chiffre ne doit plus les réclamer.
+  */
+  const aEncaisser = totalAffiche - (regleEnLigne ? premierRendezVous : 0);
+
   function proposition(): PrescriptionValidee {
     return {
       lignes: [{ technologie: 'radiofrequence', seances: cure.seances, prixUnitaire: prixSeance }],
@@ -167,7 +181,12 @@ export default function DevisSignature({
       frais: echeancier.frais,
       echeances: echeancier.echeances.map((e) =>
         e.type === 'bilan'
-          ? { ...e, note: 'Premier rendez-vous réglé au centre le jour même' }
+          ? {
+              ...e,
+              note: regleEnLigne
+                ? 'Premier rendez-vous réglé en ligne à la prise de rendez-vous'
+                : 'Premier rendez-vous réglé au centre le jour même',
+            }
           : e,
       ),
     };
@@ -387,7 +406,7 @@ export default function DevisSignature({
           quand se lit juste en dessous.
         */}
         <div className="chiffres mt-5 text-5xl font-bold">
-          {formaterEurosJuste(totalAffiche)}
+          {formaterEurosJuste(aEncaisser)}
         </div>
         <div className="mt-1.5 text-sm text-marine-200">
           {methode === 'centre'
@@ -397,10 +416,16 @@ export default function DevisSignature({
             : mensualitesEgales
               ? `${echeancier.n} mensualités égales · via Alma`
               : `${echeancier.n} versements · via Alma`}
+          {regleEnLigne && (
+            <span className="mt-0.5 block text-xs text-marine-300">
+              total {formaterEurosJuste(totalAffiche)}, dont{' '}
+              {formaterEuros(premierRendezVous)} déjà réglés en ligne
+            </span>
+          )}
         </div>
 
         <div className="mx-auto mt-4 max-w-xs">
-          <LigneDuJour montant={premierRendezVous} />
+          <LigneDuJour montant={premierRendezVous} enLigne={regleEnLigne} />
           {methode === 'centre' && echeancier.n === 1 ? (
             <LigneDeReglement libelle="La cure" montant={premier?.montant ?? montantCure} fort />
           ) : (
@@ -438,6 +463,33 @@ export default function DevisSignature({
           ))}
         </div>
 
+        {/*
+          Elle a réglé son premier rendez-vous en prenant rendez-vous sur
+          Planity : l'argent est déjà entré, ailleurs. Le total ne bouge
+          pas — ces 89 € en font partie —, c'est le partage entre ce qui
+          est encaissé et ce qui reste à encaisser qui change.
+        */}
+        <div className="mx-auto mt-4 max-w-sm border-t border-white/15 pt-3">
+          <label className="flex cursor-pointer items-start gap-2.5 text-left">
+            <input
+              type="checkbox"
+              checked={regleEnLigne}
+              onChange={(e) => setRegleEnLigne(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/40 bg-white/10 accent-rose-500"
+            />
+            <span className="text-[11px] leading-snug text-marine-200">
+              <span className="font-semibold text-white">
+                Premier rendez-vous déjà réglé en ligne ({formaterEuros(premierRendezVous)})
+              </span>
+              <span className="block">
+                {regleEnLigne
+                  ? 'Déduit de ce qu’elle règle au centre. Le total ne bouge pas.'
+                  : 'À cocher si elle a payé son bilan et sa première séance en prenant rendez-vous.'}
+              </span>
+            </span>
+          </label>
+        </div>
+
         <p className="mx-auto mt-3 max-w-sm text-[11px] text-marine-300">
           {methode === 'centre'
             ? `Par chèques au centre. Chaque chèque couvre un nombre entier de séances, et la cure dure ${cure.mois} mois : on n’encaisse pas après la dernière séance.`
@@ -457,8 +509,8 @@ export default function DevisSignature({
               {formaterEuros(montantAFinancer, 2)}
             </div>
             <div className="text-[11px] text-marine-200">
-              la cure seule, sans les frais et sans le premier rendez-vous — il se règle au
-              centre, Alma ne le finance pas
+              la cure seule, sans les frais et sans le premier rendez-vous — Alma ne le
+              finance pas, il se règle à part
             </div>
           </div>
         )}
@@ -497,10 +549,15 @@ export default function DevisSignature({
             onClick={() => onBilanSeul(proposition())}
             disabled={enregistrement}
             className="bouton-discret"
-            title="Le premier rendez-vous est facturé, aucune cure n'est ouverte, et son Profil Signature part par mail."
+            title={
+              regleEnLigne
+                ? "Le premier rendez-vous a été réglé en ligne, aucune cure n'est ouverte, et son Profil Signature part par mail."
+                : "Le premier rendez-vous est facturé, aucune cure n'est ouverte, et son Profil Signature part par mail."
+            }
           >
             <Mail className="h-4 w-4" />
-            Sans cure · {formaterEuros(grille.bilan_signature)}
+            {/* Rien à encaisser au comptoir si elle a déjà payé en ligne. */}
+            Sans cure · {regleEnLigne ? 'déjà réglé' : formaterEuros(premierRendezVous)}
           </button>
           <button
             onClick={() => onValider(proposition())}
@@ -520,14 +577,18 @@ export default function DevisSignature({
   );
 }
 
-/* Ce qu'elle règle aujourd'hui : le Profil Signature et le premier soin. */
-function LigneDuJour({ montant }: { montant: number }) {
+/* Le Profil Signature et le premier soin : réglés au comptoir, ou déjà en ligne. */
+function LigneDuJour({ montant, enLigne }: { montant: number; enLigne: boolean }) {
   return (
     <div className="flex justify-between gap-3 border-b border-white/15 py-1 text-[13px] text-marine-100">
       <span>
-        Premier rendez-vous <span className="text-marine-300">· aujourd’hui</span>
+        Premier rendez-vous{' '}
+        <span className="text-marine-300">· {enLigne ? 'déjà réglé en ligne' : 'aujourd’hui'}</span>
       </span>
-      <span className="chiffres font-semibold text-white">{formaterEurosJuste(montant)}</span>
+      <span className="chiffres font-semibold text-white">
+        {enLigne ? '− ' : ''}
+        {formaterEurosJuste(montant)}
+      </span>
     </div>
   );
 }
