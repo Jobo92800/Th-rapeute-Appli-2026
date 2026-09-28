@@ -601,8 +601,15 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   qui règle chacun. Et **tous les 409 ne valent pas « déjà fait »** :
   `compte-sans-identifiant` s'annonçait comme un succès, et la cliente
   repartait sans accès.
-- **Le parcours audio passe maintenant par l'application nutrition.**
-  `PODCAST_API_URL` ne vise plus Mon Parcours mais l'application nutrition,
+- **Le parcours audio est repassé en direct sur Mon Parcours** (28 septembre
+  2026, secret `PODCAST_API_URL` = `https://parcours.mabeautyplus.fr/api/admin`,
+  `PODCAST_ADMIN_CODE` = le code de Mon Parcours). Il avait été basculé sur
+  le relais de l'application nutrition ; or **celle-ci n'est pas encore
+  finie**, et son invitation envoyait la cliente sur un site qui n'est pas
+  prêt. Le jour où elle le sera, il suffit de remettre le secret sur son
+  `/api/admin-parcours` : le relais crée alors le compte des deux côtés.
+  Ce qu'il faut savoir de ce relais, pour ce jour-là :
+  `PODCAST_API_URL` visait l'application nutrition,
   qui crée le compte des deux côtés avec le même mot de passe — elle
   appelle **Mon Parcours d'abord**, et n'écrit rien s'il refuse
   (« relais-refuse », le refus d'origine en `detail`). C'est un relais de
@@ -611,8 +618,17 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   lire, pas celui du relais. Le refus rencontré : **`mot-de-passe-refuse`**,
   quand Mon Parcours veut changer le mot de passe d'un compte de connexion
   **qui a été supprimé** — la fiche pointe vers un identifiant mort.
-  Trois fiches dans ce cas au 28 septembre 2026, **toutes de test** ; les 62
-  clientes réelles ont bien leur compte.
+  Trois fiches dans ce cas au 28 septembre 2026, **toutes de test**, et
+  retirées depuis — 62 comptes pour 62 fiches, plus aucune orpheline. Le
+  contrôle se refait en comparant `auth/v1/admin/users` à la table
+  `clientes` de Mon Parcours.
+- **Les invitations du parcours audio partent du service de secours de
+  Supabase**, limité à **deux emails par heure** (`rate_limit_email_sent`,
+  aucun SMTP posé sur le projet Appli-Podcast). Le chemin normal — le mot
+  de passe choisi au comptoir — n'envoie rien et ne s'y heurte jamais ;
+  c'est le renvoi d'invitation qui se fait refuser à la troisième, sans
+  que rien ne l'annonce. À poser le jour où l'invitation redeviendra le
+  chemin courant.
 - **Doublons Airtable.** Le parcours du bilan enchaîne trois écritures ;
   sans verrou, trois synchros parallèles créaient trois fiches. Réglé par
   `reclamer_taches_airtable` (SKIP LOCKED), un verrou par cliente et un
