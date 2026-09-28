@@ -42,6 +42,41 @@ Deno.serve(async (req: Request) => {
     );
   }
 
+  /*
+    CE QUE L'AUTRE APPLICATION RÉPOND, EN FRANÇAIS.
+
+    Elle renvoie des codes — « relais-refuse », « mot-de-passe-refuse » —
+    qui ne veulent rien dire pour une thérapeute, et que l'écran affichait
+    tels quels quand il les affichait. Chacun a pourtant une cause précise
+    et un geste qui la règle : c'est cela qu'on écrit.
+
+    Le relais est une étape de la transition vers l'application nutrition :
+    elle crée le compte des deux côtés avec le même mot de passe, en
+    appelant Mon Parcours d'abord. Quand Mon Parcours refuse, elle n'écrit
+    rien et renvoie « relais-refuse » avec le refus d'origine en détail —
+    et c'est ce détail qui nomme vraiment la cause.
+  */
+  function enClair(erreur: string, detail?: string): string {
+    const cause = detail && detail !== erreur ? detail : erreur;
+    const dictionnaire: Record<string, string> = {
+      'mot-de-passe-refuse':
+        "Le compte de cette cliente existe dans le parcours audio, mais le compte de connexion qui va avec a été supprimé : le mot de passe ne peut plus être changé. Il faut recréer son compte côté parcours audio.",
+      'mot-de-passe-court': 'Le mot de passe doit faire au moins 8 caractères.',
+      'creation-refusee':
+        "Le parcours audio a refusé de créer le compte de connexion. Souvent : une adresse déjà utilisée par un autre compte, ou un mot de passe trop simple.",
+      'compte-sans-identifiant':
+        "Cette adresse est déjà connue du parcours audio, mais sans compte de connexion. À reprendre depuis l'espace d'administration du parcours audio.",
+      'email-invalide': "L'adresse email de cette cliente n'est pas valide.",
+      'email-deja-utilise': 'Cette adresse a déjà un compte sur le parcours audio.',
+      'parcours-inconnu': "Ce parcours n'existe pas dans l'application du parcours audio.",
+      'prenom-requis': 'Cette fiche n’a pas de prénom.',
+      'code-invalide':
+        "Le code d'administration du parcours audio est refusé : le secret PODCAST_ADMIN_CODE ne correspond plus.",
+      'email-refuse': "L'invitation par email a été refusée par le parcours audio.",
+    };
+    return dictionnaire[cause] ?? `Le parcours audio a refusé : ${cause}`;
+  }
+
   /** Appel de l'API d'administration de Mon Parcours. */
   async function podcast(corps: Record<string, unknown>) {
     const r = await fetch(api!, {
@@ -146,7 +181,14 @@ Deno.serve(async (req: Request) => {
 
       const r = await podcast({ action: 'renvoyer-invitation', id: trouvee.id });
       if (!r.ok) {
-        return json({ error: r.corps?.erreur ?? `Renvoi refusé (${r.statut}).` }, 502);
+        return json(
+          {
+            error: r.corps?.erreur
+              ? enClair(String(r.corps.erreur), r.corps?.detail ? String(r.corps.detail) : undefined)
+              : `Renvoi refusé (${r.statut}).`,
+          },
+          502,
+        );
       }
       return json({ ok: true, email: c.email });
     }
@@ -186,13 +228,22 @@ Deno.serve(async (req: Request) => {
       ...(motDePasse ? { motDePasse } : {}),
     });
 
-    // Un compte déjà existant n'est pas une erreur : on retient simplement
-    // le parcours et on laisse la thérapeute renvoyer l'invitation si besoin.
-    const dejaLa = r.statut === 409;
+    /*
+      Un compte déjà existant n'est pas une erreur : on retient le parcours
+      et on laisse la thérapeute renvoyer l'invitation. Mais tous les 409 ne
+      se valent pas — « compte-sans-identifiant » dit qu'il y a une fiche
+      sans compte de connexion, et l'annoncer comme un succès laissait la
+      cliente sans accès en croyant l'avoir donné.
+    */
+    const dejaLa = r.statut === 409 && r.corps?.erreur !== 'compte-sans-identifiant';
 
     if (!r.ok && !dejaLa) {
       return json(
-        { error: r.corps?.erreur ?? `L'application Mon Parcours a refusé (${r.statut}).` },
+        {
+          error: r.corps?.erreur
+            ? enClair(String(r.corps.erreur), r.corps?.detail ? String(r.corps.detail) : undefined)
+            : `L'application du parcours audio a refusé (${r.statut}).`,
+        },
         502,
       );
     }

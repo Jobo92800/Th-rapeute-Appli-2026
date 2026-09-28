@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { messageDeLaFonction } from '../lib/erreurs';
 
 /*
   Les comptes de connexion des thérapeutes. Direction seule, des deux côtés :
@@ -50,7 +51,9 @@ export async function changerLeMotDePasse(
   const reponse = data as { ok?: boolean; prenom?: string; error?: string } | null;
 
   if (error || !reponse?.ok) {
-    throw new Error(reponse?.error ?? "Le mot de passe n'a pas pu être changé.");
+    throw new Error(
+      reponse?.error ?? (await messageDeLaFonction(error, "Le mot de passe n'a pas pu être changé.")),
+    );
   }
   return { prenom: reponse.prenom ?? '' };
 }

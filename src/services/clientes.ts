@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { messageDeLaFonction } from '../lib/erreurs';
 import { declencherSynchro } from './metier';
 import { nettoyer as nettoyerSante, type Sante } from '../domain/sante';
 import type { Cliente, ClienteSaisie, Therapeute } from '../types/db';
@@ -132,7 +133,14 @@ export async function supprimerCliente(
     const { error } = await supabase.functions.invoke('synchro-airtable', {
       body: { action: 'supprimer_fiche', recordId: options.airtableRecordId },
     });
-    if (error) throw new Error("La fiche Airtable n'a pas pu être supprimée. Rien n'a été effacé.");
+    if (error) {
+      throw new Error(
+        await messageDeLaFonction(
+          error,
+          "La fiche Airtable n'a pas pu être supprimée. Rien n'a été effacé.",
+        ),
+      );
+    }
   }
 
   const { error } = await supabase.from('clientes').delete().eq('id', id);

@@ -586,6 +586,33 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   n'ont jamais divergé — seul le document mentait, et `contrats.centre_id`
   avec lui. Un seul contrat signé en a souffert (Jasmine Durand, 22
   septembre) ; un PDF signé ne se corrige pas, il se refait.
+- **Une fonction Edge qui refuse, et dont personne ne lit la raison.**
+  « L'accès au parcours audio n'a pas pu être créé », sans un mot de plus
+  (Jonathan, 28 septembre 2026). Deux écrans de fumée l'un derrière
+  l'autre. D'abord **`supabase.functions.invoke` ne rend pas le corps de la
+  réponse hors 2xx** : `data` vaut `null` et `error.message` se réduit à
+  « Edge Function returned a non-2xx status code » — la phrase que la
+  fonction avait écrite (« Cette cliente n'a pas d'adresse email ») était
+  jetée. Elle est sur `error.context`, et **`messageDeLaFonction()`**
+  (`src/lib/erreurs.ts`) la relit ; tous les appels de fonction Edge y
+  passent désormais. Ensuite la fonction elle-même ne relayait que le
+  **code** de l'autre application — « relais-refuse », « mot-de-passe-refuse » —
+  sans son détail : elle les traduit maintenant en français, avec le geste
+  qui règle chacun. Et **tous les 409 ne valent pas « déjà fait »** :
+  `compte-sans-identifiant` s'annonçait comme un succès, et la cliente
+  repartait sans accès.
+- **Le parcours audio passe maintenant par l'application nutrition.**
+  `PODCAST_API_URL` ne vise plus Mon Parcours mais l'application nutrition,
+  qui crée le compte des deux côtés avec le même mot de passe — elle
+  appelle **Mon Parcours d'abord**, et n'écrit rien s'il refuse
+  (« relais-refuse », le refus d'origine en `detail`). C'est un relais de
+  transition, à retirer le jour de la bascule. Conséquence : un refus de
+  Mon Parcours bloque toute la création, et c'est son message qu'il faut
+  lire, pas celui du relais. Le refus rencontré : **`mot-de-passe-refuse`**,
+  quand Mon Parcours veut changer le mot de passe d'un compte de connexion
+  **qui a été supprimé** — la fiche pointe vers un identifiant mort.
+  Trois fiches dans ce cas au 28 septembre 2026, **toutes de test** ; les 62
+  clientes réelles ont bien leur compte.
 - **Doublons Airtable.** Le parcours du bilan enchaîne trois écritures ;
   sans verrou, trois synchros parallèles créaient trois fiches. Réglé par
   `reclamer_taches_airtable` (SKIP LOCKED), un verrou par cliente et un

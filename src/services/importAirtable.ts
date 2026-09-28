@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { messageDeLaFonction } from '../lib/erreurs';
 
 export interface RapportImport {
   simulation: boolean;
@@ -29,8 +30,7 @@ export async function reprendreFichesAirtable(ecrire = false): Promise<RapportIm
   });
 
   if (error) {
-    const message = (data as { error?: string })?.error;
-    throw new Error(message ?? "La reprise n'a pas pu être lancée.");
+    throw new Error(await messageDeLaFonction(error, "La reprise n'a pas pu être lancée."));
   }
 
   if ((data as { error?: string })?.error) {

@@ -44,3 +44,35 @@ export function estUnePageDepassee(e: unknown): boolean {
     texteErreur(e),
   );
 }
+
+/**
+ * Le message d'une fonction Edge qui a refusé.
+ *
+ * `supabase.functions.invoke` ne rend PAS le corps de la réponse quand le
+ * statut n'est pas 2xx : `data` vaut null, et `error` est un
+ * `FunctionsHttpError` dont le message se réduit à « Edge Function returned
+ * a non-2xx status code ». Toutes nos fonctions répondent pourtant
+ * `{ error: "…" }` en disant précisément ce qui manque — « Cette cliente
+ * n'a pas d'adresse email », « Mon Parcours a refusé » — et ce message
+ * était jeté : la thérapeute lisait « l'accès n'a pas pu être créé » sans
+ * jamais savoir pourquoi, et nous non plus (Jonathan, 28 septembre 2026).
+ *
+ * La réponse est accessible sur `error.context`. On la relit ici, une fois,
+ * pour retrouver la phrase que la fonction avait écrite.
+ */
+export async function messageDeLaFonction(erreur: unknown, defaut: string): Promise<string> {
+  const contexte = (erreur as { context?: unknown } | null)?.context;
+
+  if (contexte && typeof (contexte as Response).json === 'function') {
+    try {
+      const corps = await (contexte as Response).clone().json();
+      const dit = texteErreur(corps);
+      if (dit && dit !== 'Erreur inconnue.') return dit;
+    } catch {
+      /* Pas de JSON : on retombe sur le message de l'erreur elle-même. */
+    }
+  }
+
+  const brut = texteErreur(erreur);
+  return brut && !/non-2xx status code/i.test(brut) ? brut : defaut;
+}

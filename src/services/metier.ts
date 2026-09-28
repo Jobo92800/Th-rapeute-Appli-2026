@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { messageDeLaFonction } from '../lib/erreurs';
 import type { ComplementChoisi } from '../domain/complements';
 import type { Bareme } from '../domain/bioportrait';
 import type { BaremeAntiAge } from '../domain/antiAge';
@@ -913,7 +914,7 @@ export async function donnerAccesParcours(
 
   if (error) {
     throw new Error(
-      (data as { error?: string })?.error ?? "L'accès au parcours audio n'a pas pu être créé.",
+      await messageDeLaFonction(error, "L'accès au parcours audio n'a pas pu être créé."),
     );
   }
   const d = data as { dejaLa?: boolean; motDePasseDefini?: boolean };
@@ -926,9 +927,7 @@ export async function renvoyerInvitationParcours(clienteId: string): Promise<str
   });
 
   if (error) {
-    throw new Error(
-      (data as { error?: string })?.error ?? "L'invitation n'a pas pu être renvoyée.",
-    );
+    throw new Error(await messageDeLaFonction(error, "L'invitation n'a pas pu être renvoyée."));
   }
   return (data as { email?: string })?.email ?? '';
 }
@@ -955,10 +954,7 @@ export async function urlEcoutePodcast(
     body: { action: 'ecouter', parcours, etape },
   });
   if (error) {
-    // Hors 2xx, la fonction met sa raison dans le corps : on la lit avant de renoncer.
-    const ctx = (error as { context?: Response }).context;
-    const corps = ctx ? await ctx.json().catch(() => null) : null;
-    throw new Error(corps?.error || error.message || 'Mon Parcours ne répond pas.');
+    throw new Error(await messageDeLaFonction(error, 'Mon Parcours ne répond pas.'));
   }
   const r = data as { url?: string; titre?: string; error?: string };
   if (!r?.url) throw new Error(r?.error || 'Mon Parcours ne répond pas.');
