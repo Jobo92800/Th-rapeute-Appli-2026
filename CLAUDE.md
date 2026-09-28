@@ -570,6 +570,22 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   **nommer la famille qu'on veut, jamais exclure celles qu'on connaît** —
   une famille de plus ne doit rien casser. Et `meilleurCandidat` porte
   désormais un `?? []`, pour qu'un profil inconnu n'emporte plus un écran.
+- **Le sélecteur de centre n'est pas le centre de la fiche.** Le contrat
+  d'une cure vendue au Crès est sorti au nom d'**Avignon** — MB5PRO, son
+  SIREN, son adresse (Jonathan, 28 septembre 2026). La cause : les écrans
+  de la fiche prenaient `useCentre()`, c'est-à-dire **ce que le sélecteur de
+  la barre de gauche affiche**, et quand la direction regarde les cinq
+  centres celui-ci vaut `centres[0]` — le premier par ordre alphabétique,
+  Avignon. Une cliente appartient pourtant à un centre, et c'est lui qui
+  vend la cure, signe avec sa société, décompte son rayon. Tout ce qui
+  s'écrit ou s'imprime sur une fiche existante passe désormais par
+  **`useCentreDeLaFiche(cliente.centre_id)`** ; le sélecteur ne décide plus
+  que d'une chose, le centre où naît une fiche neuve. Même règle sur les
+  trois bilans quand ils repassent sur une cliente connue. **Les données,
+  elles, étaient justes** : `clientes.centre_id` et `programmes.centre_id`
+  n'ont jamais divergé — seul le document mentait, et `contrats.centre_id`
+  avec lui. Un seul contrat signé en a souffert (Jasmine Durand, 22
+  septembre) ; un PDF signé ne se corrige pas, il se refait.
 - **Doublons Airtable.** Le parcours du bilan enchaîne trois écritures ;
   sans verrou, trois synchros parallèles créaient trois fiches. Réglé par
   `reclamer_taches_airtable` (SKIP LOCKED), un verrou par cliente et un

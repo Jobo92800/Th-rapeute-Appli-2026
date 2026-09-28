@@ -14,7 +14,7 @@ import {
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { useCentre } from '../../lib/session';
+import { useCentreDeLaFiche } from '../../lib/session';
 import {
   arriveeDesContratsAuCrm,
   consentementsDuContrat,
@@ -42,7 +42,12 @@ function telecharger(base64: string, nom: string) {
 }
 
 export default function OngletDocuments({ cliente }: { cliente: Cliente }) {
-  const centre = useCentre();
+  /*
+    Le centre de LA CLIENTE : c'est lui qui vend la cure et signe le
+    contrat. Le sélecteur de la barre de gauche ne dit que ce qu'on
+    regarde — et il a fait sortir un contrat du Crès au nom d'Avignon.
+  */
+  const centre = useCentreDeLaFiche(cliente.centre_id);
   const qc = useQueryClient();
   const [signature, setSignature] = useState(false);
   const [consentsOuverts, setConsentsOuverts] = useState<string | null>(null);

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ChoisirUnCentre from '../components/ChoisirUnCentre';
-import { useCentre, useSession } from '../lib/session';
+import { useCentreDeLaFiche, useSession } from '../lib/session';
 import { lireBaremeActif, lireGrilleTarifaire } from '../services/metier';
 import { creerCliente, lireCliente, modifierCliente } from '../services/clientes';
 import { etatDuCentre } from '../services/stock';
@@ -71,7 +71,6 @@ const PROPOSITION_VIDE: PrescriptionValidee = {
 };
 
 export default function NouveauBilan() {
-  const centre = useCentre();
   const { therapeute, tousCentres } = useSession();
   const navigate = useNavigate();
 
@@ -92,6 +91,18 @@ export default function NouveauBilan() {
     queryFn: () => lireCliente(clienteExistanteId!),
     enabled: Boolean(clienteExistanteId),
   });
+
+  /*
+    LE CENTRE DE LA CLIENTE QUAND ELLE EN A UN.
+
+    Sur une fiche neuve, c'est le sélecteur de la barre de gauche qui dit
+    où elle naît. Sur un point refait, non : la fiche appartient déjà à un
+    centre, c'est lui qui vend la cure, signe le contrat et sort les boîtes
+    de son rayon. Le sélecteur ne dit que ce qu'on regarde — et pour la
+    direction en vue d'ensemble, il vaut le premier centre par ordre
+    alphabétique.
+  */
+  const centre = useCentreDeLaFiche(clienteExistante?.centre_id);
 
   const { data: baremeData, isLoading, error } = useQuery({
     queryKey: ['bareme'],

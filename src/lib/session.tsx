@@ -157,6 +157,28 @@ export function useCentre(): Centre {
 }
 
 /**
+ * LE CENTRE D'UNE FICHE, ET NON CELUI DU SÉLECTEUR.
+ *
+ * Une cliente appartient à un centre : c'est lui qui vend la cure, signe
+ * le contrat avec sa société et son SIREN, et décompte son rayon. Le
+ * sélecteur de la barre de gauche ne dit que ce qu'on REGARDE — et quand
+ * la direction regarde les cinq centres, il vaut `centres[0]`, c'est-à-dire
+ * le premier par ordre alphabétique. Un contrat signé au Crès est ainsi
+ * sorti au nom d'Avignon, MB5PRO et son SIREN (Jonathan, 28 septembre 2026).
+ *
+ * Tout ce qui s'écrit sur une fiche existante passe donc par ici. Le
+ * sélecteur ne décide plus que d'une chose : dans quel centre naît une
+ * fiche neuve.
+ */
+export function useCentreDeLaFiche(centreId: string | null | undefined): Centre {
+  const { centre, centresAccessibles } = useSession();
+  const celuiDeLaFiche = centreId ? centresAccessibles.find((c) => c.id === centreId) : undefined;
+  const retenu = celuiDeLaFiche ?? centre;
+  if (!retenu) throw new Error('Aucun centre actif');
+  return retenu;
+}
+
+/**
  * L'identifiant à passer aux services : null quand la direction regarde les
  * cinq centres, l'identifiant du centre sinon.
  */

@@ -10,7 +10,6 @@ import { bilansDeLaCliente, lireBaremeActif } from '../../services/metier';
 import { SEUIL_PRESENCE, type Axe, AXES_PROFIL, AXES_TERRAIN } from '../../domain/bioportrait';
 import { CENTRE_ANTI_AGE } from '../../domain/antiAge';
 import { signatureDisponible } from '../../domain/profilSignature';
-import { useSession } from '../../lib/session';
 import ReponsesDuBilan from './ReponsesDuBilan';
 import BioPortraitAntiAgeSurFiche from './BioPortraitAntiAgeSurFiche';
 import ProfilSignatureSurFiche from './ProfilSignatureSurFiche';
@@ -18,27 +17,26 @@ import { LeBioPortraitSeul, Recapitulatif } from './DocumentsDuBilan';
 
 export default function OngletBioPortrait({
   clienteId,
+  centreId,
   civilite,
 }: {
   clienteId: string;
+  /** Le centre de la cliente, pas celui du sélecteur : c'est lui qui tient les soins. */
+  centreId: string;
   civilite: Civilite;
 }) {
   const qc = useQueryClient();
-  const { centre, tousCentres } = useSession();
   const [confirme, setConfirme] = useState(false);
 
   /*
-    Les bilans anti-âge que ce centre tient. Deux centres, deux soins, deux
-    questionnaires — et le même nom devant la cliente. La direction, qui
-    voit les cinq centres, les voit tous les deux : le soin les départage.
+    Les bilans anti-âge que SON centre tient : l'Advance Lift au
+    Grau-du-Roi, la radiofréquence au Crès et à Sérignan. Jamais les deux
+    — aucun centre ne fait les deux —, et jamais d'après le sélecteur de
+    la barre de gauche, qui dit seulement ce qu'on regarde.
   */
   const profilsSignature = [
-    ...(centre?.id === CENTRE_ANTI_AGE || tousCentres
-      ? [{ to: '/bilan-anti-age', soin: 'Advance Lift' }]
-      : []),
-    ...(signatureDisponible(centre?.id ?? '') || tousCentres
-      ? [{ to: '/bilan-signature', soin: 'radiofréquence' }]
-      : []),
+    ...(centreId === CENTRE_ANTI_AGE ? [{ to: '/bilan-anti-age', soin: 'Advance Lift' }] : []),
+    ...(signatureDisponible(centreId) ? [{ to: '/bilan-signature', soin: 'radiofréquence' }] : []),
   ];
   /*
     Quel bilan on regarde. Null veut dire « le plus récent », et c'est la

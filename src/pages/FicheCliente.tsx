@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useCentre, useSession } from '../lib/session';
+import { useCentreDeLaFiche, useSession } from '../lib/session';
 import ChoisirUnCentre from '../components/ChoisirUnCentre';
 import { supabase } from '../lib/supabase';
 import { texteErreur } from '../lib/erreurs';
@@ -65,7 +65,6 @@ const ONGLETS: { id: Onglet; libelle: string; icone: typeof User }[] = [
 export default function FicheCliente() {
   const { id } = useParams<{ id: string }>();
   const creation = !id;
-  const centre = useCentre();
   const { tousCentres } = useSession();
   const [onglet, setOnglet] = useState<Onglet>('coordonnees');
 
@@ -80,6 +79,19 @@ export default function FicheCliente() {
     queryFn: () => lireCliente(id!),
     enabled: !creation,
   });
+
+  /*
+    LE CENTRE DE LA FICHE, PAS CELUI DU SÉLECTEUR.
+
+    Tout ce qui s'écrit ici — une cure, une séance, un relevé, une boîte
+    de compléments, une note — appartient au centre de la cliente. Le
+    sélecteur de la barre de gauche dit ce qu'on regarde, et quand la
+    direction regarde les cinq centres il vaut le premier par ordre
+    alphabétique : Avignon. Sur une fiche neuve, il n'y a pas encore de
+    cliente et c'est bien le sélecteur qui décide — d'où le garde-fou
+    ci-dessous, qui demande d'en choisir un.
+  */
+  const centre = useCentreDeLaFiche(cliente?.centre_id);
 
   const { data: bilans = [] } = useQuery({
     queryKey: ['bilans', id],
@@ -289,7 +301,7 @@ export default function FicheCliente() {
       {!creation && onglet === 'coordonnees' && cliente && <CarteParrainage cliente={cliente} />}
       {!creation && onglet === 'bioportrait' && (
         <>
-          <OngletBioPortrait clienteId={id!} civilite={cliente!.civilite} />
+          <OngletBioPortrait clienteId={id!} centreId={centre.id} civilite={cliente!.civilite} />
           <BilanSante cliente={cliente!} />
         </>
       )}
