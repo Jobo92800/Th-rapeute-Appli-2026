@@ -10,7 +10,20 @@
   dans `services/recapPdf`, et le texte du mail est écrit dans Airtable.
 */
 
-import { SEUIL_PRESENCE, type Axe, type Bareme, type BioPortrait, type MesureInbody } from './bioportrait';
+import { SEUIL_PRESENCE, type Axe, type Bareme, type BioPortrait, type MesureInbody, type Reponses } from './bioportrait';
+import {
+  accorder,
+  correspondances,
+  lireLaComposition,
+  pointDeVigilance,
+  prioritesDuBilan,
+  socle,
+  soinsPreconises,
+  soinsVendus,
+  type Correspondance,
+  type LigneComposition,
+  type SoinPreconise,
+} from './restitution';
 import type { BaremeAntiAge, BioPortraitAntiAge } from './antiAge';
 import { LIBELLES_TECHNOLOGIE, formaterEuros } from './tarification';
 import { libelleComplements, nombreDeBoites, type ComplementChoisi } from './complements';
@@ -454,4 +467,176 @@ export function nomFichierRecap(d: Pick<DonneesRecap, 'prenom' | 'nom' | 'dateBi
 /** Le montant annoncé, arrondi comme il est dit à l'oral. */
 export function montantLisible(n: number): string {
   return formaterEuros(n);
+}
+
+/* =========================================================================
+   La restitution en quatre pages
+   ========================================================================= */
+
+/**
+ * Ce que le document imprime d'un axe : son nom, son sous-titre, ce qu'il
+ * est en deux phrases, ce qu'il produit, et la part des réponses qui y mène.
+ */
+export interface AxeRestitution {
+  nom: string;
+  sousTitre: string;
+  resume: string;
+  manifestations: string[];
+  mecanisme: string;
+  pourcentage: number;
+}
+
+/**
+ * La restitution du BioPortrait, prête à imprimer.
+ *
+ * Tout est déjà calculé et accordé : le module d'impression ne décide de
+ * rien, il pose. C'est la règle de la maison pour les documents — une page
+ * qui calcule finit par calculer autrement que l'écran.
+ */
+export interface DonneesRestitution {
+  civilite: string;
+  prenom: string;
+  nom: string;
+  dateBilan: string;
+  centre: DonneesRecap['centre'];
+  /** Trois pages pour celle qui démarre, quatre pour celle qui réfléchit. */
+  pages: 3 | 4;
+
+  profil: AxeRestitution;
+  terrain: AxeRestitution;
+  /** Ce qu'elle vit au quotidien, du côté du profil. */
+  vecu: string;
+  syntheseCroisement: string;
+  ordreDesChoses: string;
+
+  composition: LigneComposition[];
+  priorites: string[];
+  correspondances: Correspondance[];
+  soins: SoinPreconise[];
+  socle: Array<{ titre: string; court: string; icone: string }>;
+
+  /** Ce qu'elle achète, ligne à ligne, sans prix unitaire. */
+  recapitulatif: Array<{ libelle: string; detail: string }>;
+  prix: string;
+  mentionReglement: string;
+  echeances: string[];
+  mentionBilanDeduit: string;
+}
+
+/** Un axe, tel que la restitution le raconte. */
+function axeRestitution(bareme: Bareme, code: Axe, pourcentage: number): AxeRestitution {
+  const a = bareme.AX[code];
+  return {
+    nom: a?.name ?? '',
+    sousTitre: sansBalises(a?.sig ?? ''),
+    resume: sansBalises(a?.resume ?? a?.feel ?? ''),
+    manifestations: (a?.manif ?? a?.imp ?? []).map(sansBalises),
+    mecanisme: sansBalises(a?.meca ?? a?.feel ?? ''),
+    pourcentage,
+  };
+}
+
+/** Première lettre en minuscule, point final retiré : la phrase s'enchaîne. */
+function enSuite(texte: string): string {
+  const t = texte.trim().replace(/\.$/, '');
+  return t.charAt(0).toLowerCase() + t.slice(1);
+}
+
+export function construireRestitution(args: {
+  bareme: Bareme;
+  bioportrait: BioPortrait;
+  reponses: Reponses;
+  proposition: Proposition;
+  cliente: { civilite: string; prenom: string; nom: string };
+  centre: DonneesRecap['centre'];
+  dateBilan: string;
+  /** Le prix du bilan, déduit dès qu'elle démarre. Jamais écrit en dur. */
+  prixBilan: number;
+  /** Trois pages quand la cure est signée : son contrat porte le prix. */
+  pages: 3 | 4;
+}): DonneesRestitution {
+  const { bareme, bioportrait: bp, proposition: p, cliente } = args;
+  const civilite = cliente.civilite;
+
+  const composition = lireLaComposition(bareme, args.reponses, civilite);
+  const vigilance = pointDeVigilance(composition);
+  const vendus = soinsVendus(
+    p.lignes.map((l) => ({ technologie: l.technologie, seances: l.seances })),
+  );
+
+  const ctx = {
+    bareme,
+    profil: bp.profilDominant,
+    terrain: bp.terrainDominant,
+    vigilance,
+    vendus,
+    civilite,
+  };
+
+  const profil = axeRestitution(bareme, bp.profilDominant, bp.pourcentages[bp.profilDominant]);
+  const terrain = axeRestitution(bareme, bp.terrainDominant, bp.pourcentages[bp.terrainDominant]);
+
+  /* Ce qu'elle achète : les soins, puis ce qui est compris. */
+  const recapitulatif: Array<{ libelle: string; detail: string }> = p.lignes
+    .filter((l) => l.seances > 0)
+    .map((l) => ({
+      libelle: LIBELLES_TECHNOLOGIE[l.technologie] ?? l.technologie,
+      detail: `${l.seances} séance${l.seances > 1 ? 's' : ''}`,
+    }));
+  if (p.guide && Number(p.prixGuide) > 0) {
+    recapitulatif.push({ libelle: 'Guide de rééquilibrage alimentaire', detail: 'Compris' });
+  }
+  if (p.tenue && Number(p.prixTenue) > 0) {
+    recapitulatif.push({ libelle: 'Tenue I-Shape', detail: 'Comprise' });
+  }
+  const boites = p.complements ?? [];
+  if (nombreDeBoites(boites) > 0) {
+    recapitulatif.push({ libelle: libelleComplements(boites), detail: 'Compris' });
+  }
+
+  const montantRegle = Number(p.montantTotal) + Number(p.frais);
+
+  return {
+    civilite,
+    prenom: cliente.prenom,
+    nom: cliente.nom,
+    dateBilan: args.dateBilan,
+    centre: args.centre,
+    pages: args.pages,
+
+    profil,
+    terrain,
+    vecu: accorder(sansBalises(bareme.AX[bp.profilDominant]?.vecu ?? ''), civilite),
+
+    /*
+      Le croisement, écrit avec les deux sous-titres. C'est la phrase qui
+      explique pourquoi les méthodes générales n'ont rien donné : elles
+      traitaient l'un des deux, jamais les deux ensemble.
+    */
+    syntheseCroisement:
+      `Pris séparément, chacun de ces deux points s'explique. Ensemble, ils s'entretiennent : ` +
+      `${profil.sousTitre} et ${terrain.sousTitre} se nourrissent l'un l'autre, et c'est très ` +
+      `exactement pour cela que les méthodes générales n'ont rien donné. Elles s'attaquaient à ` +
+      `un seul des deux.`,
+    ordreDesChoses:
+      `D'abord ${enSuite(bareme.AX[bp.terrainDominant]?.agir ?? '')}, ` +
+      `puis ${enSuite(bareme.AX[bp.profilDominant]?.prio ?? '')}. ` +
+      `C'est exactement ce que votre programme prévoit.`,
+
+    composition,
+    priorites: prioritesDuBilan(ctx),
+    correspondances: correspondances(ctx),
+    soins: soinsPreconises(ctx),
+    socle: socle(bareme, civilite).map((s) => ({ titre: s.titre, court: s.court, icone: s.icone })),
+
+    recapitulatif,
+    prix: formaterEuros(montantRegle),
+    mentionReglement: LIBELLE_REGLEMENT[p.modeReglement] ?? 'À définir ensemble',
+    echeances: p.echeances
+      .filter((e) => e.type !== 'bilan')
+      .map((e, i) => `${i === 0 ? '1re' : `${i + 1}e`} : ${formaterEuros(Number(e.montant))}`),
+    mentionBilanDeduit:
+      `Les ${formaterEuros(args.prixBilan)} de votre BioPortrait sont intégralement déduits ` +
+      `dès lors que vous démarrez votre accompagnement.`,
+  };
 }

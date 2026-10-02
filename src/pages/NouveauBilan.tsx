@@ -389,6 +389,12 @@ export default function NouveauBilan() {
           },
           centre,
           dateBilan: new Date().toISOString().slice(0, 10),
+          /*
+            Ses réponses d'analyse : c'est d'elles que sortent le tableau de
+            composition corporelle et le point de vigilance de la page 1.
+          */
+          reponses,
+          prixBilan: grille.bilan,
         });
       } catch (err) {
         console.error(err);
@@ -419,6 +425,8 @@ export default function NouveauBilan() {
             },
             centre,
             dateBilan: new Date().toISOString().slice(0, 10),
+            reponses,
+            prixBilan: grille.bilan,
           });
           toast.success(
             `Bilan enregistré (${formaterEuros(grille.bilan)} à facturer) · le récapitulatif part par mail`,

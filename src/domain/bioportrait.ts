@@ -68,16 +68,52 @@ export interface EtapeBareme {
   major?: boolean;
   /** Mesure InBody qui porte le score sur 100. */
   score?: boolean;
+  /**
+   * Ce que dit chaque réponse, dans le même ordre qu'elles. Sur les
+   * questions d'analyse seulement, depuis la 076.
+   */
+  lecture?: LectureMesure[];
   left?: string;
   right?: string;
 }
 
 export interface DescriptionAxe {
   name: string;
+  /** Le sous-titre, entre guillemets : « le corps consolé ». */
   sig: string;
   feel: string;
   imp: string[];
   note: string;
+
+  /*
+    De quoi écrire la restitution remise à la cliente (migration 076). Ces
+    champs sont facultatifs : les barèmes 1 et 2 ne les ont pas, et les
+    bilans qui les référencent doivent rester lisibles.
+  */
+  /** Le profil ou le terrain en deux phrases, sans balise. */
+  resume?: string;
+  /** Trois manifestations concrètes. */
+  manif?: string[];
+  /** Ce qu'elle vit au quotidien. Les profils seulement. */
+  vecu?: string;
+  /** Ce qui se passe réellement dans son corps. */
+  meca?: string;
+  /** La priorité qui en découle. Les profils. */
+  prio?: string;
+  /** Ce qu'il faut faire de ce terrain, en complément de phrase. */
+  agir?: string;
+}
+
+/**
+ * Ce que dit une réponse d'analyse, dans le tableau de composition
+ * corporelle : la situation en deux mots, le nombre de pastilles remplies,
+ * s'il faut alerter, et la phrase qui explique.
+ */
+export interface LectureMesure {
+  s: string;
+  n: number;
+  a: boolean;
+  t: string;
 }
 
 /** Un palier du barème de prescription : à partir de tant de points… */
@@ -111,6 +147,44 @@ export interface Bareme {
    */
   FORMULAS?: Array<{ f: number; n: string; d: string; rec?: boolean }>;
   INCLUS?: Array<{ i: string; t: string; d: string }>;
+  /** Les soins et la matrice de la restitution (migration 076). */
+  RESTITUTION?: ContenuRestitution;
+}
+
+/** Un soin, tel que la restitution le présente. */
+export interface DescriptionSoin {
+  /** « La Luxothérapie Perte de poids », pour une phrase. */
+  nom: string;
+  /** « Luxothérapie Perte de poids », pour un titre de carte. */
+  titre: string;
+  court: string;
+  atouts: string[];
+  icone: string;
+}
+
+/**
+ * La matrice de la restitution : quel soin répond à quel point de l'analyse,
+ * et ce qu'il y apporte.
+ *
+ * Les soins sont nommés par leurs codes (LUXO, RELAX, ISHAPE, PRESSO) et les
+ * mesures par leur RANG dans le questionnaire — jamais par leur libellé, qui
+ * a déjà changé une fois.
+ */
+export interface ContenuRestitution {
+  SOINS: Record<string, DescriptionSoin>;
+  /** Ce que comprend toute cure, dans l'ordre d'affichage. */
+  SOCLE: string[];
+  /** Les soins disponibles même quand ils ne sont pas vendus à la séance. */
+  TOUJOURS: string[];
+  ASSOC: {
+    terrain: Record<string, string[]>;
+    profil: Record<string, string[]>;
+    mesure: Record<string, string[]>;
+  };
+  /** Clé « axe|valeur|soin » → ce que ce soin apporte à ce point précis. */
+  EFFET: Record<string, string>;
+  /** Ce que le soin apporte quand aucun croisement précis n'existe. */
+  REPLI: Record<string, string>;
 }
 
 /**
