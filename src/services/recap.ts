@@ -181,7 +181,11 @@ export async function rangerBioPortrait(args: {
           centre,
           dateBilan: args.dateBilan,
           prixBilan: args.prixBilan ?? 0,
-          pages: 3,
+          /*
+            Un point de suivi n'a pas de programme : on s'arrête au
+            diagnostic. Une cure présentée, et la page du programme suit.
+          */
+          pages: args.proposition.lignes.some((l) => l.seances > 0) ? 3 : 2,
         }),
       )
     : bioPortraitEnBase64(

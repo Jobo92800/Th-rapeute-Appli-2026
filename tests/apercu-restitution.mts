@@ -85,7 +85,8 @@ const donnees = construireRestitution({
   },
   dateBilan: '2 octobre 2026',
   prixBilan: 129,
-  pages: (Number(process.argv[3]) === 3 ? 3 : 4) as 3 | 4,
+  /* 2 = un point de suivi, 3 = le document du dossier, 4 = celui du devis. */
+  pages: ([2, 3, 4].includes(Number(process.argv[3])) ? Number(process.argv[3]) : 4) as 2 | 3 | 4,
 });
 
 const pdf = genererRestitutionPdf(donnees);

@@ -242,10 +242,16 @@ function pastillePicto(doc: Doc, nom: string, x: number, y: number, diametre: nu
 
 function enTete(doc: Doc, d: DonneesRestitution, kicker: string): number {
   // Le filet de marque, en haut de chaque page.
-  degrade(doc, 0, 0, L, 1.8, [AQUA, [142, 111, 198], ROSE]);
+  degrade(doc, 0, 0, L, 1.8, [AQUA, [142, 111, 198], ROSE], 48);
 
+  /*
+    L'ALIAS, SANS QUOI LE LOGO EST RECOPIÉ SUR CHAQUE PAGE. jsPDF range une
+    image par alias ; sans alias il en invente un à chaque appel et stocke
+    quatre fois les 46 Ko du JPEG. Le document passe de 190 à 60 Ko — il part
+    chez chaque cliente et Airtable le conserve.
+  */
   const largeurLogo = 36;
-  doc.addImage(LOGO_PDF, 'JPEG', MARGE, HAUT, largeurLogo, largeurLogo / LOGO_RATIO);
+  doc.addImage(LOGO_PDF, 'JPEG', MARGE, HAUT, largeurLogo, largeurLogo / LOGO_RATIO, 'logo-mabeautyplus');
 
   police(doc, 7.5, 'bold');
   encre(doc, AQUA_TEXTE);
@@ -274,23 +280,21 @@ function pied(doc: Doc, d: DonneesRestitution, page: number, total: number) {
 
 /* --- les blocs ----------------------------------------------------------- */
 
-/** Le bloc profond qui porte le croisement, puis le prix. */
+/**
+ * Le bloc vert profond qui porte le croisement, puis le prix.
+ *
+ * Deux calottes arrondies aux couleurs des extrémités, et le dégradé entre
+ * les deux. La première version peignait le dégradé trois fois et reposait
+ * des carrés blancs sur les angles : trente kilo-octets de traits inutiles
+ * dans un document qui part chez chaque cliente.
+ */
 function blocProfond(doc: Doc, x: number, y: number, w: number, h: number) {
-  degrade(doc, x, y, w, h, [PROFOND, PROFOND_2], 40);
-  // Les coins : on repose le fond de page par-dessus les angles vifs.
-  fond(doc, BLANC);
   const r = 5.8;
-  [[x, y], [x + w - r, y], [x, y + h - r], [x + w - r, y + h - r]].forEach(([cx, cy]) => {
-    doc.rect(cx, cy, r, r, 'F');
-  });
-  fond(doc, PROFOND_2);
-  doc.roundedRect(x, y, w, h, r, r, 'F');
-  degrade(doc, x + r, y, w - r * 2, h, [PROFOND, PROFOND_2], 40);
   fond(doc, PROFOND);
   doc.roundedRect(x, y, r * 2, h, r, r, 'F');
   fond(doc, PROFOND_2);
   doc.roundedRect(x + w - r * 2, y, r * 2, h, r, r, 'F');
-  degrade(doc, x + r, y, w - r * 2, h, [PROFOND, PROFOND_2], 40);
+  degrade(doc, x + r, y, w - r * 2, h, [PROFOND, PROFOND_2], 36);
 }
 
 /** La jauge d'un axe : un rail, une part remplie, le pourcentage. */
@@ -889,13 +893,27 @@ function page4(doc: Doc, d: DonneesRestitution) {
  * signé : la page du prix ne part qu'avec le devis.
  */
 export function genererRestitutionPdf(d: DonneesRestitution): jsPDF {
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  /*
+    COMPRESSÉ. Les dégradés sont peints en bandes fines, ce qui fait
+    quelques centaines de traits par page ; sans compression le flux de
+    dessin pèse plus lourd que le logo. Le document part chez chaque
+    cliente, Airtable le conserve, et il voyage par mail.
+  */
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
 
   page1(doc, d);
   doc.addPage();
   page2(doc, d);
-  doc.addPage();
-  page3(doc, d);
+
+  /*
+    Deux pages seulement sur un point de suivi : aucune cure n'a été
+    présentée ce jour-là, et une page intitulée « Votre programme » qui ne
+    propose rien est une page qui ment. Son diagnostic, lui, vaut toujours.
+  */
+  if (d.pages >= 3) {
+    doc.addPage();
+    page3(doc, d);
+  }
 
   if (d.pages >= 4) {
     doc.addPage();

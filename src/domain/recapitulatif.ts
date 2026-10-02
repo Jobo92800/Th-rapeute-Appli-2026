@@ -499,8 +499,11 @@ export interface DonneesRestitution {
   nom: string;
   dateBilan: string;
   centre: DonneesRecap['centre'];
-  /** Trois pages pour celle qui démarre, quatre pour celle qui réfléchit. */
-  pages: 3 | 4;
+  /**
+   * Deux pages sur un point de suivi — aucune cure n'a été présentée —,
+   * trois pour celle qui démarre, quatre pour celle qui réfléchit encore.
+   */
+  pages: 2 | 3 | 4;
 
   profil: AxeRestitution;
   terrain: AxeRestitution;
@@ -553,7 +556,7 @@ export function construireRestitution(args: {
   /** Le prix du bilan, déduit dès qu'elle démarre. Jamais écrit en dur. */
   prixBilan: number;
   /** Trois pages quand la cure est signée : son contrat porte le prix. */
-  pages: 3 | 4;
+  pages: 2 | 3 | 4;
 }): DonneesRestitution {
   const { bareme, bioportrait: bp, proposition: p, cliente } = args;
   const civilite = cliente.civilite;
