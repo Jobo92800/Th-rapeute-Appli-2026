@@ -23,6 +23,11 @@ import {
   reechelonner,
   refusDeReechelonner,
 } from '../src/domain/reglement.ts';
+import {
+  construireEcheancierCure,
+  creneauxParDefaut,
+  montantAcompte,
+} from '../src/domain/tarification.ts';
 import { evolution, libelleEvolution } from '../src/domain/tableauDeBord.ts';
 import { construireContrat } from '../src/domain/contrat.ts';
 import type { Centre, Cliente, Echeance, LigneProgramme, Programme } from '../src/types/db.ts';
@@ -312,6 +317,49 @@ export function controlerMetier() {
     quinze jours au plus. Le reste du calendrier ne bouge pas : le 10 de
     chaque mois reste le 10 de chaque mois.
   */
+  /*
+    L'ACOMPTE D'UNE CURE SUIVANTE NE PORTE PAS DE BILAN.
+
+    Au premier bilan, il couvre le BioPortrait et les créneaux bloqués. Sur
+    une cure suivante il n'y a plus de bilan à couvrir : il a été fait et
+    facturé la première fois, et une cliente qui revient ne le repaie pas
+    (Jonathan, 5 octobre 2026). Seuls les créneaux restent.
+  */
+  section('L’acompte d’une cure suivante');
+
+  egalEuros(
+    'trois créneaux bloqués, trois séances dues',
+    montantAcompte({ prixBilan: 0, creneauxReserves: 3, prixSeance: 59 }),
+    177,
+  );
+  egalEuros(
+    'et jamais le prix d’un bilan déjà facturé',
+    montantAcompte({ prixBilan: 0, creneauxReserves: 1, prixSeance: 59 }),
+    59,
+  );
+  egal(
+    'autant de créneaux que de soins différents',
+    [creneauxParDefaut(0), creneauxParDefaut(1), creneauxParDefaut(3)],
+    [1, 1, 3],
+  );
+
+  const cureSuivante = construireEcheancierCure({
+    seances: 20,
+    prixSeance: 59,
+    options: 29,
+    methode: 'centre',
+    n: 4,
+    acompte: montantAcompte({ prixBilan: 0, creneauxReserves: 2, prixSeance: 59 }),
+  });
+  egalEuros('le montant de la cure ne bouge pas', cureSuivante.montantARegler, 1209);
+  egal('l’acompte sort en tête', cureSuivante.echeances[0].type, 'acompte');
+  egalEuros('et il se déduit du total', cureSuivante.echeances[0].montant, 118);
+  egalEuros(
+    'la somme des lignes retombe sur le montant de la cure',
+    cureSuivante.echeances.reduce((t, e) => t + e.montant, 0),
+    1209,
+  );
+
   section('L’acompte rapproche la première échéance, et elle seule');
 
   const LE_10 = new Date('2026-09-10T09:00:00Z');

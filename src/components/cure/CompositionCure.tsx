@@ -16,6 +16,8 @@ import {
   LIBELLES_TECHNOLOGIE,
   calculerMontant,
   construireEcheancierCure,
+  creneauxParDefaut,
+  montantAcompte,
   formaterEuros,
   formaterEurosJuste,
   prixUnitaireParDefaut,
@@ -151,6 +153,22 @@ export default function CompositionCure({
   const offertesPosees = Math.min(offertes, seancesOffertes);
 
   /*
+    L'ACOMPTE, POUR CELLE QUI DIT OUI SANS POUVOIR TOUT RÉGLER AUJOURD'HUI.
+
+    Le même geste qu'au bilan, à une chose près : il n'y a pas de bilan à
+    couvrir. Le BioPortrait a été fait et facturé sur la première cure, et
+    on ne le refacture pas parce qu'elle revient. L'acompte ne porte donc
+    que LES CRÉNEAUX DÉJÀ BLOQUÉS pour elle — une demi-heure par soin, trois
+    soins enchaînés font une heure et demie, donc trois séances dues.
+
+    Il se déduit du total, c'est son premier règlement. Au centre seulement :
+    chez Alma, le crédit couvre déjà la totalité et le centre est payé à la
+    signature. Rangé par défaut — le cas courant est de ne pas en demander.
+  */
+  const [acompteOuvert, setAcompteOuvert] = useState(false);
+  const [creneaux, setCreneaux] = useState<number | null>(null);
+
+  /*
     Le même plafond qu'au bilan : la cure ne se règle pas plus longtemps
     qu'elle ne dure. La Relaxation ne compte pas parmi les soins principaux,
     elle s'ajoute à une venue existante.
@@ -166,6 +184,22 @@ export default function CompositionCure({
     ? nEcheances
     : (choixEcheances[choixEcheances.length - 1] ?? 1);
 
+  /*
+    Le nombre retenu, et non celui qui traîne dans l'état : la thérapeute a
+    pu ouvrir l'acompte sur trois soins puis en retirer un.
+  */
+  const soinsRetenus = lignes.filter((l) => l.seances > 0).length;
+  const creneauxRetenus = creneaux ?? creneauxParDefaut(soinsRetenus);
+  const acompte =
+    acompteOuvert && methode === 'centre'
+      ? montantAcompte({
+          // Pas de bilan ici : il a été facturé avec la première cure.
+          prixBilan: 0,
+          creneauxReserves: creneauxRetenus,
+          prixSeance: grille.seance,
+        })
+      : 0;
+
   const echeancier = useMemo(
     () =>
       construireEcheancierCure({
@@ -176,8 +210,9 @@ export default function CompositionCure({
         options: detail.montantGuide + detail.montantTenue + detail.montantComplements,
         methode,
         n: nRetenu,
+        acompte,
       }),
-    [detail, grille.seance, methode, nRetenu],
+    [detail, grille.seance, methode, nRetenu, acompte],
   );
 
   useEffect(() => {
@@ -200,6 +235,16 @@ export default function CompositionCure({
     // onChange est recréée à chaque rendu du parent : on ne l'observe pas.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lignes, electro, tenue, guide, detail, echeancier, offertesPosees, technoOfferte, complements]);
+
+  /* Chez Alma, l'acompte n'a pas de sens : on le referme en changeant de méthode. */
+  function changerDeMethode(m: 'centre' | 'alma') {
+    setMethode(m);
+    setNEcheances(4);
+    if (m === 'alma') {
+      setAcompteOuvert(false);
+      setCreneaux(null);
+    }
+  }
 
   function ajuster(t: Technologie, delta: number) {
     setSeances((s) => ({ ...s, [t]: Math.max(0, s[t] + delta) }));
@@ -396,10 +441,7 @@ export default function CompositionCure({
               <button
                 key={m.id}
                 type="button"
-                onClick={() => {
-                  setMethode(m.id);
-                  setNEcheances(4);
-                }}
+                onClick={() => changerDeMethode(m.id)}
                 className={`rounded-xl border px-4 py-3 text-left transition-colors ${
                   actif
                     ? 'border-marine-600 bg-marine-50'
@@ -467,16 +509,84 @@ export default function CompositionCure({
             </p>
           )}
 
+        {/*
+          L'acompte, rangé tant qu'on n'en a pas besoin. Au centre seulement :
+          chez Alma le crédit couvre déjà tout.
+        */}
+        {methode === 'centre' && detail.total > 0 && (
+          <div className="mt-4 border-t border-ardoise-100 pt-3">
+            {!acompteOuvert ? (
+              <button
+                type="button"
+                onClick={() => setAcompteOuvert(true)}
+                className="text-xs font-semibold text-marine-700 underline underline-offset-2 hover:text-marine-900"
+              >
+                Impossible de tout régler aujourd’hui ?
+              </button>
+            ) : (
+              <div className="rounded-xl border border-marine-200 bg-marine-50 px-4 py-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-semibold text-marine-900">Acompte aujourd’hui</span>
+                  <button
+                    type="button"
+                    onClick={() => setCreneaux(Math.max(0, creneauxRetenus - 1))}
+                    className="h-6 w-6 rounded-md border border-ardoise-200 bg-white leading-none text-ardoise-700 hover:border-marine-400"
+                    aria-label="Un créneau de moins"
+                  >
+                    −
+                  </button>
+                  <span className="chiffres text-sm font-semibold text-ardoise-900">
+                    {creneauxRetenus} créneau{creneauxRetenus > 1 ? 'x' : ''}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCreneaux(creneauxRetenus + 1)}
+                    className="h-6 w-6 rounded-md border border-ardoise-200 bg-white leading-none text-ardoise-700 hover:border-marine-400"
+                    aria-label="Un créneau de plus"
+                  >
+                    +
+                  </button>
+                  <span className="chiffres ml-auto text-base font-bold text-marine-800">
+                    {formaterEuros(acompte)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAcompteOuvert(false);
+                      setCreneaux(null);
+                    }}
+                    className="text-xs text-ardoise-500 underline underline-offset-2 hover:text-ardoise-800"
+                  >
+                    Retirer
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-ardoise-600">
+                  {creneauxRetenus} créneau{creneauxRetenus > 1 ? 'x' : ''} de 30 minutes bloqué
+                  {creneauxRetenus > 1 ? 's' : ''} dans le planning. Il se déduit du total, et la
+                  première échéance tombe quinze jours après.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {echeancier.echeances.length > 1 && (
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
             {echeancier.echeances.map((e) => (
               <div
-                key={e.rang}
-                className="rounded-lg border border-ardoise-200 bg-ardoise-50 px-3 py-2"
+                key={`${e.type ?? 'echeance'}-${e.rang}`}
+                className={`rounded-lg border px-3 py-2 ${
+                  e.type === 'acompte'
+                    ? 'border-marine-300 bg-marine-50'
+                    : 'border-ardoise-200 bg-ardoise-50'
+                }`}
               >
-                <div className="text-2xs font-semibold uppercase tracking-wide text-ardoise-400">
-                  {e.rang}
-                  {e.rang === 1 ? 'ère' : 'ème'}
+                <div
+                  className={`text-2xs font-semibold uppercase tracking-wide ${
+                    e.type === 'acompte' ? 'text-marine-700' : 'text-ardoise-400'
+                  }`}
+                >
+                  {e.type === 'acompte' ? 'Acompte' : `${e.rang}${e.rang === 1 ? 'ère' : 'ème'}`}
                 </div>
                 <div className="chiffres text-sm font-bold text-ardoise-900">
                   {formaterEurosJuste(e.montant)}
