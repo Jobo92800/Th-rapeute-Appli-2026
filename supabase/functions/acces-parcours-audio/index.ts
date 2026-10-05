@@ -8,8 +8,20 @@
   il vit ici, en secret de fonction.
 
   Secrets attendus (Supabase → Edge Functions → Secrets) :
-    PODCAST_API_URL      https://applipodcast.netlify.app/api/admin
+    PODCAST_API_URL      https://parcours.mabeautyplus.fr/api/admin
     PODCAST_ADMIN_CODE   le code de l'espace thérapeute
+
+  Et, **séparément**, pour la seule lecture de l'activité de la cliente :
+    NUTRITION_API_URL    https://applinutritonjuin2026.netlify.app/api/admin-parcours
+    NUTRITION_ADMIN_CODE le code d'administration de l'application nutrition
+
+  Pourquoi deux paires et pas une. La création de compte est repassée en
+  direct sur Mon Parcours le 28 septembre 2026, parce que l'invitation de
+  l'application nutrition envoyait la cliente sur un site qui n'était pas
+  prêt. Lire ce qu'elle fait dans l'application nutrition est un tout autre
+  sujet, sans risque : mélanger les deux obligerait à rebasculer la création
+  pour obtenir une lecture. Les secrets nutrition sont **facultatifs** —
+  absents, la fiche n'affiche simplement pas le bloc d'activité.
 */
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
@@ -34,6 +46,8 @@ Deno.serve(async (req: Request) => {
 
   const api = Deno.env.get('PODCAST_API_URL');
   const code = Deno.env.get('PODCAST_ADMIN_CODE');
+  const apiNutrition = Deno.env.get('NUTRITION_API_URL');
+  const codeNutrition = Deno.env.get('NUTRITION_ADMIN_CODE');
 
   if (!api || !code) {
     return json(
@@ -85,6 +99,21 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify(corps),
     });
     return { statut: r.status, ok: r.ok, corps: await r.json().catch(() => ({})) };
+  }
+
+  /** L'application nutrition, pour la seule lecture de l'activité. */
+  async function nutrition(corps: Record<string, unknown>) {
+    if (!apiNutrition || !codeNutrition) return { ok: false, corps: {} as Record<string, unknown> };
+    try {
+      const r = await fetch(apiNutrition, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-mbp-code': codeNutrition },
+        body: JSON.stringify(corps),
+      });
+      return { ok: r.ok, corps: (await r.json().catch(() => ({}))) as Record<string, unknown> };
+    } catch {
+      return { ok: false, corps: {} as Record<string, unknown> };
+    }
   }
 
   /**
@@ -159,6 +188,29 @@ Deno.serve(async (req: Request) => {
       if (!c?.email) return json({ compte: null });
       const trouvee = await chercherParEmail(c.email);
       return json({ compte: trouvee });
+    }
+
+    // --- Ce qu'elle fait dans son application, entre deux rendez-vous -----
+    /*
+      L'application cliente sait des choses que cette fiche ignore : si elle
+      est revenue, où elle en est du parcours, ce qu'elle s'est pesée, si elle
+      a planifié ses repas. On le lit ici, en lecture seule, pour que la
+      séance s'ouvre sur du réel plutôt que sur « alors, ça va ? ».
+
+      Une cliente sans compte, ou dont l'application ne répond pas, renvoie
+      simplement `null` : la fiche n'affiche alors rien de plus qu'avant.
+    */
+    if (action === 'activite') {
+      const { data: c } = await db
+        .from('clientes')
+        .select('email')
+        .eq('id', clienteId)
+        .maybeSingle();
+
+      if (!c?.email) return json({ activite: null });
+      const r = await nutrition({ action: 'activite', email: c.email });
+      if (!r.ok) return json({ activite: null });
+      return json({ activite: r.corps?.activite ?? null });
     }
 
     // --- Renvoi de l'invitation -------------------------------------------

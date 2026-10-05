@@ -961,6 +961,50 @@ export async function urlEcoutePodcast(
   return { url: r.url, titre: r.titre ?? '' };
 }
 
+/**
+ * Ce que la cliente fait dans son application entre deux rendez-vous.
+ *
+ * Lecture seule, et tolérante : une cliente sans compte, une application qui
+ * ne répond pas, un secret absent — tout cela renvoie `null`, et la fiche
+ * n'affiche simplement rien de plus.
+ */
+export interface ActiviteCliente {
+  prenom: string;
+  email: string;
+  statut: string;
+  jamaisVenue: boolean;
+  derniereOuverture: string | null;
+  joursDepuisOuverture: number | null;
+  parcours: {
+    cure: string;
+    terminees: number;
+    total: number;
+    etapeEnCours: number;
+    titreEnCours: string | null;
+    tauxEnCours: number;
+    derniereEcoute: string | null;
+    joursDepuisEcoute: number | null;
+  } | null;
+  poids: {
+    nombre: number;
+    premier: number | null;
+    dernier: number | null;
+    dernierLe: string | null;
+    ecart: number | null;
+    joursDepuis: number | null;
+  };
+  objectifs: { cochees: number; total: number; joursParfaits7: number };
+  repas: { planifiesCetteSemaine: number; joursPlanifies: number };
+}
+
+export async function activiteCliente(clienteId: string): Promise<ActiviteCliente | null> {
+  const { data, error } = await supabase.functions.invoke('acces-parcours-audio', {
+    body: { clienteId, action: 'activite' },
+  });
+  if (error) return null;
+  return ((data as { activite?: ActiviteCliente | null })?.activite ?? null) as ActiviteCliente | null;
+}
+
 /** État du compte de la cliente côté Mon Parcours, ou null s'il n'existe pas. */
 export async function etatParcours(clienteId: string): Promise<CompteParcours | null> {
   const { data, error } = await supabase.functions.invoke('acces-parcours-audio', {

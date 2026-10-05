@@ -602,6 +602,25 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   qui règle chacun. Et **tous les 409 ne valent pas « déjà fait »** :
   `compte-sans-identifiant` s'annonçait comme un succès, et la cliente
   repartait sans accès.
+- **« Dans son application », sur l'onglet Parcours audio** (5 octobre 2026).
+  La fiche savait tout du centre et rien de ce qui se passe entre deux
+  rendez-vous : on accueillait une cliente pour sa sixième séance sans savoir
+  qu'elle avait arrêté le parcours à l'étape 2 ou qu'elle ne s'était pas pesée
+  depuis trois semaines. `CarteActiviteCliente` lit quatre chiffres dans
+  l'application nutrition — avancement du parcours et jours depuis la dernière
+  écoute, ses pesées à elle et l'écart depuis la première, ses objectifs de la
+  semaine, ses repas planifiés — plus la date de sa dernière visite. **En
+  lecture seule**, et sans ses messages ni ses photos de repas : ce qui ouvre
+  une séance, pas une surveillance. Les retards s'affichent en ambre, jamais
+  en reproche.
+  **Deux secrets séparés, et facultatifs** : `NUTRITION_API_URL`
+  (`https://applinutritonjuin2026.netlify.app/api/admin-parcours`) et
+  `NUTRITION_ADMIN_CODE`. Ils ne touchent pas à `PODCAST_API_URL`, qui pilote
+  la **création** de compte et reste sur Mon Parcours : lire l'activité et
+  créer un accès sont deux sujets, et les confondre obligerait à rebasculer la
+  création pour obtenir une lecture. Secrets absents, application qui ne répond
+  pas, cliente sans compte : la carte ne s'affiche pas, la fiche est celle
+  d'avant.
 - **Le parcours audio est repassé en direct sur Mon Parcours** (28 septembre
   2026, secret `PODCAST_API_URL` = `https://parcours.mabeautyplus.fr/api/admin`,
   `PODCAST_ADMIN_CODE` = le code de Mon Parcours). Il avait été basculé sur
