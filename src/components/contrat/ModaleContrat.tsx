@@ -189,7 +189,21 @@ export default function ModaleContrat({
 
   const tousLus = documents.length > 0 && vus.size >= documents.length;
   const mdpIncomplet =
-    parcoursAudio !== null && motDePasse.length > 0 && motDePasse.length < MOT_DE_PASSE_MIN;
+    /*
+      LE MOT DE PASSE EST OBLIGATOIRE DEPUIS LE 6 OCTOBRE 2026.
+
+      Il était facultatif : sans lui, une invitation partait par email. Or le
+      compte se crée maintenant dans DEUX applications — celle du parcours
+      audio et celle de la nutrition, le temps de la bascule — et chacune
+      envoie la sienne, avec son propre lien. La cliente recevait deux mails
+      dont l'un menait à une application qui n'est pas encore ouverte au
+      public.
+
+      Le mot de passe choisi au comptoir n'envoie rien du tout : la cliente
+      note son adresse et se connecte. C'était déjà le chemin normal, il est
+      désormais le seul.
+    */
+    parcoursAudio !== null && motDePasse.length < MOT_DE_PASSE_MIN;
   const tousCoches = coches.every(Boolean);
   const tailleManquante = tenueAremettre && !tailleTenue;
   const pret =
@@ -280,7 +294,7 @@ export default function ModaleContrat({
           toast.success(
             motDePasseDefini
               ? `Parcours audio ${libelleParcours(parcoursAudio)} — ${laCliente(cliente.civilite)} peut se connecter dès maintenant`
-              : `Parcours audio ${libelleParcours(parcoursAudio)} — invitation envoyée à ${cliente.email}`,
+              : `Parcours audio ${libelleParcours(parcoursAudio)} — compte créé, mot de passe à reprendre depuis la fiche`,
             { duration: 6000 },
           );
         } catch (e) {
@@ -547,7 +561,7 @@ export default function ModaleContrat({
                     <p className="mt-1.5 text-xs text-ardoise-500">
                       {motDePasse.length >= MOT_DE_PASSE_MIN
                         ? `${cliente.prenom} pourra se connecter tout de suite sur ${ADRESSE_PARCOURS_DITE} avec ${cliente.email}. Notez-lui ce mot de passe, ${pronom(cliente.civilite)} pourra le changer ensuite.`
-                        : `Laissez vide pour lui envoyer une invitation par email à la place — plus fragile, le lien expire au bout de 24 h.`}
+                        : `Obligatoire : c'est lui qui ouvre le compte. Aucun email ne part — notez-lui l'adresse et le mot de passe.`}
                     </p>
                   </div>
                 ) : (

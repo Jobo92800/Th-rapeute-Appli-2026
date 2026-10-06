@@ -921,6 +921,20 @@ export async function donnerAccesParcours(
   return { dejaLa: Boolean(d?.dejaLa), motDePasseDefini: Boolean(d?.motDePasseDefini) };
 }
 
+/**
+ * Le renvoi d'invitation, **plus appelé par aucun écran** (6 octobre 2026).
+ *
+ * Il faisait partir un email dont le lien ne valait qu'une fois, vingt-quatre
+ * heures. Depuis que le compte se crée dans deux applications — le parcours
+ * audio et la nutrition, le temps de la bascule —, chacune envoyait la
+ * sienne : deux mails, deux liens, dont un vers une application qui n'est pas
+ * encore ouverte au public. On redonne un mot de passe à la place, ce qui
+ * n'envoie rien et marche tout de suite.
+ *
+ * La fonction reste : le jour où la bascule sera faite et où les deux
+ * applications n'en feront plus qu'une, l'invitation redeviendra un chemin
+ * de secours légitime.
+ */
 export async function renvoyerInvitationParcours(clienteId: string): Promise<string> {
   const { data, error } = await supabase.functions.invoke('acces-parcours-audio', {
     body: { clienteId, action: 'renvoyer' },

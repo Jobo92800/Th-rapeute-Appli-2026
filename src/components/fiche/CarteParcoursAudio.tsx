@@ -9,7 +9,6 @@ import {
   MOT_DE_PASSE_MIN,
   donnerAccesParcours,
   etatParcours,
-  renvoyerInvitationParcours,
 } from '../../services/metier';
 import { laCliente, majuscule } from '../../domain/civilite';
 import {
@@ -54,7 +53,7 @@ export default function CarteParcoursAudio({
   contratSigneLe: string | null;
 }) {
   const qc = useQueryClient();
-  const [action, setAction] = useState<'creer' | 'renvoyer' | null>(null);
+  const [action, setAction] = useState<'creer' | null>(null);
   const [parcoursChoisi, setParcoursChoisi] = useState<CodeParcours>('B');
   const [motDePasse, setMotDePasse] = useState('');
 
@@ -70,9 +69,13 @@ export default function CarteParcoursAudio({
   async function donner() {
     setAction('creer');
     try {
+      /*
+        Sur un compte existant, on ne redistribue pas son parcours : elle en
+        suit un, le remettre à zéro effacerait son avancement.
+      */
       const { motDePasseDefini } = await donnerAccesParcours(
         cliente.id,
-        parcoursChoisi,
+        aAcces ? ((cliente.parcours_audio as CodeParcours | null) ?? parcoursChoisi) : parcoursChoisi,
         motDePasse,
       );
       setMotDePasse('');
@@ -81,23 +84,11 @@ export default function CarteParcoursAudio({
       toast.success(
         motDePasseDefini
           ? `Compte prêt — ${laCliente(cliente.civilite)} peut se connecter dès maintenant`
-          : `Invitation envoyée à ${cliente.email}`,
+          : `Compte créé — reprenez le mot de passe ici`,
         { duration: 6000 },
       );
     } catch (e) {
       toast.error(texteErreur(e) || "L'accès n'a pas pu être créé.");
-    } finally {
-      setAction(null);
-    }
-  }
-
-  async function renvoyer() {
-    setAction('renvoyer');
-    try {
-      const email = await renvoyerInvitationParcours(cliente.id);
-      toast.success(`Invitation renvoyée à ${email || cliente.email}`);
-    } catch (e) {
-      toast.error(texteErreur(e) || "L'invitation n'a pas pu être renvoyée.");
     } finally {
       setAction(null);
     }
@@ -206,10 +197,7 @@ export default function CarteParcoursAudio({
 
               <button
                 onClick={donner}
-                disabled={
-                  action !== null ||
-                  (motDePasse.length > 0 && motDePasse.length < MOT_DE_PASSE_MIN)
-                }
+                disabled={action !== null || motDePasse.length < MOT_DE_PASSE_MIN}
                 className="bouton-principal"
               >
                 {action === 'creer' ? (
@@ -224,7 +212,7 @@ export default function CarteParcoursAudio({
             <p className="text-xs text-ardoise-500">
               {motDePasse.length >= MOT_DE_PASSE_MIN
                 ? `Le compte sera utilisable immédiatement : ${cliente.email} et ce mot de passe.`
-                : 'Sans mot de passe, une invitation part par email — plus fragile, le lien expire au bout de 24 h.'}
+                : `Obligatoire : c'est lui qui ouvre le compte. Aucun email ne part — notez-lui l'adresse et le mot de passe.`}
             </p>
           </div>
         ) : (
@@ -258,14 +246,46 @@ export default function CarteParcoursAudio({
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <button onClick={renvoyer} disabled={action !== null} className="bouton-discret">
-                {action === 'renvoyer' ? (
+            {/*
+              MOT DE PASSE OUBLIÉ : ON LUI EN REDONNE UN, ON N'ENVOIE PLUS DE LIEN.
+
+              Le renvoi d'invitation partait par email, et son lien ne valait
+              qu'une fois, vingt-quatre heures. Depuis que le compte se crée
+              dans deux applications — le parcours audio et la nutrition, le
+              temps de la bascule —, chacune envoyait le sien : deux mails,
+              deux liens, dont un vers une application qui n'est pas encore
+              ouverte au public.
+
+              Redonner un mot de passe ne fait partir aucun email, marche
+              immédiatement, et met les deux comptes d'accord. C'est aussi ce
+              que la thérapeute veut vraiment quand la cliente l'appelle.
+            */}
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="min-w-52 flex-1">
+                <label htmlFor="mdp-reprise" className="etiquette">
+                  Mot de passe oublié ? Donnez-lui-en un nouveau
+                </label>
+                <input
+                  id="mdp-reprise"
+                  type="text"
+                  autoComplete="off"
+                  value={motDePasse}
+                  onChange={(e) => setMotDePasse(e.target.value)}
+                  className="champ"
+                  placeholder={`${MOT_DE_PASSE_MIN} caractères minimum`}
+                />
+              </div>
+              <button
+                onClick={donner}
+                disabled={action !== null || motDePasse.length < MOT_DE_PASSE_MIN}
+                className="bouton-discret"
+              >
+                {action === 'creer' ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Send className="h-4 w-4" />
                 )}
-                Mot de passe oublié — lui renvoyer un lien
+                Redonner l'accès
               </button>
               <a
                 href={ADRESSE_PARCOURS}
@@ -279,11 +299,11 @@ export default function CarteParcoursAudio({
 
             <p className="text-xs text-ardoise-400">
               Accès donné le{' '}
-              {format(new Date(cliente.acces_audio_le!), 'd MMMM yyyy', { locale: fr })}. Le renvoi
-              d'invitation est ce qu'on fait quand {laCliente(cliente.civilite)} a oublié son mot de
-              passe ou ne retrouve plus son email : elle reçoit un lien pour reprendre la main sur
-              son compte. Ce lien ne vaut qu'une fois et expire au bout de 24 h — mieux vaut
-              l'envoyer pendant qu'elle est au téléphone.
+              {format(new Date(cliente.acces_audio_le!), 'd MMMM yyyy', { locale: fr })}. Le nouveau
+              mot de passe remplace l'ancien tout de suite, et{' '}
+              {laCliente(cliente.civilite)} se connecte avec {cliente.email} sur{' '}
+              {ADRESSE_PARCOURS_DITE}. Aucun email ne part : notez-lui les deux, ou dictez-les-lui
+              au téléphone.
             </p>
           </div>
         )}
