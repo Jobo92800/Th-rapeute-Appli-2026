@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { texteErreur } from '../../lib/erreurs';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { OctagonX, Plus, RotateCcw, Sparkles, Trash2, Wallet } from 'lucide-react';
+import { Check, Loader2, OctagonX, Plus, RotateCcw, Sparkles, Trash2, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import {
   majEcheance,
   programmesDeLaCliente,
+  corrigerLesMontants,
   reechelonnerLesEcheances,
   ventesDeLaCliente,
 } from '../../services/metier';
@@ -25,6 +26,7 @@ import {
   TEINTE_STATUT,
   echeanceIntouchable,
   etatEcheance,
+  montantsCoherents,
   reechelonner,
   refusDeReechelonner,
   encaisseHorsFrais,
@@ -381,6 +383,13 @@ export default function OngletProgramme({
                   Réglé par <b>Alma</b> en {echeances.length} fois, avancé au centre à la
                   signature. Les mensualités sont prélevées par l’organisme : il n’y a rien à
                   encaisser ni à relancer ici. Le contrat en porte le détail.
+                  {/*
+                    Même chez Alma, la direction peut corriger le montant : le
+                    calendrier appartient à l'organisme, pas le prix de la cure.
+                  */}
+                  {role === 'direction' && (
+                    <CorrigerLesMontants programme={p} echeances={echeances} onFait={rafraichir} />
+                  )}
                 </p>
               ) : (
                 <>
@@ -392,7 +401,12 @@ export default function OngletProgramme({
                     moyen de règlement.
                   </p>
 
-                  <Reechelonner programme={p} lignes={lignes} echeances={echeances} onFait={rafraichir} />
+                  <div className="flex flex-wrap items-center gap-x-5">
+                    <Reechelonner programme={p} lignes={lignes} echeances={echeances} onFait={rafraichir} />
+                    {role === 'direction' && (
+                      <CorrigerLesMontants programme={p} echeances={echeances} onFait={rafraichir} />
+                    )}
+                  </div>
                 </>
               )}
 
@@ -596,6 +610,185 @@ function Bloc({
         {valeur}
       </div>
       {note && <div className="mt-0.5 text-2xs text-ardoise-500">{note}</div>}
+    </div>
+  );
+}
+
+/**
+ * Corriger à la main le montant d'une cure et de ses échéances.
+ *
+ * **Direction seulement**, et la base le vérifie aussi. Changer un montant
+ * après coup, c'est décider de ce qu'on ne réclamera plus — un geste de la
+ * même famille que l'avoir et l'arrêt de cure, pas une décision de comptoir.
+ *
+ * CE QUI SE CORRIGE ET CE QUI NE SE CORRIGE PAS. Le montant de la cure et
+ * les échéances encore dues, oui. Une échéance déjà réglée, non : c'est un
+ * fait, pas une prévision — il faut d'abord la remettre « À venir » dans son
+ * menu, ce qui se voit. L'acompte et le bilan déjà versé non plus.
+ *
+ * LA SOMME DOIT TOMBER JUSTE. Le total et les échéances se corrigent
+ * ensemble, et l'écran refuse d'enregistrer tant que la somme ne retombe pas
+ * sur le montant — frais Alma compris, puisque les mensualités les portent.
+ * Sans ce contrôle, la fiche annoncerait un prix et en réclamerait un autre.
+ *
+ * Les lignes de la cure ne bougent pas : une séance reste vendue au prix
+ * qu'elle valait. C'est une correction de montant, pas une renégociation —
+ * et le contrat signé, lui, garde ce qui a été signé.
+ */
+function CorrigerLesMontants({
+  programme,
+  echeances,
+  onFait,
+}: {
+  programme: Programme;
+  echeances: Echeance[];
+  onFait: () => void;
+}) {
+  const [ouvert, setOuvert] = useState(false);
+  const [total, setTotal] = useState(String(Number(programme.montant_total)));
+  const [montants, setMontants] = useState<Record<string, string>>({});
+  const [enCours, setEnCours] = useState(false);
+
+  const frais = Number(programme.frais_financement ?? 0);
+
+  /* Ce qui est réglé est un fait : on l'affiche, on ne le propose pas. */
+  const figee = (e: Echeance) =>
+    e.statut === 'paye' || e.statut === 'donne' || e.type === 'bilan' || e.type === 'acompte';
+
+  function ouvrir() {
+    setTotal(String(Number(programme.montant_total)));
+    setMontants(Object.fromEntries(echeances.map((e) => [e.id, String(Number(e.montant))])));
+    setOuvert(true);
+  }
+
+  const lu = (v: string) => Number(String(v).replace(',', '.'));
+  const totalVoulu = lu(total);
+  const somme = echeances.reduce((n, e) => n + (lu(montants[e.id] ?? '0') || 0), 0);
+  const attendu = Math.round((totalVoulu + frais) * 100) / 100;
+  /* La règle vit dans le domaine, avec son banc d'essai : la base la tient aussi. */
+  const juste =
+    Number.isFinite(totalVoulu) &&
+    montantsCoherents({
+      montantTotal: totalVoulu,
+      frais,
+      echeances: echeances.map((e) => lu(montants[e.id] ?? '0') || 0),
+    });
+  const valide = Number.isFinite(totalVoulu) && totalVoulu >= 0 && juste;
+
+  async function appliquer() {
+    setEnCours(true);
+    try {
+      await corrigerLesMontants(
+        programme.id,
+        totalVoulu,
+        echeances.map((e) => ({ id: e.id, montant: lu(montants[e.id] ?? '0') })),
+      );
+      toast.success('Montants corrigés');
+      setOuvert(false);
+      onFait();
+    } catch (err) {
+      // Le refus vient de la base et dit précisément pourquoi : on le montre.
+      toast.error(texteErreur(err) || "Les montants n'ont pas pu être corrigés.");
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  if (!ouvert) {
+    return (
+      <button
+        onClick={ouvrir}
+        className="mt-2 text-xs font-medium text-marine-700 underline underline-offset-2 hover:text-marine-900"
+      >
+        Corriger les montants
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-3 w-full rounded-xl border border-ardoise-300 bg-white p-4">
+      <p className="text-xs text-ardoise-600">
+        <b className="text-ardoise-900">Direction.</b> Un geste commercial, une erreur de saisie :
+        on réécrit le montant de la cure et ses échéances. Les séances vendues ne changent pas, et
+        le contrat déjà signé garde ce qui a été signé.
+      </p>
+
+      <div className="mt-3 flex flex-wrap items-end gap-3">
+        <div>
+          <span className="etiquette">Montant de la cure</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            value={total}
+            onChange={(e) => setTotal(e.target.value)}
+            className="champ w-36"
+            aria-label="Montant de la cure"
+          />
+        </div>
+        {frais > 0 && (
+          <p className="pb-2 text-xs text-ardoise-500">
+            + {formaterEuros(frais, 2)} de frais Alma, à la charge de la cliente — les mensualités
+            les portent.
+          </p>
+        )}
+      </div>
+
+      <div className="mt-3 space-y-1.5">
+        {echeances.map((e) => (
+          <div key={e.id} className="flex flex-wrap items-center gap-3">
+            <span className="w-24 shrink-0 text-2xs font-semibold uppercase tracking-wide text-ardoise-500">
+              {e.type === 'bilan'
+                ? 'Bilan'
+                : e.type === 'acompte'
+                  ? 'Acompte'
+                  : `${e.rang}${e.rang === 1 ? 'ère' : 'ème'} éch.`}
+            </span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={montants[e.id] ?? ''}
+              onChange={(ev) => setMontants((m) => ({ ...m, [e.id]: ev.target.value }))}
+              disabled={figee(e)}
+              aria-label={`Montant de l'échéance ${e.rang}`}
+              className="champ w-32 disabled:bg-ardoise-50 disabled:text-ardoise-400"
+            />
+            {figee(e) && (
+              <span className="text-xs text-ardoise-500">
+                Déjà réglée — remettez-la « À venir » pour la corriger.
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <p
+        className={`mt-3 rounded-lg px-3 py-2 text-xs ${
+          juste ? 'bg-marine-50 text-marine-800' : 'border border-amber-200 bg-amber-50 text-amber-900'
+        }`}
+      >
+        {juste ? (
+          <>
+            La somme tombe juste : <b>{formaterEuros(somme, 2)}</b>.
+          </>
+        ) : (
+          <>
+            Les échéances font <b>{formaterEuros(somme, 2)}</b> pour{' '}
+            <b>{formaterEuros(attendu, 2)}</b> attendus
+            {frais > 0 ? ' (montant et frais Alma)' : ''}. Tant que la somme ne tombe pas juste, la
+            fiche annoncerait un prix et en réclamerait un autre.
+          </>
+        )}
+      </p>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button onClick={appliquer} disabled={!valide || enCours} className="bouton-principal">
+          {enCours ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          Enregistrer les montants
+        </button>
+        <button onClick={() => setOuvert(false)} className="bouton-discret">
+          Annuler
+        </button>
+      </div>
     </div>
   );
 }

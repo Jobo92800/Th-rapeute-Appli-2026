@@ -20,6 +20,7 @@ import {
   encaisseHorsFrais,
   datesEcheancierApresAcompte,
   echeanceIntouchable,
+  montantsCoherents,
   reechelonner,
   refusDeReechelonner,
 } from '../src/domain/reglement.ts';
@@ -319,6 +320,47 @@ export function controlerMetier() {
     quinze jours au plus. Le reste du calendrier ne bouge pas : le 10 de
     chaque mois reste le 10 de chaque mois.
   */
+  /*
+    CORRIGER LES MONTANTS À LA MAIN (direction, 6 octobre 2026).
+
+    Un geste commercial consenti au comptoir, une erreur de saisie : la
+    direction réécrit le montant d'une cure et de ses échéances. Le seul
+    contrôle qui compte, c'est que la somme retombe juste — sans lui, la
+    fiche annoncerait un prix et le CRM en réclamerait un autre. Chez Alma,
+    ce sont les mensualités qui portent les frais : les oublier ferait
+    refuser une correction pourtant exacte.
+  */
+  section('Corriger les montants d’une cure');
+
+  verifie(
+    'deux chèques qui font le montant : juste',
+    montantsCoherents({ montantTotal: 553, echeances: [316, 237] }),
+  );
+  verifie(
+    'un euro de trop : refusé',
+    !montantsCoherents({ montantTotal: 553, echeances: [316, 238] }),
+  );
+  verifie(
+    'un centime de trop aussi',
+    !montantsCoherents({ montantTotal: 553, echeances: [316, 237.01] }),
+  );
+  verifie(
+    'le bilan déjà réglé compte dans la somme',
+    montantsCoherents({ montantTotal: 642, echeances: [89, 316, 237] }),
+  );
+  verifie(
+    'chez Alma, les frais sont portés par les mensualités',
+    montantsCoherents({ montantTotal: 474, frais: 9.01, echeances: [127.51, 118.5, 118.5, 118.5] }),
+  );
+  verifie(
+    'et les oublier ferait refuser une correction juste',
+    !montantsCoherents({ montantTotal: 474, echeances: [127.51, 118.5, 118.5, 118.5] }),
+  );
+  verifie(
+    'une cure sans échéance ne vaut rien',
+    montantsCoherents({ montantTotal: 0, echeances: [] }),
+  );
+
   /*
     CHAQUE CENTRE N'A PAS LES MÊMES APPAREILS.
 

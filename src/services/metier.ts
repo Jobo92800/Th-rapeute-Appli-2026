@@ -484,6 +484,29 @@ export async function reechelonnerLesEcheances(
   declencherSynchro();
 }
 
+/**
+ * Corriger à la main le montant d'une cure et de ses échéances.
+ *
+ * **Direction seulement**, vérifié par la base : changer un montant après
+ * coup, c'est décider de ce qu'on ne réclamera plus — comme un avoir ou un
+ * arrêt de cure. La commande refuse elle-même une cure arrêtée, une échéance
+ * déjà réglée, et toute somme qui ne retombe pas sur le montant plus les
+ * frais : l'écran prévient, la base tranche.
+ */
+export async function corrigerLesMontants(
+  programmeId: string,
+  montantTotal: number,
+  echeances: Array<{ id: string; montant: number }>,
+): Promise<void> {
+  const { error } = await supabase.rpc('corriger_les_montants', {
+    p_programme_id: programmeId,
+    p_montant_total: montantTotal,
+    p_echeances: echeances,
+  });
+  if (error) throw error;
+  declencherSynchro();
+}
+
 export async function majEcheance(id: string, patch: Partial<Echeance>): Promise<void> {
   const { error } = await supabase.from('echeances').update(patch).eq('id', id);
   if (error) throw error;

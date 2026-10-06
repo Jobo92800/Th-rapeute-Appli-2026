@@ -376,3 +376,24 @@ export function refusDeReechelonner(args: {
   }
   return null;
 }
+
+/**
+ * La correction manuelle des montants tombe-t-elle juste ?
+ *
+ * La somme des échéances doit retomber sur le montant de la cure, **frais de
+ * financement compris** : chez Alma, ce sont les mensualités qui portent les
+ * frais, et les oublier ferait refuser une correction pourtant exacte.
+ *
+ * Sans ce contrôle, la fiche annoncerait un prix et en réclamerait un autre —
+ * et le CRM relancerait sur le second. On compare au centime, parce que c'est
+ * là que les erreurs d'arrondi se logent.
+ */
+export function montantsCoherents(args: {
+  montantTotal: number;
+  frais?: number;
+  echeances: number[];
+}): boolean {
+  const attendu = Math.round((args.montantTotal + (args.frais ?? 0)) * 100);
+  const somme = Math.round(args.echeances.reduce((n, m) => n + m, 0) * 100);
+  return attendu === somme;
+}
