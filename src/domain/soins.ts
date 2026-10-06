@@ -24,6 +24,8 @@
 */
 
 import type { Technologie } from './tarification';
+import { CENTRE_ANTI_AGE } from './antiAge';
+import { signatureDisponible } from './profilSignature';
 
 /**
  * Le Dôme ne se tient qu'au Grau-du-Roi. Il n'est jamais prescrit par un
@@ -81,6 +83,26 @@ export const CENTRES_AVEC_DOME = ['grau-du-roi'];
 
 export function domeDisponible(centreId: string | null | undefined): boolean {
   return Boolean(centreId) && CENTRES_AVEC_DOME.includes(centreId!);
+}
+
+/**
+ * Les soins anti-âge que ce centre tient.
+ *
+ * L'Advance Lift n'est qu'au Grau-du-Roi, la radiofréquence Mesojet qu'au
+ * Crès et à Sérignan, et Cabestany comme Avignon n'ont pas d'anti-âge.
+ * **Proposer un soin qu'un centre ne tient pas, c'est le vendre** : la
+ * cliente signe, et personne ne peut le lui donner. La règle vit donc ici,
+ * au même endroit que les bilans qui prescrivent ces soins, et le banc
+ * d'essai la tient.
+ *
+ * Jamais les deux à la fois : aucun centre ne fait l'Advance Lift et la
+ * radiofréquence.
+ */
+export function soinsAntiAgeDuCentre(centreId: string | null | undefined): Technologie[] {
+  if (!centreId) return [];
+  if (centreId === CENTRE_ANTI_AGE) return ['advance_lift'];
+  if (signatureDisponible(centreId)) return ['radiofrequence'];
+  return [];
 }
 
 export interface CouleurSoin {

@@ -141,6 +141,8 @@ export default function ModaleNouvelleCure({
               catalogue={rayon}
               seancesOffertes={solde.disponibles}
               optionsModifiables
+              /* Le centre décide des soins anti-âge proposés. */
+              centreId={centreId}
               onChange={(p, n) => {
                 setPrescription(p);
                 setTotalSeances(n);

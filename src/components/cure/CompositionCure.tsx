@@ -7,6 +7,7 @@ import {
   type ComplementChoisi,
 } from '../../domain/complements';
 import type { EtatStock } from '../../types/db';
+import { soinsAntiAgeDuCentre } from '../../domain/soins';
 import {
   ECHEANCES_ALMA,
   dureeCureEnMois,
@@ -67,6 +68,12 @@ interface Props {
    * signée quand elles ont été gagnées.
    */
   seancesOffertes?: number;
+  /**
+   * Le centre de la cliente. Il décide des soins anti-âge proposés :
+   * l'Advance Lift au Grau-du-Roi, la radiofréquence au Crès et à Sérignan,
+   * rien ailleurs. Absent, on ne propose que la perte de poids.
+   */
+  centreId?: string;
   onChange: (p: Prescription, totalSeances: number) => void;
 }
 
@@ -77,6 +84,7 @@ interface Props {
   liste s'il revient au catalogue.
 */
 const TECHNOS_PRINCIPALES: Technologie[] = ['luxo', 'relax', 'ishape', 'presso'];
+
 
 /*
   Les deux façons de régler, identiques à celles du bilan. Un seul calcul
@@ -100,8 +108,15 @@ export default function CompositionCure({
   seancesInitiales,
   optionsModifiables = false,
   seancesOffertes = 0,
+  centreId,
   onChange,
 }: Props) {
+  /*
+    Une cliente suivie en radiofréquence qui reprend une cure n'a pas à
+    repasser son Profil Signature : la thérapeute compose, comme pour la
+    perte de poids. Ce que le centre tient décide de ce qu'on propose.
+  */
+  const antiAge = soinsAntiAgeDuCentre(centreId);
   const [seances, setSeances] = useState<Record<Technologie, number>>({
     luxo: seancesInitiales?.luxo ?? 16,
     relax: seancesInitiales?.relax ?? 0,
@@ -127,17 +142,37 @@ export default function CompositionCure({
   const [offertes, setOffertes] = useState(seancesOffertes);
   const [technoOfferte, setTechnoOfferte] = useState<Technologie>('luxo');
 
+  /*
+    La radiofréquence a deux formats et deux prix : visage et cou en trente
+    minutes, décolleté compris en une heure. Le décolleté ne s'impose jamais
+    tout seul — c'est la thérapeute qui le propose.
+  */
+  const [avecDecollete, setAvecDecollete] = useState(false);
+
   const electro = seances.ishape > 0;
-  const tenue = tenueChoisie ?? electro;
+
+  /*
+    Le guide et la tenue appartiennent à la perte de poids. Une cure
+    d'anti-âge seul ne les porte pas — le guide est celui du rééquilibrage
+    alimentaire, la tenue celle de l'I-Shape. Les laisser cochés ajoutait
+    89 € à une cure de radiofréquence.
+  */
+  const aUnSoinPertePoids = TECHNOS_PRINCIPALES.some((t) => seances[t] > 0);
+  const tenue = aUnSoinPertePoids && (tenueChoisie ?? electro);
 
   const lignes = useMemo(
     () =>
-      (['luxo', 'relax', 'ishape', 'presso'] as Technologie[]).map((t) => ({
+      [...TECHNOS_PRINCIPALES, ...antiAge].map((t) => ({
         technologie: t,
         seances: seances[t],
-        prixUnitaire: prixUnitaireParDefaut(t, grille),
+        prixUnitaire:
+          t === 'radiofrequence' && avecDecollete
+            ? grille.radiofrequence_decollete
+            : prixUnitaireParDefaut(t, grille),
       })),
-    [seances, grille],
+    // `antiAge` est recalculé à chaque rendu mais ne dépend que du centre.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [seances, grille, centreId, avecDecollete],
   );
 
   const complements = useMemo(
@@ -145,9 +180,16 @@ export default function CompositionCure({
     [boites, catalogue, grille.complement],
   );
 
+  const guideRetenu = guide && aUnSoinPertePoids;
+
   const detail = useMemo(
-    () => calculerMontant(lignes, { tenue, guide, boites: nombreDeBoites(complements) }, grille),
-    [lignes, tenue, guide, complements, grille],
+    () =>
+      calculerMontant(
+        lignes,
+        { tenue, guide: guideRetenu, boites: nombreDeBoites(complements) },
+        grille,
+      ),
+    [lignes, tenue, guideRetenu, complements, grille],
   );
 
   const offertesPosees = Math.min(offertes, seancesOffertes);
@@ -221,7 +263,7 @@ export default function CompositionCure({
         lignes,
         electro,
         tenue,
-        guide,
+        guide: guideRetenu,
         offertes:
           offertesPosees > 0 ? { technologie: technoOfferte, seances: offertesPosees } : null,
         complements,
@@ -234,7 +276,7 @@ export default function CompositionCure({
     );
     // onChange est recréée à chaque rendu du parent : on ne l'observe pas.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lignes, electro, tenue, guide, detail, echeancier, offertesPosees, technoOfferte, complements]);
+  }, [lignes, electro, tenue, guideRetenu, detail, echeancier, offertesPosees, technoOfferte, complements]);
 
   /* Chez Alma, l'acompte n'a pas de sens : on le referme en changeant de méthode. */
   function changerDeMethode(m: 'centre' | 'alma') {
@@ -271,6 +313,58 @@ export default function CompositionCure({
             />
           ))}
 
+          {/*
+            Les soins anti-âge du centre, à part : ce n'est pas le même
+            accompagnement, et les mélanger dans la même liste laisserait
+            croire qu'une cure les enchaîne.
+          */}
+          {antiAge.length > 0 && (
+            <div className="bg-violet-50/50 px-5 py-2">
+              <p className="text-2xs font-semibold uppercase tracking-widest text-violet-600">
+                Anti-âge
+              </p>
+            </div>
+          )}
+          {antiAge.map((t) => (
+            <LigneSeances
+              key={t}
+              libelle={LIBELLES_TECHNOLOGIE[t]}
+              valeur={seances[t]}
+              onMoins={() => ajuster(t, -1)}
+              onPlus={() => ajuster(t, 1)}
+            />
+          ))}
+
+          {/* Deux formats, deux prix : le décolleté ne s'impose pas tout seul. */}
+          {antiAge.includes('radiofrequence') && seances.radiofrequence > 0 && (
+            <div className="grid gap-2 px-5 py-3 sm:grid-cols-2">
+              {[
+                { avec: false, titre: 'Visage et cou', detail: '30 minutes', prix: grille.radiofrequence },
+                {
+                  avec: true,
+                  titre: 'Visage, cou et décolleté',
+                  detail: '1 heure',
+                  prix: grille.radiofrequence_decollete,
+                },
+              ].map((f) => (
+                <button
+                  key={f.titre}
+                  type="button"
+                  onClick={() => setAvecDecollete(f.avec)}
+                  className={`rounded-xl border px-3.5 py-2.5 text-left transition-colors ${
+                    avecDecollete === f.avec
+                      ? 'border-violet-400 bg-violet-50'
+                      : 'border-ardoise-200 bg-white hover:border-violet-200'
+                  }`}
+                >
+                  <span className="block text-sm font-semibold text-ardoise-900">{f.titre}</span>
+                  <span className="block text-xs text-ardoise-500">
+                    {f.detail} · {formaterEuros(f.prix)} la séance
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="space-y-1.5 border-t border-ardoise-100 bg-ardoise-50/60 px-5 py-4 text-sm">
@@ -280,10 +374,11 @@ export default function CompositionCure({
                 À facturer — décochez ce qui a déjà été remis
               </p>
               <Option
-                coche={guide}
+                coche={guideRetenu}
                 onChange={setGuide}
                 libelle="Guide de rééquilibrage alimentaire"
                 prix={formaterEuros(grille.guide)}
+                note={!aUnSoinPertePoids ? 'Aucun soin de perte de poids dans cette cure' : undefined}
               />
               <Option
                 coche={tenue}

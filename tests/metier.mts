@@ -27,7 +27,9 @@ import {
   construireEcheancierCure,
   creneauxParDefaut,
   montantAcompte,
+  prixUnitaireParDefaut,
 } from '../src/domain/tarification.ts';
+import { soinsAntiAgeDuCentre } from '../src/domain/soins.ts';
 import { evolution, libelleEvolution } from '../src/domain/tableauDeBord.ts';
 import { construireContrat } from '../src/domain/contrat.ts';
 import type { Centre, Cliente, Echeance, LigneProgramme, Programme } from '../src/types/db.ts';
@@ -317,6 +319,46 @@ export function controlerMetier() {
     quinze jours au plus. Le reste du calendrier ne bouge pas : le 10 de
     chaque mois reste le 10 de chaque mois.
   */
+  /*
+    CHAQUE CENTRE N'A PAS LES MÊMES APPAREILS.
+
+    Une cure suivante se compose à la main, sans repasser par un bilan — et
+    depuis le 5 octobre 2026 elle peut contenir un soin anti-âge. Mais
+    proposer un soin qu'un centre ne tient pas, c'est le vendre : la cliente
+    signe, et personne ne peut le lui donner. Aucun centre ne fait les deux.
+  */
+  section('Les soins anti-âge, centre par centre');
+
+  egal('le Grau-du-Roi tient l’Advance Lift', soinsAntiAgeDuCentre('grau-du-roi'), ['advance_lift']);
+  egal('le Crès tient la radiofréquence', soinsAntiAgeDuCentre('le-cres'), ['radiofrequence']);
+  egal('Sérignan aussi', soinsAntiAgeDuCentre('serignan'), ['radiofrequence']);
+  egal('Cabestany n’a pas d’anti-âge', soinsAntiAgeDuCentre('cabestany'), []);
+  egal('Avignon non plus', soinsAntiAgeDuCentre('avignon'), []);
+  egal('et sans centre, on ne propose rien', soinsAntiAgeDuCentre(null), []);
+  verifie(
+    'aucun centre ne fait les deux',
+    ['grau-du-roi', 'le-cres', 'serignan', 'cabestany', 'avignon'].every(
+      (c) => soinsAntiAgeDuCentre(c).length <= 1,
+    ),
+  );
+
+  /*
+    La radiofréquence a deux formats et deux prix. Le décolleté ne s'impose
+    jamais tout seul : c'est la thérapeute qui le propose, et le prix suit.
+  */
+  section('Le prix d’une séance, soin par soin');
+
+  const TARIFS = {
+    seance: 59, guide: 29, tenue: 60, bilan: 129, complement: 37,
+    advance_lift: 85, dome: 49, radiofrequence: 79,
+    radiofrequence_decollete: 139, bilan_signature: 89,
+  } as unknown as Parameters<typeof prixUnitaireParDefaut>[1];
+
+  egal('la luxothérapie à 59 €', prixUnitaireParDefaut('luxo', TARIFS), 59);
+  egal('l’Advance Lift à 85 €', prixUnitaireParDefaut('advance_lift', TARIFS), 85);
+  egal('la radiofréquence visage et cou à 79 €', prixUnitaireParDefaut('radiofrequence', TARIFS), 79);
+  egal('le Dôme à 49 €', prixUnitaireParDefaut('dome', TARIFS), 49);
+
   /*
     L'ACOMPTE D'UNE CURE SUIVANTE NE PORTE PAS DE BILAN.
 
