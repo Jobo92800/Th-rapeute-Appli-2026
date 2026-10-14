@@ -374,7 +374,7 @@ export function controlerMetier() {
   egal('le Grau-du-Roi tient l’Advance Lift', soinsAntiAgeDuCentre('grau-du-roi'), ['advance_lift']);
   egal('le Crès tient la radiofréquence', soinsAntiAgeDuCentre('le-cres'), ['radiofrequence']);
   egal('Sérignan aussi', soinsAntiAgeDuCentre('serignan'), ['radiofrequence']);
-  egal('Cabestany n’a pas d’anti-âge', soinsAntiAgeDuCentre('cabestany'), []);
+  egal('Pollestres n’a pas d’anti-âge', soinsAntiAgeDuCentre('cabestany'), []);
   egal('Avignon non plus', soinsAntiAgeDuCentre('avignon'), []);
   egal('et sans centre, on ne propose rien', soinsAntiAgeDuCentre(null), []);
   verifie(

@@ -42,12 +42,16 @@ CREATE TABLE IF NOT EXISTS centres (
 COMMENT ON COLUMN centres.nom_airtable IS
   'Valeur exacte du champ Centre dans la table Airtable Clients.';
 
+-- Cabestany a déménagé à Pollestres le 14 octobre 2026 (migration 078) : le
+-- nom et l'adresse portés ici sont les nouveaux, pour qu'une base neuve
+-- démarre juste. L'identifiant reste `cabestany`, et `nom_airtable` reste
+-- « Cabestany », la valeur que le CRM connaît.
 INSERT INTO centres (id, nom, societe, siren, adresse, code_postal, ville, telephone, email,
                      siege_adresse, siege_code_postal, siege_ville, nom_airtable) VALUES
   ('grau-du-roi', 'Le Grau-du-Roi', 'MB1PRO', '853 874 428 00016', '577 Rue des Tamaris',    '30240', 'Le Grau-du-Roi', '04 66 73 02 00', 'contact@mabeautyplus.fr', '577 Rue des Tamaris', '30240', 'Le Grau-du-Roi', 'Le Grau-du-Roi'),
   ('le-cres',     'Le Crès',        'MB2PRO', '982 876 047 00019', '1 Avenue des Chasseurs',  '34920', 'Le Crès',        '04 66 73 02 00', 'contact@mabeautyplus.fr', '577 Rue des Tamaris', '30240', 'Le Grau-du-Roi', 'Le Crès'),
   ('serignan',    'Sérignan',       'MB3PRO', '928 646 322 00018', '120 Avenue de la Plage',  '34410', 'Sérignan',       '04 66 73 02 00', 'contact@mabeautyplus.fr', '577 Rue des Tamaris', '30240', 'Le Grau-du-Roi', 'Sérignan'),
-  ('cabestany',   'Cabestany',      'MB4PRO', '938 742 541 00015', '4 Rue Ambroise Croizat',  '66330', 'Cabestany',      '04 66 73 02 00', 'contact@mabeautyplus.fr', '577 Rue des Tamaris', '30240', 'Le Grau-du-Roi', 'Cabestany'),
+  ('cabestany',   'Pollestres',     'MB4PRO', '938 742 541 00015', '16 Rue Alfred Sauvy',     '66450', 'Pollestres',     '04 66 73 02 00', 'contact@mabeautyplus.fr', '577 Rue des Tamaris', '30240', 'Le Grau-du-Roi', 'Cabestany'),
   ('avignon',     'Avignon',        'MB5PRO', '102 009 677 00018', '8 Bd de la Fraternité',   '84140', 'Avignon',        '04 66 73 02 00', 'contact@mabeautyplus.fr', '577 Rue des Tamaris', '30240', 'Le Grau-du-Roi', 'Avignon')
 ON CONFLICT (id) DO NOTHING;
 

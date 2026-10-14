@@ -96,7 +96,20 @@ WITH controles(numero, objet, present) AS (
                   jsonb_array_elements(b.contenu->'QUESTIONS') AS t(q)
              WHERE b.version = 1
                AND q->>'code' = 'q10c'
-               AND q->'si'->>'code' = 'q10b'))
+               AND q->'si'->>'code' = 'q10b')),
+
+    ('076', 'La restitution BioPortrait — les textes rangés dans le barème',
+     EXISTS (SELECT 1 FROM bareme_empreinte
+             WHERE version = 3 AND contenu ? 'RESTITUTION')),
+
+    ('077', 'La direction peut corriger les montants — commande corriger_les_montants',
+     EXISTS (SELECT 1 FROM pg_proc p
+             JOIN pg_namespace n ON n.oid = p.pronamespace
+             WHERE n.nspname = 'public' AND p.proname = 'corriger_les_montants')),
+
+    ('078', 'Cabestany devient Pollestres — le nom et l''adresse du centre',
+     EXISTS (SELECT 1 FROM centres
+             WHERE id = 'cabestany' AND nom = 'Pollestres' AND code_postal = '66450'))
 )
 SELECT
   numero,

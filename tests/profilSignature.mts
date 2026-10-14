@@ -167,7 +167,7 @@ export function controlerProfilSignature() {
   verifie('au Crès', signatureDisponible('le-cres'));
   verifie('à Sérignan', signatureDisponible('serignan'));
   verifie('pas au Grau-du-Roi, qui garde son Advance Lift', !signatureDisponible('grau-du-roi'));
-  verifie('ni à Cabestany', !signatureDisponible('cabestany'));
+  verifie('ni à Pollestres', !signatureDisponible('cabestany'));
 
   section('Les maxima se lisent sur le barème');
 

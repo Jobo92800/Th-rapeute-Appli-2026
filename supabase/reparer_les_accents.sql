@@ -19,7 +19,7 @@ FROM (VALUES
   ('grau-du-roi', 'Le Grau-du-Roi', '577 Rue des Tamaris', '30240', 'Le Grau-du-Roi', '577 Rue des Tamaris', '30240', 'Le Grau-du-Roi', 'Le Grau-du-Roi'),
   ('le-cres', 'Le Crès', '1 Avenue des Chasseurs', '34920', 'Le Crès', '577 Rue des Tamaris', '30240', 'Le Grau-du-Roi', 'Le Crès'),
   ('serignan', 'Sérignan', '120 Avenue de la Plage', '34410', 'Sérignan', '577 Rue des Tamaris', '30240', 'Le Grau-du-Roi', 'Sérignan'),
-  ('cabestany', 'Cabestany', '4 Rue Ambroise Croizat', '66330', 'Cabestany', '577 Rue des Tamaris', '30240', 'Le Grau-du-Roi', 'Cabestany'),
+  ('cabestany', 'Pollestres', '16 Rue Alfred Sauvy', '66450', 'Pollestres', '577 Rue des Tamaris', '30240', 'Le Grau-du-Roi', 'Cabestany'),
   ('avignon', 'Avignon', '8 Bd de la Fraternité', '84140', 'Avignon', '577 Rue des Tamaris', '30240', 'Le Grau-du-Roi', 'Avignon')
 ) AS v(id, nom, adresse, cp, ville, sa, scp, sv, na)
 WHERE centres.id = v.id;

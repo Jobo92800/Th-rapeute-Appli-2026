@@ -89,7 +89,7 @@ export function domeDisponible(centreId: string | null | undefined): boolean {
  * Les soins anti-âge que ce centre tient.
  *
  * L'Advance Lift n'est qu'au Grau-du-Roi, la radiofréquence Mesojet qu'au
- * Crès et à Sérignan, et Cabestany comme Avignon n'ont pas d'anti-âge.
+ * Crès et à Sérignan, et Pollestres comme Avignon n'ont pas d'anti-âge.
  * **Proposer un soin qu'un centre ne tient pas, c'est le vendre** : la
  * cliente signe, et personne ne peut le lui donner. La règle vit donc ici,
  * au même endroit que les bilans qui prescrivent ces soins, et le banc

@@ -90,8 +90,8 @@ COMPTES=(
   "caroll@mabeautyplus.fr|Caroll · Sérignan"
   "aude@mabeautyplus.fr|Aude · Sérignan"
   "marie-san@mabeautyplus.fr|Marie-san · Sérignan"
-  "marine@mabeautyplus.fr|Marine · Cabestany"
-  "sara@mabeautyplus.fr|Sara · Cabestany"
+  "marine@mabeautyplus.fr|Marine · Pollestres"
+  "sara@mabeautyplus.fr|Sara · Pollestres"
   "alexandra@mabeautyplus.fr|Alexandra · Avignon"
   "laura@mabeautyplus.fr|Laura · Avignon"
 )
