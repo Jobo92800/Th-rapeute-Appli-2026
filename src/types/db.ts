@@ -145,7 +145,13 @@ export interface Jeu {
 // ---------------------------------------------------------------------------
 
 export type StatutBilan = 'en_cours' | 'termine' | 'abandonne';
-export type Facturation = 'en_attente' | 'facture' | 'offert';
+/**
+ * `en_attente` : rien n'est tranché. `facture` : elle ne démarre pas et règle
+ * son bilan. `offert` : il est compris dans la cure qu'elle signe, ou c'est un
+ * point de suivi. `offert_promo` : offert en promotion alors qu'elle ne prend
+ * pas de cure (migration 079). La règle est dans `domain/facturationDuBilan`.
+ */
+export type Facturation = 'en_attente' | 'facture' | 'offert' | 'offert_promo';
 
 export interface Bilan {
   id: string;

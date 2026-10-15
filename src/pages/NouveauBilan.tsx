@@ -24,6 +24,7 @@ import { creerCliente, lireCliente, modifierCliente } from '../services/clientes
 import { etatDuCentre } from '../services/stock';
 import { laCliente } from '../domain/civilite';
 import { formaterEuros } from '../domain/tarification';
+import { facturationDuBilan } from '../domain/facturationDuBilan';
 import { envoyerRecap, rangerBioPortrait } from '../services/recap';
 import { enregistrerBilan, creerProgramme } from '../services/metier';
 import {
@@ -273,7 +274,7 @@ export default function NouveauBilan() {
    */
   async function enregistrerTout(
     proposition: PrescriptionValidee | null,
-    issue: { valider: boolean; recap: boolean },
+    issue: { valider: boolean; recap: boolean; offert?: boolean },
   ) {
     /*
       `proposition` absente = on refait le point, sans passer par le devis.
@@ -310,6 +311,20 @@ export default function NouveauBilan() {
               therapeute && therapeute.role !== 'direction' ? [therapeute.prenom] : [],
           });
 
+      /*
+        Ce qu'on facture : la règle est dans le domaine, pas ici. Avec une
+        cure le bilan est dedans, un point de suivi ne vend rien, la
+        promotion l'offre, et sinon elle le règle.
+      */
+      const facture = facturationDuBilan(
+        {
+          avecCure: Boolean(prescription),
+          pointDeSuivi: suivi,
+          offertEnPromo: Boolean(issue.offert),
+        },
+        grille.bilan,
+      );
+
       const bilan = await enregistrerBilan({
         cliente_id: cliente.id,
         centre_id: centre.id,
@@ -324,8 +339,8 @@ export default function NouveauBilan() {
         terrain_dominant: bioportrait.terrainDominant,
         profils_secondaires: bioportrait.profilsSecondaires,
         terrains_secondaires: bioportrait.terrainsSecondaires,
-        facturation: prescription || suivi ? 'offert' : 'facture',
-        montant_facture: prescription || suivi ? 0 : grille.bilan,
+        facturation: facture.facturation,
+        montant_facture: facture.montant,
         proposition: suivi
           ? null
           : ({
@@ -709,6 +724,12 @@ export default function NouveauBilan() {
         // « Bilan seul » envoie le récapitulatif : il n'y a plus qu'un
         // bouton pour la cliente qui ne démarre pas, et il fait les deux.
         onBilanSeul={(p) => enregistrerTout(p, { valider: false, recap: true })}
+        /*
+          La promotion : le même geste, le bilan à zéro euro. Le jour où
+          elle s'arrête, on retire cette ligne et le bouton disparaît de
+          l'écran — les bilans déjà offerts gardent leur état.
+        */
+        onBilanOffert={(p) => enregistrerTout(p, { valider: false, recap: true, offert: true })}
         onValider={(p) => enregistrerTout(p, { valider: true, recap: false })}
       />
     );

@@ -456,12 +456,43 @@ export async function situationsDuCentre(centreId: string | null): Promise<Situa
  * c'est l'écran qui décide de ne l'afficher que si aucune cure ne prend
  * le dessus.
  */
-export async function clientesAvecBilanFacture(centreId: string | null): Promise<Set<string>> {
-  let requete = supabase.from('bilans').select('cliente_id').eq('facturation', 'facture');
+/**
+ * Les clientes qui ont fait un bilan dont on parle encore d'argent :
+ * celui qu'elles ont **réglé**, et celui qu'on leur a **offert en
+ * promotion** (079). Les deux disent « elle est venue et n'a pas pris de
+ * cure », et ce sont celles-là qu'on rappelle — mais pas pour la même
+ * raison, et la liste les sépare.
+ *
+ * Un bilan simplement `offert` n'y figure pas : il est compris dans une
+ * cure signée, ou c'est un point de suivi. Dans les deux cas la colonne
+ * Règlement a mieux à dire que le bilan.
+ *
+ * Une seule requête pour les deux : la liste des clientes en lance déjà
+ * plusieurs, et deux appels pour un même filtre seraient deux de trop.
+ */
+export async function clientesAvecBilanSansCure(
+  centreId: string | null,
+): Promise<{ regle: Set<string>; offert: Set<string> }> {
+  let requete = supabase
+    .from('bilans')
+    .select('cliente_id, facturation')
+    .in('facturation', ['facture', 'offert_promo']);
   if (centreId) requete = requete.eq('centre_id', centreId);
   const { data, error } = await requete;
   if (error) throw error;
-  return new Set((data ?? []).map((b) => b.cliente_id as string));
+
+  const regle = new Set<string>();
+  const offert = new Set<string>();
+  for (const b of data ?? []) {
+    (b.facturation === 'facture' ? regle : offert).add(b.cliente_id as string);
+  }
+  /*
+    Un bilan réglé l'emporte : une cliente peut avoir reçu un bilan en
+    promotion puis en avoir réglé un autre, et « Bilan seul » est alors ce
+    qu'il faut lire.
+  */
+  for (const id of regle) offert.delete(id);
+  return { regle, offert };
 }
 
 /**

@@ -234,11 +234,20 @@ export default function OngletBioPortrait({
           <span className="text-rose-600">{dt ? bareme.AX[dt].name : '—'}</span>
         </p>
         <p className="mt-2 text-xs text-ardoise-500">
+          {/*
+            « Offert » veut dire deux choses qu'il ne faut pas confondre : le
+            bilan compris dans la cure qu'elle vient de signer, et le bilan
+            offert en promotion alors qu'elle n'a rien pris (079). Dire
+            « elle a démarré son accompagnement » du second serait faux, et
+            faux au pire endroit — la phrase qu'on lit avant de la rappeler.
+          */}
           {bilan.facturation === 'offert'
             ? `Bilan offert — ${laCliente(civilite)} a démarré son accompagnement`
-            : bilan.facturation === 'facture'
-              ? `Bilan facturé ${Number(bilan.montant_facture ?? 0).toLocaleString('fr-FR')} €`
-              : 'Facturation à trancher'}
+            : bilan.facturation === 'offert_promo'
+              ? 'Bilan offert en promotion — aucune cure ouverte'
+              : bilan.facturation === 'facture'
+                ? `Bilan facturé ${Number(bilan.montant_facture ?? 0).toLocaleString('fr-FR')} €`
+                : 'Facturation à trancher'}
         </p>
 
         <Recapitulatif bilan={bilan} clienteId={clienteId} qc={qc} confirme={confirme} setConfirme={setConfirme} />

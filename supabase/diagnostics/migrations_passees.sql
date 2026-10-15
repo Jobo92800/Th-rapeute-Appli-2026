@@ -109,7 +109,13 @@ WITH controles(numero, objet, present) AS (
 
     ('078', 'Cabestany devient Pollestres — le nom et l''adresse du centre',
      EXISTS (SELECT 1 FROM centres
-             WHERE id = 'cabestany' AND nom = 'Pollestres' AND code_postal = '66450'))
+             WHERE id = 'cabestany' AND nom = 'Pollestres' AND code_postal = '66450')),
+
+    ('079', 'Le bilan offert en promotion — la contrainte accepte offert_promo',
+     EXISTS (SELECT 1 FROM pg_constraint
+             WHERE conrelid = 'bilans'::regclass
+               AND conname = 'bilans_facturation_check'
+               AND pg_get_constraintdef(oid) LIKE '%offert_promo%'))
 )
 SELECT
   numero,

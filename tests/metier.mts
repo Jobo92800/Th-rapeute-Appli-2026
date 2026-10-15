@@ -14,6 +14,7 @@ import {
   type Filleule,
 } from '../src/domain/parrainage.ts';
 import { finDeCure, libelleFinDeCure, niveauStock } from '../src/domain/stock.ts';
+import { facturationDuBilan } from '../src/domain/facturationDuBilan.ts';
 import {
   JOURS_AVANT_PREMIERE_ECHEANCE,
   datesEcheancier,
@@ -580,5 +581,54 @@ export function controlerMetier() {
       statutCure: 'valide',
       echeances: [ech(1, 501, 'paye'), ech(2, 472, 'paye')],
     }) ?? '').includes('réglé'),
+  );
+
+  section('Ce qu’on facture d’un bilan');
+
+  /*
+    Les quatre issues du rendez-vous. Elles décident de ce que la cliente
+    règle, de ce que le tableau de bord compte, et de ce que la fiche
+    annonce — un bilan dont l’état est faux fait mentir trois écrans.
+  */
+  const issue = (p: Partial<Parameters<typeof facturationDuBilan>[0]>) =>
+    facturationDuBilan(
+      { avecCure: false, pointDeSuivi: false, offertEnPromo: false, ...p },
+      129,
+    );
+
+  egal('sans cure, elle règle son bilan', issue({}).facturation, 'facture');
+  egalEuros('et ce sont 129 €', issue({}).montant, 129);
+
+  egal('avec une cure, il est compris dedans', issue({ avecCure: true }).facturation, 'offert');
+  egalEuros('et il ne se facture pas deux fois', issue({ avecCure: true }).montant, 0);
+
+  egal('un point de suivi ne vend rien', issue({ pointDeSuivi: true }).facturation, 'offert');
+  egalEuros('et ne facture rien', issue({ pointDeSuivi: true }).montant, 0);
+
+  egal(
+    'la promotion l’offre, et le dit',
+    issue({ offertEnPromo: true }).facturation,
+    'offert_promo',
+  );
+  egalEuros('zéro euro', issue({ offertEnPromo: true }).montant, 0);
+
+  /*
+    L’ordre compte : si la thérapeute a validé une cure, le bilan est dedans
+    — c’est « offert » et non « offert_promo ». Sans quoi un bilan compris
+    dans une cure se compterait parmi les bilans de la promotion.
+  */
+  egal(
+    'une cure validée l’emporte sur la promotion',
+    issue({ avecCure: true, offertEnPromo: true }).facturation,
+    'offert',
+  );
+
+  verifie(
+    'et jamais un euro facturé quand rien n’est dû',
+    [
+      issue({ avecCure: true }),
+      issue({ pointDeSuivi: true }),
+      issue({ offertEnPromo: true }),
+    ].every((r) => r.montant === 0 && r.facturation !== 'facture'),
   );
 }

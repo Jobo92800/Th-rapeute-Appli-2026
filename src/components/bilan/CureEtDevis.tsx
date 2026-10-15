@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Ban, Eye, Loader2, Mail, Minus, Pencil, Plus, Stethoscope, X } from 'lucide-react';
+import { AlertTriangle, Ban, Eye, Gift, Loader2, Mail, Minus, Pencil, Plus, Stethoscope, X } from 'lucide-react';
 import {
   relireLesReponses,
   type Bareme,
@@ -111,6 +111,13 @@ interface Props {
    * proposé, et son BioPortrait part par mail avec la proposition.
    */
   onBilanSeul: (propose: PrescriptionValidee) => void;
+  /**
+   * La promotion : le même geste que « Bilan seul », mais le bilan est
+   * offert — zéro euro, et aucune cure ouverte (14 octobre 2026).
+   * Absent quand la promotion est terminée : le bouton disparaît alors de
+   * l'écran, et les bilans déjà offerts gardent leur état.
+   */
+  onBilanOffert?: (propose: PrescriptionValidee) => void;
   onValider: (p: PrescriptionValidee) => void;
 }
 
@@ -140,6 +147,7 @@ export default function CureEtDevis({
   enregistrement,
   onRetour,
   onBilanSeul,
+  onBilanOffert,
   onValider,
 }: Props) {
   /*
@@ -1009,26 +1017,51 @@ export default function CureEtDevis({
           Revenir au BioPortrait
         </button>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-start gap-3">
           {/*
-            Un seul bouton pour la cliente qui ne démarre pas.
+            La cliente qui ne démarre pas, et ce qu'on lui facture.
 
-            Il y en avait deux — « Bilan seul » et « Envoyer le récap » —
-            et la différence ne se voyait pas : les deux facturaient le
-            bilan et n'ouvraient pas de cure, seul le mail les séparait. On
-            ne choisit plus : elle repart avec son BioPortrait et la
-            proposition qu'on vient de lui présenter, toujours. Ne pas les
-            lui envoyer n'a jamais rien fait gagner à personne.
+            Il y a eu deux boutons ici — « Bilan seul » et « Envoyer le
+            récap » — dont la différence ne se voyait pas : les deux
+            facturaient le bilan et n'ouvraient pas de cure, seul le mail
+            les séparait. On ne choisit plus : elle repart avec son
+            BioPortrait et la proposition qu'on vient de lui présenter,
+            toujours. Ne pas les lui envoyer n'a jamais rien fait gagner à
+            personne.
+
+            Le second bouton, EN DESSOUS et plus petit, est celui de la
+            promotion : exactement le même geste, le bilan à zéro euro.
+            Rangé là parce qu'il est l'exception et non le chemin normal —
+            un bouton de même taille à côté aurait fait hésiter à chaque
+            rendez-vous. Il disparaît de l'écran le jour où la promotion
+            s'arrête (`onBilanOffert` absent).
           */}
-          <button
-            onClick={() => onBilanSeul(propositionCourante())}
-            disabled={enregistrement || totalSeances === 0}
-            className="bouton-discret"
-            title="Le bilan est facturé, la cure n'est pas ouverte, et son BioPortrait part par mail avec cette proposition."
-          >
-            <Mail className="h-4 w-4" />
-            Bilan seul · {formaterEuros(grille.bilan)}
-          </button>
+          <div className="flex flex-col items-stretch gap-2">
+            <button
+              onClick={() => onBilanSeul(propositionCourante())}
+              disabled={enregistrement || totalSeances === 0}
+              className="bouton-discret"
+              title="Le bilan est facturé, la cure n'est pas ouverte, et son BioPortrait part par mail avec cette proposition."
+            >
+              <Mail className="h-4 w-4" />
+              Bilan seul · {formaterEuros(grille.bilan)}
+            </button>
+
+            {onBilanOffert && (
+              <button
+                onClick={() => onBilanOffert(propositionCourante())}
+                disabled={enregistrement || totalSeances === 0}
+                className="inline-flex items-center justify-center gap-1.5 rounded-full border border-marine-200
+                           bg-marine-50 px-4 py-1.5 text-[13px] font-semibold text-marine-700
+                           transition-all hover:bg-marine-100 disabled:cursor-not-allowed disabled:opacity-50"
+                title="Promotion : le bilan est offert, rien n'est facturé, la cure n'est pas ouverte, et son BioPortrait part par mail avec cette proposition."
+              >
+                <Gift className="h-3.5 w-3.5" />
+                Bilan offert · promotion
+              </button>
+            )}
+          </div>
+
           <button
             onClick={valider}
             disabled={enregistrement || (totalSeances === 0 && montantBoites <= 0)}

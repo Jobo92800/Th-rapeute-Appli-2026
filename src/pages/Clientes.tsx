@@ -13,7 +13,7 @@ import {
   listerTherapeutes,
   restaurerCliente,
 } from '../services/clientes';
-import { clientesAvecBilanFacture, resumeNotesDuCentre, situationsDuCentre } from '../services/metier';
+import { clientesAvecBilanSansCure, resumeNotesDuCentre, situationsDuCentre } from '../services/metier';
 import { creditsDuCentre } from '../services/parrainage';
 import PastilleCredits from '../components/PastilleCredits';
 import { soldeDepuisCompteurs } from '../domain/parrainage';
@@ -103,10 +103,17 @@ export default function Clientes() {
     retry: false,
   });
 
-  // Celles qui ont payé un bilan sans prendre de cure : « Bilan seul ».
-  const { data: bilansSeuls = new Set<string>() } = useQuery({
-    queryKey: ['bilans-factures', perimetre],
-    queryFn: () => clientesAvecBilanFacture(perimetre),
+  /*
+    Celles qui ont fait un bilan sans prendre de cure : celui qu'elles ont
+    réglé (« Bilan seul ») et celui qu'on leur a offert en promotion
+    (« Bilan offert »). Sans cette seconde liste, les clientes de la
+    promotion afficheraient « — » et se perdraient au milieu de celles qui
+    n'ont jamais rien fait — alors que ce sont justement celles-là qu'on
+    rappelle.
+  */
+  const { data: bilansSansCure } = useQuery({
+    queryKey: ['bilans-sans-cure', perimetre],
+    queryFn: () => clientesAvecBilanSansCure(perimetre),
   });
 
   // Les crédits de parrainage du centre, en un seul appel : une filleule
@@ -406,7 +413,11 @@ export default function Clientes() {
                     {c.therapeutes.length > 0 ? c.therapeutes.join(', ') : '—'}
                   </td>
                   <td className="px-4 py-2.5">
-                    <CelluleReglement situation={situation} bilanSeul={bilansSeuls.has(c.id!)} />
+                    <CelluleReglement
+                      situation={situation}
+                      bilanSeul={bilansSansCure?.regle.has(c.id!) ?? false}
+                      bilanOffert={bilansSansCure?.offert.has(c.id!) ?? false}
+                    />
                   </td>
                   <td className="px-4 py-2.5">
                     <BoutonNotes
@@ -518,23 +529,39 @@ function BoutonNotes({
 function CelluleReglement({
   situation,
   bilanSeul,
+  bilanOffert,
 }: {
   situation: SituationReglement | undefined;
   /** Un bilan facturé sur la fiche : sans cure, c'est ce que la colonne doit dire. */
   bilanSeul: boolean;
+  /** Un bilan offert en promotion, sans cure : elle est venue, elle n'a rien réglé. */
+  bilanOffert: boolean;
 }) {
   const etat = etatCliente(situation);
 
   if (etat.etat === 'aucun') {
     /*
-      Pas d'échéancier, mais un bilan payé : la cliente est venue, a réglé
-      son BioPortrait et n'a pas démarré. Ce n'est pas « rien », et ça se
-      lit d'un coup d'œil dans la liste — c'est celles-là qu'on relance.
+      Pas d'échéancier, mais un bilan sur la fiche : la cliente est venue et
+      n'a pas démarré. Ce n'est pas « rien », et ça se lit d'un coup d'œil —
+      c'est celles-là qu'on rappelle.
+
+      Les deux pastilles ne se confondent pas, et c'est pour ça qu'elles ne
+      sont pas de la même couleur : l'ambre dit qu'il y a eu un règlement de
+      129 € sans suite, l'aqua qu'on a offert le bilan et qu'il n'y a rien à
+      encaisser. Devant une cliente au téléphone, ce n'est pas la même
+      conversation.
     */
     if (bilanSeul) {
       return (
         <span className="inline-flex w-fit items-center rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-2xs font-semibold text-amber-800">
           Bilan seul
+        </span>
+      );
+    }
+    if (bilanOffert) {
+      return (
+        <span className="inline-flex w-fit items-center rounded-full border border-marine-200 bg-marine-50 px-2.5 py-0.5 text-2xs font-semibold text-marine-700">
+          Bilan offert
         </span>
       );
     }

@@ -674,9 +674,16 @@ Deno.serve(async (req: Request) => {
     if (b.profil_dominant) champs['Profil Empreinte'] = profils[b.profil_dominant] ?? b.profil_dominant;
     if (b.terrain_dominant) champs['Terrain Empreinte'] = terrains[b.terrain_dominant] ?? b.terrain_dominant;
 
-    // Le bilan seul n'est facturé que si la cliente ne démarre pas.
+    /*
+      Le bilan seul n'est facturé que si la cliente ne démarre pas — et pas
+      même alors, quand il lui est offert en promotion (079). Dans les deux
+      cas où il ne se facture pas, on écrit bien 0 € au lieu de laisser le
+      champ tranquille : une valeur qui traîne dans le CRM serait réclamée.
+    */
     if (b.facturation === 'facture') champs['Bilan seul'] = Number(b.montant_facture) || 0;
-    if (b.facturation === 'offert') champs['Bilan seul'] = 0;
+    if (b.facturation === 'offert' || b.facturation === 'offert_promo') {
+      champs['Bilan seul'] = 0;
+    }
 
     return { clienteId: b.cliente_id as string, champs };
   }
