@@ -221,7 +221,9 @@ export type Technologie =
   | 'presso'
   | 'dome'
   | 'advance_lift'
-  | 'radiofrequence';
+  | 'radiofrequence'
+  /** Le Psio, à Sérignan. Jamais prescrit : ajouté à la main (migration 080). */
+  | 'psio';
 
 export type TailleTenue = 'S' | 'M' | 'L' | 'XL';
 

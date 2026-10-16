@@ -49,6 +49,7 @@ import {
   type ModeReglement,
   type Technologie,
 } from '../../domain/tarification';
+import { demandeUneVenue } from '../../domain/soins';
 
 /** Ce qui remonte à l'enregistrement une fois la cure validée. */
 export interface PrescriptionValidee {
@@ -77,6 +78,7 @@ const TECHNO: Record<Prestation, Technologie> = {
   ISHAPE: 'ishape',
   PRESSO: 'presso',
   DOME: 'dome',
+  PSIO: 'psio',
 };
 
 const COULEUR_NIVEAU: Record<string, string> = {
@@ -100,6 +102,8 @@ interface Props {
   curseur: number | null;
   /** Le Dôme se propose à l'ajout — au Grau-du-Roi seulement. */
   avecDome?: boolean;
+  /** Le Psio aussi — à Sérignan seulement. Aucun bilan ne le prescrit. */
+  avecPsio?: boolean;
   /** Le rayon du centre, pour proposer les boîtes de compléments avec la cure. */
   catalogue?: EtatStock[];
   /** Le complément que le terrain oriente, rappelé au moment de choisir les boîtes. */
@@ -142,6 +146,7 @@ export default function CureEtDevis({
   reponses,
   curseur,
   avecDome = false,
+  avecPsio = false,
   catalogue = [],
   complementRecommande = null,
   enregistrement,
@@ -249,8 +254,8 @@ export default function CureEtDevis({
   }
 
   const ajoutables = useMemo(
-    () => prestationsAjoutables(depouillement, cure, avecDome),
-    [depouillement, cure, avecDome],
+    () => prestationsAjoutables(depouillement, cure, avecDome, avecPsio),
+    [depouillement, cure, avecDome, avecPsio],
   );
 
   const retenues = lignesRetenues(cure);
@@ -271,7 +276,7 @@ export default function CureEtDevis({
     changement de formule ou d'ajustement, donc le choix se resserre tout
     seul quand la thérapeute réduit l'offre.
   */
-  const soinsPrincipaux = retenues.filter((l) => l.presta !== 'RELAX').length;
+  const soinsPrincipaux = retenues.filter((l) => demandeUneVenue(TECHNO[l.presta])).length;
   const seancesDuPlusLong = retenues.reduce((n, l) => Math.max(n, l.seances), 0);
   const dureeMois = dureeCureEnMois(seancesDuPlusLong, soinsPrincipaux);
 

@@ -88,7 +88,15 @@ export function controlerPrescription() {
   section('Une cliente sans particularité');
 
   const neutre = depouiller(bareme, {});
-  egal('aucun point', neutre.points, { LUXO: 0, RELAX: 0, ISHAPE: 0, PRESSO: 0, DOME: 0 });
+  egal('aucun point', neutre.points, {
+    LUXO: 0,
+    RELAX: 0,
+    ISHAPE: 0,
+    PRESSO: 0,
+    /* Le Dôme et le Psio n'ont aucun point : aucune question ne leur en donne. */
+    DOME: 0,
+    PSIO: 0,
+  });
   egal('aucune contre-indication', neutre.contreIndications, {});
 
   const cureNeutre = prescrire(bareme, neutre);

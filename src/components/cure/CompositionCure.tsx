@@ -7,7 +7,7 @@ import {
   type ComplementChoisi,
 } from '../../domain/complements';
 import type { EtatStock } from '../../types/db';
-import { soinsAntiAgeDuCentre } from '../../domain/soins';
+import { ajusterSeancesDuSoin, demandeUneVenue, psioDisponible, soinsAntiAgeDuCentre } from '../../domain/soins';
 import {
   ECHEANCES_ALMA,
   dureeCureEnMois,
@@ -117,12 +117,19 @@ export default function CompositionCure({
     perte de poids. Ce que le centre tient décide de ce qu'on propose.
   */
   const antiAge = soinsAntiAgeDuCentre(centreId);
+  /*
+    Le Psio, à Sérignan : un soin de plus, sans bilan, qu'on vend aussi à une
+    cliente qui revient sans repasser son BioPortrait. Il se vend par
+    formules — 6 ou 8 séances —, jamais à la séance.
+  */
+  const psio: Technologie[] = psioDisponible(centreId) ? ['psio'] : [];
   const [seances, setSeances] = useState<Record<Technologie, number>>({
     luxo: seancesInitiales?.luxo ?? 16,
     relax: seancesInitiales?.relax ?? 0,
     ishape: seancesInitiales?.ishape ?? 0,
     presso: seancesInitiales?.presso ?? 0,
     dome: seancesInitiales?.dome ?? 0,
+    psio: seancesInitiales?.psio ?? 0,
     // Une cure suivante se compose parmi les soins de la perte de poids ;
     // les deux bilans anti-âge ont les leurs, et leurs cures naissent de là.
     advance_lift: seancesInitiales?.advance_lift ?? 0,
@@ -162,7 +169,7 @@ export default function CompositionCure({
 
   const lignes = useMemo(
     () =>
-      [...TECHNOS_PRINCIPALES, ...antiAge].map((t) => ({
+      [...TECHNOS_PRINCIPALES, ...psio, ...antiAge].map((t) => ({
         technologie: t,
         seances: seances[t],
         prixUnitaire:
@@ -212,10 +219,13 @@ export default function CompositionCure({
 
   /*
     Le même plafond qu'au bilan : la cure ne se règle pas plus longtemps
-    qu'elle ne dure. La Relaxation ne compte pas parmi les soins principaux,
-    elle s'ajoute à une venue existante.
+    qu'elle ne dure. La Relaxation et le Psio ne comptent pas parmi les soins
+    principaux — ils s'ajoutent à une venue existante au lieu d'en demander
+    une. La règle est dans `soins.ts`, partagée avec le devis du bilan.
   */
-  const soinsPrincipaux = lignes.filter((l) => l.seances > 0 && l.technologie !== 'relax').length;
+  const soinsPrincipaux = lignes.filter(
+    (l) => l.seances > 0 && demandeUneVenue(l.technologie),
+  ).length;
   const seancesDuPlusLong = lignes.reduce((n, l) => Math.max(n, l.seances), 0);
   const dureeMois = dureeCureEnMois(seancesDuPlusLong, soinsPrincipaux);
   // Le cinquième chèque ne s'ouvre qu'à partir de vingt luxo.
@@ -289,7 +299,7 @@ export default function CompositionCure({
   }
 
   function ajuster(t: Technologie, delta: number) {
-    setSeances((s) => ({ ...s, [t]: Math.max(0, s[t] + delta) }));
+    setSeances((s) => ({ ...s, [t]: ajusterSeancesDuSoin(t, s[t], delta) }));
   }
 
   return (
@@ -307,6 +317,22 @@ export default function CompositionCure({
             <LigneSeances
               key={t}
               libelle={LIBELLES_TECHNOLOGIE[t]}
+              valeur={seances[t]}
+              onMoins={() => ajuster(t, -1)}
+              onPlus={() => ajuster(t, 1)}
+            />
+          ))}
+
+          {/*
+            Le Psio se range avec les soins de la perte de poids : il
+            s'enchaîne après l'un d'eux, dans la même venue. Son libellé dit
+            qu'il se vend par formules, sans quoi les « − » et « + » qui
+            sautent de 6 à 8 passeraient pour une panne.
+          */}
+          {psio.map((t) => (
+            <LigneSeances
+              key={t}
+              libelle={`${LIBELLES_TECHNOLOGIE[t]} · 6 ou 8 séances`}
               valeur={seances[t]}
               onMoins={() => ajuster(t, -1)}
               onPlus={() => ajuster(t, 1)}

@@ -57,6 +57,7 @@ export async function lireGrilleTarifaire(): Promise<GrilleTarifaire> {
     radiofrequence: vus.get('radiofrequence') ?? 79,
     radiofrequence_decollete: vus.get('radiofrequence_decollete') ?? 139,
     bilan_signature: vus.get('bilan_signature') ?? 89,
+    psio: vus.get('psio') ?? 58.5,
     complement: vus.get('complement') ?? 37,
   };
 }

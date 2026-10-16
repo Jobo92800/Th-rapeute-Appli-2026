@@ -123,7 +123,16 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
     manque sur une cure reprise du CRM.
   */
   const blocsParSoin = useMemo(() => {
-    const ordre: Technologie[] = ['luxo', 'relax', 'ishape', 'presso', 'dome', 'advance_lift', 'radiofrequence'];
+    const ordre: Technologie[] = [
+      'luxo',
+      'relax',
+      'ishape',
+      'presso',
+      'psio',
+      'dome',
+      'advance_lift',
+      'radiofrequence',
+    ];
     return ordre
       .map((technologie) => ({
         technologie,

@@ -37,7 +37,7 @@ import {
 } from '../domain/bioportrait';
 import Restitution from '../components/bilan/Restitution';
 import { depouiller } from '../domain/prescription';
-import { domeDisponible } from '../domain/soins';
+import { domeDisponible, psioDisponible } from '../domain/soins';
 import QuestionBioPortrait from '../components/bilan/QuestionBioPortrait';
 import Progression from '../components/bilan/Progression';
 import CureEtDevis, { type PrescriptionValidee } from '../components/bilan/CureEtDevis';
@@ -717,6 +717,7 @@ export default function NouveauBilan() {
         reponses={reponses}
         curseur={curseur}
         avecDome={domeDisponible(centre.id)}
+        avecPsio={psioDisponible(centre.id)}
         catalogue={rayon}
         complementRecommande={complementRecommande(bareme, bioportrait)}
         enregistrement={enregistrement}

@@ -21,6 +21,7 @@ import type {
   Reponses,
 } from './bioportrait';
 import { choix } from './bioportrait';
+import { FORMULES_PAR_SOIN } from './soins';
 
 export const PRESTATIONS: Prestation[] = ['LUXO', 'RELAX', 'ISHAPE', 'PRESSO'];
 
@@ -83,6 +84,7 @@ const PALIERS_DEFAUT: Record<Prestation, PalierPrestation[]> = {
   ],
   /* Jamais prescrit : le Dôme n'entre dans une cure qu'à la main. */
   DOME: [{ min: 0, s: 0, l: null }],
+  PSIO: [{ min: 0, s: 0, l: null }],
 };
 
 /**
@@ -91,7 +93,10 @@ const PALIERS_DEFAUT: Record<Prestation, PalierPrestation[]> = {
  * « avis médical » — c'est pour ça qu'on ne remplace que dans un sens.
  */
 export function depouiller(bareme: Bareme, reponses: Reponses): Depouillement {
-  const points = { LUXO: 0, RELAX: 0, ISHAPE: 0, PRESSO: 0, DOME: 0 } as Record<Prestation, number>;
+  const points = { LUXO: 0, RELAX: 0, ISHAPE: 0, PRESSO: 0, DOME: 0, PSIO: 0 } as Record<
+    Prestation,
+    number
+  >;
   const contreIndications: Partial<Record<Prestation, ContreIndication>> = {};
   let engagement: Depouillement['engagement'] = 'MID';
   let scoreInbody: number | null = null;
@@ -222,7 +227,26 @@ export const PALIERS_SEANCES: Record<Prestation, number[]> = {
   PRESSO: [6, 10, 12],
   /* Le Dôme, ajouté à la main au Grau-du-Roi : les mêmes paliers que l'I-Shape, faute de règle écrite. */
   DOME: [6, 10, 12, 15, 20],
+  /*
+    Le Psio, à Sérignan : DEUX FORMULES ET PAS UNE DE PLUS — 6 séances à
+    351 €, 8 à 468 € (Jonathan, 16 octobre 2026). Ici la liste n'est pas une
+    échelle sur laquelle on se cale, c'est l'offre entière : sept séances de
+    Psio n'existent pas, et le « + » s'arrête donc à huit. Elle vient de
+    `soins.ts`, qui la tient pour les deux écrans à la fois.
+  */
+  PSIO: [...FORMULES_PAR_SOIN.psio!],
 };
+
+/**
+ * Les soins dont les séances ne se choisissent pas une par une : on passe
+ * d'une formule à l'autre, et on ne sort jamais de la liste.
+ *
+ * Partout ailleurs, le « − » et le « + » bougent d'une séance : les paliers
+ * servent aux formules, pas à la main de la thérapeute, et quatorze luxo
+ * sont une cure qui existe. Le Psio, lui, se vend en 6 ou en 8 ; afficher
+ * 409,50 € pour sept séances serait annoncer un prix que personne n'a fixé.
+ */
+export const PRESTATIONS_A_FORMULES: readonly Prestation[] = ['PSIO'];
 
 /** Ce qu'on ne descend jamais : le premier palier de la prestation. */
 export function minimumSeances(presta: Prestation): number {
@@ -240,7 +264,23 @@ export function minimumSeances(presta: Prestation): number {
  * sans jamais le dire.
  */
 export function ajusterSeances(presta: Prestation, actuelle: number, delta: number): number {
+  if (PRESTATIONS_A_FORMULES.includes(presta)) return formuleVoisine(presta, actuelle, delta);
   return Math.max(minimumSeances(presta), actuelle + delta);
+}
+
+/**
+ * La formule suivante ou précédente, sans jamais sortir de la liste.
+ *
+ * Un nombre de séances qui n'est dans aucune formule — une vieille ligne,
+ * une reprise — se recale sur la plus proche avant de bouger, plutôt que de
+ * rester coincé là où il est.
+ */
+function formuleVoisine(presta: Prestation, actuelle: number, delta: number): number {
+  const paliers = PALIERS_SEANCES[presta];
+  const rang = paliers.indexOf(actuelle);
+  const depart = rang >= 0 ? rang : paliers.indexOf(palierLePlusProche(presta, actuelle));
+  const vise = depart + (delta > 0 ? 1 : delta < 0 ? -1 : 0);
+  return paliers[Math.min(paliers.length - 1, Math.max(0, vise))];
 }
 
 /**
@@ -375,13 +415,19 @@ export function prestationsAjoutables(
   d: Depouillement,
   cure: LignePrescrite[],
   /**
-   * Le Dôme s'ajoute aussi, mais seulement là où il se tient — le
-   * Grau-du-Roi. Aucun bilan ne le prescrit : il n'entre que par ici.
+   * Les soins qu'aucun bilan ne prescrit et qui n'entrent que par ici, selon
+   * ce que le centre tient : le Dôme au Grau-du-Roi, le Psio à Sérignan.
+   * Proposer un soin qu'un centre ne tient pas revient à le vendre.
    */
   avecDome = false,
+  avecPsio = false,
 ): Prestation[] {
   const presentes = new Set(cure.map((l) => l.presta));
-  const candidates = avecDome ? [...PRESTATIONS_CURE, 'DOME' as Prestation] : PRESTATIONS_CURE;
+  const candidates: Prestation[] = [
+    ...PRESTATIONS_CURE,
+    ...(avecDome ? (['DOME'] as Prestation[]) : []),
+    ...(avecPsio ? (['PSIO'] as Prestation[]) : []),
+  ];
   return candidates.filter(
     (p) => !presentes.has(p) && d.contreIndications[p] !== 'rem',
   );

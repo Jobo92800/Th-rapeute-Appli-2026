@@ -30,7 +30,13 @@ export type TypeEtape =
   | 'transition';
 
 /** Les quatre prestations que le questionnaire peut recommander. */
-export type Prestation = 'LUXO' | 'RELAX' | 'ISHAPE' | 'PRESSO' | 'DOME';
+/**
+ * Les soins qu'une cure peut porter. `DOME` et `PSIO` n'ont aucun point dans
+ * le barème : ils ne sont jamais prescrits, la thérapeute les ajoute à la
+ * main, et ils ne figurent ici que parce qu'une ligne de cure doit pouvoir
+ * les nommer.
+ */
+export type Prestation = 'LUXO' | 'RELAX' | 'ISHAPE' | 'PRESSO' | 'DOME' | 'PSIO';
 
 /**
  * Ce qu'une réponse dit d'un soin :

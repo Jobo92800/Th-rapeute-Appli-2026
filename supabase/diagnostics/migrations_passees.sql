@@ -115,7 +115,13 @@ WITH controles(numero, objet, present) AS (
      EXISTS (SELECT 1 FROM pg_constraint
              WHERE conrelid = 'bilans'::regclass
                AND conname = 'bilans_facturation_check'
-               AND pg_get_constraintdef(oid) LIKE '%offert_promo%'))
+               AND pg_get_constraintdef(oid) LIKE '%offert_promo%')),
+
+    ('080', 'Le Psio à Sérignan — le tarif et la technologie admise',
+     EXISTS (SELECT 1 FROM tarifs WHERE code = 'psio')
+     AND EXISTS (SELECT 1 FROM pg_constraint
+                  WHERE conname = 'programme_lignes_technologie_check'
+                    AND pg_get_constraintdef(oid) LIKE '%psio%'))
 )
 SELECT
   numero,

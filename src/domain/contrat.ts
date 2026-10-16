@@ -121,6 +121,7 @@ const LIGNES_CONTRAT: Array<{ label: string; technologies: Technologie[] }> = [
   { label: 'Luxothérapie Relaxation', technologies: ['relax'] },
   { label: 'Pressodynamie', technologies: ['presso'] },
   { label: 'Dôme', technologies: ['dome'] },
+  { label: 'Psio', technologies: ['psio'] },
   { label: 'Advance Lift', technologies: ['advance_lift'] },
   /* Le soin du Profil Signature : radiofréquence Mesojet, au Crès et à Sérignan. */
   { label: 'Radiofréquence visage (Mesojet)', technologies: ['radiofrequence'] },

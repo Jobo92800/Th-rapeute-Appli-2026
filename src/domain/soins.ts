@@ -86,6 +86,78 @@ export function domeDisponible(centreId: string | null | undefined): boolean {
 }
 
 /**
+ * Le Psio ne se tient qu'à Sérignan (Jonathan, 16 octobre 2026). Comme le
+ * Dôme, **aucun bilan ne le prescrit** : la thérapeute l'ajoute à la main,
+ * au devis du BioPortrait sous « Modifier » ou sur le formulaire d'une cure
+ * suivante. Ailleurs, il n'apparaît nulle part — proposer un soin qu'un
+ * centre ne tient pas revient à le vendre.
+ */
+export const CENTRES_AVEC_PSIO = ['serignan'];
+
+export function psioDisponible(centreId: string | null | undefined): boolean {
+  return Boolean(centreId) && CENTRES_AVEC_PSIO.includes(centreId!);
+}
+
+/**
+ * LES SOINS QUI SE VENDENT PAR FORMULES, et les formules qui existent.
+ *
+ * Le Psio a deux formules et pas une de plus — 6 séances à 351 €, 8 à 468 €
+ * (Jonathan, 16 octobre 2026). Partout ailleurs le « − » et le « + »
+ * bougent d'une séance ; ici ils passent d'une formule à l'autre, et rien
+ * ne sort de la liste : sept séances de Psio n'existent pas, et afficher
+ * 409,50 € serait annoncer un prix que personne n'a fixé.
+ *
+ * **Cette liste est écrite une seule fois.** Les deux écrans qui composent
+ * une cure la lisent — le devis du bilan par les paliers de la prescription,
+ * le formulaire d'une cure suivante par `ajusterSeancesDuSoin`. Recopiée,
+ * elle aurait fini par différer d'un écran à l'autre, et la même cure
+ * n'aurait pas eu le même prix selon le chemin pris.
+ */
+export const FORMULES_PAR_SOIN: Partial<Record<Technologie, readonly number[]>> = {
+  psio: [6, 8],
+};
+
+/**
+ * Une séance de plus ou de moins sur le formulaire de cure, **zéro
+ * compris** — contrairement au devis du bilan, ici un soin absent vaut
+ * zéro et c'est ainsi qu'on ne le vend pas.
+ *
+ * Sur un soin à formules, on passe de zéro à la première formule, puis
+ * d'une formule à l'autre, et on redescend à zéro depuis la première.
+ */
+export function ajusterSeancesDuSoin(t: Technologie, actuelle: number, delta: number): number {
+  const formules = FORMULES_PAR_SOIN[t];
+  if (!formules) return Math.max(0, actuelle + delta);
+
+  const echelle = [0, ...formules];
+  const rang = echelle.indexOf(actuelle);
+  /* Un nombre hors formule — une vieille ligne, une reprise — se recale. */
+  const depart = rang >= 0 ? rang : echelle.findIndex((v) => v >= actuelle);
+  const ici = depart >= 0 ? depart : echelle.length - 1;
+  const vise = ici + (delta > 0 ? 1 : delta < 0 ? -1 : 0);
+  return echelle[Math.min(echelle.length - 1, Math.max(0, vise))];
+}
+
+/**
+ * Les soins qui demandent une venue à eux seuls.
+ *
+ * La durée d'une cure se compte en venues, pas en soins : trois soins qui
+ * font revenir ajoutent un mois, et ce mois ouvre un chèque de plus. La
+ * **Relaxation** s'enchaîne après un autre soin, dans le même rendez-vous,
+ * et n'a jamais compté. **Le Psio non plus** (Jonathan, 16 octobre 2026) :
+ * la cliente le fait dans la foulée, il ne la fait pas revenir.
+ *
+ * La règle est ici et pas dans les deux écrans qui la posaient chacun de
+ * leur côté — l'un l'aurait suivie, l'autre pas, et la même cure aurait
+ * ouvert quatre chèques au bilan et cinq à la cure suivante.
+ */
+export const SOINS_SANS_VENUE_PROPRE: readonly Technologie[] = ['relax', 'psio'];
+
+export function demandeUneVenue(t: Technologie): boolean {
+  return !SOINS_SANS_VENUE_PROPRE.includes(t);
+}
+
+/**
  * Les soins anti-âge que ce centre tient.
  *
  * L'Advance Lift n'est qu'au Grau-du-Roi, la radiofréquence Mesojet qu'au
@@ -183,6 +255,19 @@ export const COULEURS_SOIN: Record<Technologie, CouleurSoin> = {
     carte: 'border-violet-200 bg-violet-50',
     entete: 'border-violet-200 bg-violet-50',
     bouton: 'border-violet-200 bg-violet-50 hover:bg-violet-100',
+  },
+  /*
+    Le Psio, à Sérignan : indigo. Il croise le violet de la radiofréquence
+    dans ce centre — d'où un bleu franc plutôt qu'un violet de plus, et deux
+    crans d'écart en saturation pour qu'ils se séparent d'un coup d'œil.
+  */
+  psio: {
+    texte: 'text-indigo-700',
+    bord: 'border-l-indigo-500',
+    pastille: 'bg-indigo-100 text-indigo-800',
+    carte: 'border-indigo-300 bg-indigo-50',
+    entete: 'border-indigo-200 bg-indigo-100',
+    bouton: 'border-indigo-300 bg-indigo-50 hover:bg-indigo-100',
   },
   /* Le Dôme n'est plus prescrit : il reste lisible sur les cures passées. */
   dome: {

@@ -38,6 +38,7 @@ const LIBELLE_TECHNO: Record<string, string> = {
   dome: 'Dôme',
   advance_lift: 'Advance Lift',
   radiofrequence: 'Radiofréquence visage',
+  psio: 'Psio',
 };
 
 /*

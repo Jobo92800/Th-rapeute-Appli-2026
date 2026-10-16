@@ -24,7 +24,8 @@ export type Technologie =
   | 'dome'
   | 'relax'
   | 'advance_lift'
-  | 'radiofrequence';
+  | 'radiofrequence'
+  | 'psio';
 
 export const LIBELLES_TECHNOLOGIE: Record<Technologie, string> = {
   luxo: 'Luxothérapie Perte de poids',
@@ -36,6 +37,8 @@ export const LIBELLES_TECHNOLOGIE: Record<Technologie, string> = {
   advance_lift: 'Advance Lift',
   /* Le soin du Profil Signature, au Crès et à Sérignan. Deux formats, deux prix. */
   radiofrequence: 'Radiofréquence visage',
+  /* À Sérignan. Deux formules — 6 ou 8 séances — jamais prescrit par un bilan. */
+  psio: 'Psio',
 };
 
 export interface LigneProgramme {
@@ -59,6 +62,11 @@ export interface GrilleTarifaire {
   radiofrequence_decollete: number;
   /** Le premier rendez-vous du Profil Signature : le bilan et la première séance. */
   bilan_signature: number;
+  /**
+   * La séance de Psio, à Sérignan : 58,50 €. Les deux formules en découlent
+   * — 6 séances font 351 €, 8 en font 468.
+   */
+  psio: number;
   /** Une boîte de compléments, vendue à part de la cure. */
   complement: number;
 }
@@ -117,6 +125,7 @@ export function prixUnitaireParDefaut(techno: Technologie, grille: GrilleTarifai
     la thérapeute retient le décolleté.
   */
   if (techno === 'radiofrequence') return grille.radiofrequence;
+  if (techno === 'psio') return grille.psio;
   return grille.seance;
 }
 

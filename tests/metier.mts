@@ -15,6 +15,8 @@ import {
 } from '../src/domain/parrainage.ts';
 import { finDeCure, libelleFinDeCure, niveauStock } from '../src/domain/stock.ts';
 import { facturationDuBilan } from '../src/domain/facturationDuBilan.ts';
+import { ajusterSeancesDuSoin, demandeUneVenue, psioDisponible } from '../src/domain/soins.ts';
+import { ajusterSeances, prestationsAjoutables, seancesALAjout } from '../src/domain/prescription.ts';
 import {
   JOURS_AVANT_PREMIERE_ECHEANCE,
   datesEcheancier,
@@ -26,6 +28,7 @@ import {
   refusDeReechelonner,
 } from '../src/domain/reglement.ts';
 import {
+  calculerMontant,
   construireEcheancierCure,
   creneauxParDefaut,
   montantAcompte,
@@ -630,5 +633,93 @@ export function controlerMetier() {
       issue({ pointDeSuivi: true }),
       issue({ offertEnPromo: true }),
     ].every((r) => r.montant === 0 && r.facturation !== 'facture'),
+  );
+
+  section('Le Psio, à Sérignan');
+
+  /*
+    Un soin de plus, sans bilan : aucune question ne lui donne de points, la
+    thérapeute l'ajoute à la main, et seul Sérignan le tient. Proposer un
+    soin qu'un centre ne tient pas revient à le vendre.
+  */
+  verifie('Sérignan tient le Psio', psioDisponible('serignan'));
+  verifie('le Grau-du-Roi, non', !psioDisponible('grau-du-roi'));
+  verifie('le Crès non plus', !psioDisponible('le-cres'));
+  verifie('ni Pollestres', !psioDisponible('cabestany'));
+  verifie('ni Avignon', !psioDisponible('avignon'));
+  verifie('et sans centre, on ne propose rien', !psioDisponible(null));
+
+  /*
+    DEUX FORMULES ET PAS UNE DE PLUS. C'est la règle qui protège un prix :
+    sept séances de Psio n'existent pas, et le « + » ne doit jamais fabriquer
+    un montant que personne n'a fixé.
+  */
+  const grillePsio = {
+    seance: 59, guide: 29, tenue: 60, bilan: 129, dome: 49,
+    advance_lift: 85, radiofrequence: 79, radiofrequence_decollete: 139,
+    bilan_signature: 89, complement: 37, psio: 58.5,
+  };
+
+  egalEuros('la séance vaut 58,50 €', prixUnitaireParDefaut('psio', grillePsio), 58.5);
+  egalEuros(
+    'six séances font 351 €',
+    calculerMontant([{ technologie: 'psio', seances: 6, prixUnitaire: 58.5 }],
+      { guide: false, tenue: false }, grillePsio).total,
+    351,
+  );
+  egalEuros(
+    'huit séances font 468 €',
+    calculerMontant([{ technologie: 'psio', seances: 8, prixUnitaire: 58.5 }],
+      { guide: false, tenue: false }, grillePsio).total,
+    468,
+  );
+
+  egal('on l’ajoute à six séances', seancesALAjout('PSIO'), 6);
+  egal('le « + » passe de six à huit', ajusterSeances('PSIO', 6, 1), 8);
+  egal('et s’arrête là', ajusterSeances('PSIO', 8, 1), 8);
+  egal('le « − » redescend à six', ajusterSeances('PSIO', 8, -1), 6);
+  egal('et ne descend pas en dessous', ajusterSeances('PSIO', 6, -1), 6);
+  egal('un nombre hors formule se recale', ajusterSeances('PSIO', 7, 1), 8);
+
+  /* Sur le formulaire d’une cure suivante, zéro existe : c’est « on ne le vend pas ». */
+  egal('sur une cure suivante, zéro reste possible', ajusterSeancesDuSoin('psio', 6, -1), 0);
+  egal('et le premier « + » pose la formule de six', ajusterSeancesDuSoin('psio', 0, 1), 6);
+  egal('puis celle de huit', ajusterSeancesDuSoin('psio', 6, 1), 8);
+  egal('sans jamais aller plus loin', ajusterSeancesDuSoin('psio', 8, 1), 8);
+  egal('la luxo, elle, bouge d’une séance', ajusterSeancesDuSoin('luxo', 16, 1), 17);
+
+  /*
+    LE PSIO NE FAIT PAS REVENIR : il s'enchaîne après un autre soin, dans la
+    même venue, comme la Relaxation. Il ne compte donc pas dans la règle du
+    « troisième soin, un mois de plus », qui ouvre un chèque de plus.
+  */
+  verifie('le Psio ne demande pas de venue à lui seul', !demandeUneVenue('psio'));
+  verifie('la Relaxation non plus', !demandeUneVenue('relax'));
+  verifie('la luxothérapie, si', demandeUneVenue('luxo'));
+  verifie('l’I-Shape aussi', demandeUneVenue('ishape'));
+  verifie('la pressodynamie aussi', demandeUneVenue('presso'));
+
+  /*
+    Il ne s'ajoute QUE là où le centre le tient, et il n'apparaît jamais
+    parmi les soins proposés ailleurs.
+  */
+  const sansRien = {
+    points: { LUXO: 0, RELAX: 0, ISHAPE: 0, PRESSO: 0, DOME: 0, PSIO: 0 },
+    contreIndications: {},
+    engagement: 'MID' as const,
+    scoreInbody: null,
+  };
+  verifie(
+    'à Sérignan, le Psio se propose à l’ajout',
+    prestationsAjoutables(sansRien, [], false, true).includes('PSIO'),
+  );
+  verifie(
+    'ailleurs, il n’est nulle part',
+    !prestationsAjoutables(sansRien, [], false, false).includes('PSIO'),
+  );
+  verifie(
+    'et le Dôme ne le suit pas au Grau-du-Roi',
+    prestationsAjoutables(sansRien, [], true, false).includes('DOME') &&
+      !prestationsAjoutables(sansRien, [], true, false).includes('PSIO'),
   );
 }

@@ -135,13 +135,14 @@ export function pointDeVigilance(lignes: LigneComposition[]): LigneComposition |
 /**
  * Les soins de la cure qui entrent dans la restitution.
  *
- * Le Dôme en est absent : aucune question ne lui donne de points, il n'entre
- * dans une cure que par la main de la thérapeute, et le mettre en face d'un
- * point de l'analyse serait inventer un lien qui n'existe pas (Jonathan,
- * 2 octobre 2026). Il figure au récapitulatif de la dernière page, avec le
- * reste de ce qu'elle achète.
+ * Le Dôme et le Psio en sont absents : aucune question ne leur donne de
+ * points, ils n'entrent dans une cure que par la main de la thérapeute, et
+ * les mettre en face d'un point de l'analyse serait inventer un lien qui
+ * n'existe pas (Jonathan, 2 octobre 2026 pour le Dôme, 16 octobre pour le
+ * Psio). Ils figurent au récapitulatif de la dernière page, avec le reste de
+ * ce qu'elle achète.
  */
-const HORS_BIOPORTRAIT: Prestation[] = ['DOME'];
+const HORS_BIOPORTRAIT: Prestation[] = ['DOME', 'PSIO'];
 
 export interface SoinVendu {
   cle: string;
