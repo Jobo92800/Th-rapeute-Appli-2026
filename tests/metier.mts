@@ -718,9 +718,11 @@ export function controlerMetier() {
   */
   verifie('le Psio ne demande pas de venue à lui seul', !demandeUneVenue('psio'));
   verifie('la Relaxation non plus', !demandeUneVenue('relax'));
+  verifie('l’hydroporation non plus', !demandeUneVenue('hydroporation'));
   verifie('la luxothérapie, si', demandeUneVenue('luxo'));
   verifie('l’I-Shape aussi', demandeUneVenue('ishape'));
   verifie('la pressodynamie aussi', demandeUneVenue('presso'));
+  verifie('et la radiofréquence aussi', demandeUneVenue('radiofrequence'));
 
   /*
     Il ne s'ajoute QUE là où le centre le tient, et il n'apparaît jamais

@@ -142,16 +142,24 @@ export function ajusterSeancesDuSoin(t: Technologie, actuelle: number, delta: nu
  * Les soins qui demandent une venue à eux seuls.
  *
  * La durée d'une cure se compte en venues, pas en soins : trois soins qui
- * font revenir ajoutent un mois, et ce mois ouvre un chèque de plus. La
- * **Relaxation** s'enchaîne après un autre soin, dans le même rendez-vous,
- * et n'a jamais compté. **Le Psio non plus** (Jonathan, 16 octobre 2026) :
- * la cliente le fait dans la foulée, il ne la fait pas revenir.
+ * font revenir ajoutent un mois, et ce mois ouvre un chèque de plus. Or on
+ * n'encaisse pas un règlement après la dernière séance — compter une venue
+ * de trop, c'est promettre un chèque que la cure ne couvre plus.
+ *
+ * Trois soins s'enchaînent après un autre, dans le même rendez-vous, et ne
+ * font donc pas revenir : la **Relaxation**, qui n'a jamais compté ; le
+ * **Psio** ; et l'**hydroporation**, qui se fait dans la foulée de la
+ * radiofréquence — c'est le même appareil (Jonathan, 16 octobre 2026).
  *
  * La règle est ici et pas dans les deux écrans qui la posaient chacun de
  * leur côté — l'un l'aurait suivie, l'autre pas, et la même cure aurait
  * ouvert quatre chèques au bilan et cinq à la cure suivante.
  */
-export const SOINS_SANS_VENUE_PROPRE: readonly Technologie[] = ['relax', 'psio'];
+export const SOINS_SANS_VENUE_PROPRE: readonly Technologie[] = [
+  'relax',
+  'psio',
+  'hydroporation',
+];
 
 export function demandeUneVenue(t: Technologie): boolean {
   return !SOINS_SANS_VENUE_PROPRE.includes(t);
