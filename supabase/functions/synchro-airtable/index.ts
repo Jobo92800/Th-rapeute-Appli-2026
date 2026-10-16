@@ -39,6 +39,7 @@ const LIBELLE_TECHNO: Record<string, string> = {
   advance_lift: 'Advance Lift',
   radiofrequence: 'Radiofréquence visage',
   psio: 'Psio',
+  hydroporation: 'Hydroporation',
 };
 
 /*

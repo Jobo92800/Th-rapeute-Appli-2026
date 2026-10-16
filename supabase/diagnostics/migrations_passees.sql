@@ -121,7 +121,12 @@ WITH controles(numero, objet, present) AS (
      EXISTS (SELECT 1 FROM tarifs WHERE code = 'psio')
      AND EXISTS (SELECT 1 FROM pg_constraint
                   WHERE conname = 'programme_lignes_technologie_check'
-                    AND pg_get_constraintdef(oid) LIKE '%psio%'))
+                    AND pg_get_constraintdef(oid) LIKE '%psio%')),
+
+    ('081', 'L''hydroporation et le bilan anti-âge — tarif, technologie et colonne',
+     EXISTS (SELECT 1 FROM tarifs WHERE code = 'hydroporation')
+     AND EXISTS (SELECT 1 FROM information_schema.columns
+                  WHERE table_name = 'programmes' AND column_name = 'prix_bilan'))
 )
 SELECT
   numero,

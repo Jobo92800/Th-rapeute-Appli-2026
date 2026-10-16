@@ -132,6 +132,7 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
       'dome',
       'advance_lift',
       'radiofrequence',
+      'hydroporation',
     ];
     return ordre
       .map((technologie) => ({

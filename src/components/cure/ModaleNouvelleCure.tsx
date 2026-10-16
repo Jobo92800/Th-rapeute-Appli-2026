@@ -87,6 +87,7 @@ export default function ModaleNouvelleCure({
         tenue: prescription.tenue,
         prixGuide: grille?.guide ?? 0,
         prixTenue: grille?.tenue ?? 0,
+        prixBilan: prescription.prixBilan,
         montantTotal: prescription.montantTotal,
         modeReglement: prescription.modeReglement,
         fraisFinancement: prescription.frais,

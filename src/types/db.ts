@@ -223,7 +223,9 @@ export type Technologie =
   | 'advance_lift'
   | 'radiofrequence'
   /** Le Psio, à Sérignan. Jamais prescrit : ajouté à la main (migration 080). */
-  | 'psio';
+  | 'psio'
+  /** L'hydroporation, à Sérignan. Un second soin anti-âge (migration 081). */
+  | 'hydroporation';
 
 export type TailleTenue = 'S' | 'M' | 'L' | 'XL';
 
@@ -242,6 +244,8 @@ export interface Programme {
   taille_tenue: TailleTenue | null;
   prix_guide: number;
   prix_tenue: number;
+  /** Le bilan facturé avec la cure, zéro le plus souvent (migration 081). */
+  prix_bilan: number;
   montant_total: number;
   mode_reglement: ModeReglement;
   frais_financement: number;

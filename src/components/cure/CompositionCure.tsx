@@ -7,7 +7,13 @@ import {
   type ComplementChoisi,
 } from '../../domain/complements';
 import type { EtatStock } from '../../types/db';
-import { ajusterSeancesDuSoin, demandeUneVenue, psioDisponible, soinsAntiAgeDuCentre } from '../../domain/soins';
+import {
+  ajusterSeancesDuSoin,
+  bilanAntiAgeFacturable,
+  demandeUneVenue,
+  psioDisponible,
+  soinsAntiAgeDuCentre,
+} from '../../domain/soins';
 import {
   ECHEANCES_ALMA,
   dureeCureEnMois,
@@ -40,6 +46,11 @@ export interface Prescription {
   offertes: { technologie: Technologie; seances: number } | null;
   /** Les boîtes de compléments choisies avec la cure, comptées dans le montant. */
   complements: ComplementChoisi[];
+  /**
+   * Le bilan anti-âge facturé avec la cure, 89 €, ou zéro. Il compte dans le
+   * montant et tombe sur la première échéance, comme le guide et la tenue.
+   */
+  prixBilan: number;
   montantTotal: number;
   modeReglement: ModeReglement;
   frais: number;
@@ -134,6 +145,7 @@ export default function CompositionCure({
     // les deux bilans anti-âge ont les leurs, et leurs cures naissent de là.
     advance_lift: seancesInitiales?.advance_lift ?? 0,
     radiofrequence: seancesInitiales?.radiofrequence ?? 0,
+    hydroporation: seancesInitiales?.hydroporation ?? 0,
   });
   const [methode, setMethode] = useState<'centre' | 'alma'>('centre');
   const [nEcheances, setNEcheances] = useState(4);
@@ -155,6 +167,24 @@ export default function CompositionCure({
     tout seul — c'est la thérapeute qui le propose.
   */
   const [avecDecollete, setAvecDecollete] = useState(false);
+
+  /*
+    LE BILAN ANTI-ÂGE, 89 € (Jonathan, 16 octobre 2026).
+
+    Une cliente déjà suivie qui repart sur de l'anti-âge refait son bilan, et
+    il se facture — c'est le premier rendez-vous du Profil Signature, le même
+    tarif. Sur le devis du bilan ces 89 € sont déjà dans le total ; ici ils
+    n'étaient comptés nulle part, et une cure d'anti-âge vendue par ce
+    formulaire partait sans son bilan.
+
+    La case ne s'affiche que là où ce bilan existe — le Crès et Sérignan. Au
+    Grau-du-Roi, rien ne se facture à part : c'est la première séance
+    d'Advance Lift qui se règle. Et elle ne se coche jamais toute seule :
+    facturer 89 € sans que personne l'ait décidé serait pire que l'oublier.
+  */
+  const bilanProposable = bilanAntiAgeFacturable(centreId);
+  const [bilanAntiAge, setBilanAntiAge] = useState(false);
+  const bilanRetenu = bilanProposable && bilanAntiAge;
 
   const electro = seances.ishape > 0;
 
@@ -193,10 +223,10 @@ export default function CompositionCure({
     () =>
       calculerMontant(
         lignes,
-        { tenue, guide: guideRetenu, boites: nombreDeBoites(complements) },
+        { tenue, guide: guideRetenu, boites: nombreDeBoites(complements), bilan: bilanRetenu },
         grille,
       ),
-    [lignes, tenue, guideRetenu, complements, grille],
+    [lignes, tenue, guideRetenu, complements, grille, bilanRetenu],
   );
 
   const offertesPosees = Math.min(offertes, seancesOffertes);
@@ -259,7 +289,11 @@ export default function CompositionCure({
         prixSeance: grille.seance,
         montantSeances: detail.montantSeances,
         // Tout ce qui n'est pas une séance tombe sur la première échéance.
-        options: detail.montantGuide + detail.montantTenue + detail.montantComplements,
+        options:
+          detail.montantGuide +
+          detail.montantTenue +
+          detail.montantComplements +
+          detail.montantBilan,
         methode,
         n: nRetenu,
         acompte,
@@ -277,6 +311,7 @@ export default function CompositionCure({
         offertes:
           offertesPosees > 0 ? { technologie: technoOfferte, seances: offertesPosees } : null,
         complements,
+        prixBilan: detail.montantBilan,
         montantTotal: detail.total,
         modeReglement: echeancier.mode,
         frais: echeancier.frais,
@@ -413,6 +448,15 @@ export default function CompositionCure({
                 prix={formaterEuros(grille.tenue)}
                 note={!electro ? 'Aucune électrostimulation prescrite' : undefined}
               />
+              {bilanProposable && (
+                <Option
+                  coche={bilanAntiAge}
+                  onChange={setBilanAntiAge}
+                  libelle="Bilan anti-âge"
+                  prix={formaterEuros(grille.bilan_signature)}
+                  note="À cocher si elle refait son bilan ce jour-là"
+                />
+              )}
               <div className="pt-1.5">
                 <Inclus>Bilans mensuels sur balance médicale et suivi hebdomadaire</Inclus>
                 <Inclus>Application podcasts et expérience ludique à chaque séance</Inclus>

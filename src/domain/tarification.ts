@@ -25,7 +25,8 @@ export type Technologie =
   | 'relax'
   | 'advance_lift'
   | 'radiofrequence'
-  | 'psio';
+  | 'psio'
+  | 'hydroporation';
 
 export const LIBELLES_TECHNOLOGIE: Record<Technologie, string> = {
   luxo: 'Luxothérapie Perte de poids',
@@ -39,6 +40,8 @@ export const LIBELLES_TECHNOLOGIE: Record<Technologie, string> = {
   radiofrequence: 'Radiofréquence visage',
   /* À Sérignan. Deux formules — 6 ou 8 séances — jamais prescrit par un bilan. */
   psio: 'Psio',
+  /* Le second soin anti-âge de Sérignan, ajouté à la main. 179 € la séance. */
+  hydroporation: 'Hydroporation',
 };
 
 export interface LigneProgramme {
@@ -67,6 +70,8 @@ export interface GrilleTarifaire {
    * — 6 séances font 351 €, 8 en font 468.
    */
   psio: number;
+  /** La séance d'hydroporation, à Sérignan : 179 €. */
+  hydroporation: number;
   /** Une boîte de compléments, vendue à part de la cure. */
   complement: number;
 }
@@ -78,6 +83,12 @@ export interface DetailMontant {
   montantTenue: number;
   /** Les boîtes de compléments choisies avec la cure. Zéro le plus souvent. */
   montantComplements: number;
+  /**
+   * Le bilan facturé avec la cure. Zéro le plus souvent — il n'existe que
+   * sur une cure d'anti-âge composée sans repasser par un bilan, où la
+   * cliente refait son Profil Signature le jour même (081).
+   */
+  montantBilan: number;
   total: number;
 }
 
@@ -96,7 +107,13 @@ export interface DetailMontant {
  */
 export function calculerMontant(
   lignes: LigneProgramme[],
-  options: { tenue: boolean; guide: boolean; boites?: number },
+  options: {
+    tenue: boolean;
+    guide: boolean;
+    boites?: number;
+    /** Le bilan anti-âge facturé avec la cure, quand la case est cochée. */
+    bilan?: boolean;
+  },
   grille: GrilleTarifaire,
 ): DetailMontant {
   const totalSeances = lignes.reduce((n, l) => n + Math.max(0, l.seances), 0);
@@ -104,6 +121,7 @@ export function calculerMontant(
   const montantGuide = options.guide ? grille.guide : 0;
   const montantTenue = options.tenue ? grille.tenue : 0;
   const montantComplements = arrondir(Math.max(0, Math.floor(options.boites ?? 0)) * grille.complement);
+  const montantBilan = options.bilan ? grille.bilan_signature : 0;
 
   return {
     totalSeances,
@@ -111,7 +129,10 @@ export function calculerMontant(
     montantGuide,
     montantTenue,
     montantComplements,
-    total: arrondir(montantSeances + montantGuide + montantTenue + montantComplements),
+    montantBilan,
+    total: arrondir(
+      montantSeances + montantGuide + montantTenue + montantComplements + montantBilan,
+    ),
   };
 }
 
@@ -126,6 +147,7 @@ export function prixUnitaireParDefaut(techno: Technologie, grille: GrilleTarifai
   */
   if (techno === 'radiofrequence') return grille.radiofrequence;
   if (techno === 'psio') return grille.psio;
+  if (techno === 'hydroporation') return grille.hydroporation;
   return grille.seance;
 }
 

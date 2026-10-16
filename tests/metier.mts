@@ -15,7 +15,12 @@ import {
 } from '../src/domain/parrainage.ts';
 import { finDeCure, libelleFinDeCure, niveauStock } from '../src/domain/stock.ts';
 import { facturationDuBilan } from '../src/domain/facturationDuBilan.ts';
-import { ajusterSeancesDuSoin, demandeUneVenue, psioDisponible } from '../src/domain/soins.ts';
+import {
+  ajusterSeancesDuSoin,
+  bilanAntiAgeFacturable,
+  demandeUneVenue,
+  psioDisponible,
+} from '../src/domain/soins.ts';
 import { ajusterSeances, prestationsAjoutables, seancesALAjout } from '../src/domain/prescription.ts';
 import {
   JOURS_AVANT_PREMIERE_ECHEANCE,
@@ -377,14 +382,32 @@ export function controlerMetier() {
 
   egal('le Grau-du-Roi tient l’Advance Lift', soinsAntiAgeDuCentre('grau-du-roi'), ['advance_lift']);
   egal('le Crès tient la radiofréquence', soinsAntiAgeDuCentre('le-cres'), ['radiofrequence']);
-  egal('Sérignan aussi', soinsAntiAgeDuCentre('serignan'), ['radiofrequence']);
+  egal(
+    'Sérignan tient la radiofréquence ET l’hydroporation',
+    soinsAntiAgeDuCentre('serignan'),
+    ['radiofrequence', 'hydroporation'],
+  );
   egal('Pollestres n’a pas d’anti-âge', soinsAntiAgeDuCentre('cabestany'), []);
   egal('Avignon non plus', soinsAntiAgeDuCentre('avignon'), []);
   egal('et sans centre, on ne propose rien', soinsAntiAgeDuCentre(null), []);
+  /*
+    L'INVARIANT, ET CE QU'IL DIT VRAIMENT. Un centre peut tenir plusieurs
+    soins — Sérignan en a deux depuis le 16 octobre 2026. Ce qui reste
+    interdit, c'est l'Advance Lift ET la radiofréquence dans le même centre :
+    ce sont deux façons concurrentes de traiter la même chose, et les deux
+    bilans qui les prescrivent se contrediraient.
+  */
   verifie(
-    'aucun centre ne fait les deux',
-    ['grau-du-roi', 'le-cres', 'serignan', 'cabestany', 'avignon'].every(
-      (c) => soinsAntiAgeDuCentre(c).length <= 1,
+    'aucun centre ne fait l’Advance Lift et la radiofréquence',
+    ['grau-du-roi', 'le-cres', 'serignan', 'cabestany', 'avignon'].every((c) => {
+      const soins = soinsAntiAgeDuCentre(c);
+      return !(soins.includes('advance_lift') && soins.includes('radiofrequence'));
+    }),
+  );
+  verifie(
+    'et l’hydroporation ne se tient qu’à Sérignan',
+    ['grau-du-roi', 'le-cres', 'cabestany', 'avignon'].every(
+      (c) => !soinsAntiAgeDuCentre(c).includes('hydroporation'),
     ),
   );
 
@@ -722,4 +745,76 @@ export function controlerMetier() {
     prestationsAjoutables(sansRien, [], true, false).includes('DOME') &&
       !prestationsAjoutables(sansRien, [], true, false).includes('PSIO'),
   );
+
+  section('L’hydroporation, et le bilan anti-âge vendu avec la cure');
+
+  const grilleSerignan = {
+    seance: 59, guide: 29, tenue: 60, bilan: 129, dome: 49,
+    advance_lift: 85, radiofrequence: 79, radiofrequence_decollete: 139,
+    bilan_signature: 89, complement: 37, psio: 58.5, hydroporation: 179,
+  };
+
+  egalEuros('la séance d’hydroporation vaut 179 €', prixUnitaireParDefaut('hydroporation', grilleSerignan), 179);
+  egalEuros(
+    'quatre séances font 716 €',
+    calculerMontant([{ technologie: 'hydroporation', seances: 4, prixUnitaire: 179 }],
+      { guide: false, tenue: false }, grilleSerignan).total,
+    716,
+  );
+
+  /*
+    LE BILAN ANTI-ÂGE, 89 €. Il entre dans le montant de la cure comme le
+    guide et la tenue : c'est ce que la cliente règle, et c'est ce qui part
+    dans « Montant Cure ». Il ne se coche jamais tout seul.
+  */
+  const cureSansBilan = calculerMontant(
+    [{ technologie: 'hydroporation', seances: 4, prixUnitaire: 179 }],
+    { guide: false, tenue: false },
+    grilleSerignan,
+  );
+  const cureAvecBilan = calculerMontant(
+    [{ technologie: 'hydroporation', seances: 4, prixUnitaire: 179 }],
+    { guide: false, tenue: false, bilan: true },
+    grilleSerignan,
+  );
+
+  egalEuros('sans la case, rien ne s’ajoute', cureSansBilan.montantBilan, 0);
+  egalEuros('la case ajoute 89 €', cureAvecBilan.montantBilan, 89);
+  egalEuros('et le total les porte', cureAvecBilan.total, 805);
+  egalEuros('les séances, elles, ne bougent pas', cureAvecBilan.montantSeances, 716);
+
+  /*
+    LE MONTANT SE RECONSTITUE. Séances + guide + tenue + boîtes + bilan doit
+    retomber sur le total, sinon une cure porte un écart que rien n'explique
+    et que personne ne pourra trancher six mois plus tard.
+  */
+  const cureComplete = calculerMontant(
+    [
+      { technologie: 'radiofrequence', seances: 6, prixUnitaire: 79 },
+      { technologie: 'hydroporation', seances: 2, prixUnitaire: 179 },
+    ],
+    { guide: true, tenue: true, boites: 2, bilan: true },
+    grilleSerignan,
+  );
+  egalEuros(
+    'le total est la somme de ses parts',
+    cureComplete.total,
+    cureComplete.montantSeances +
+      cureComplete.montantGuide +
+      cureComplete.montantTenue +
+      cureComplete.montantComplements +
+      cureComplete.montantBilan,
+  );
+
+  /*
+    La case ne s'affiche que là où ce bilan existe. Au Grau-du-Roi, le
+    Bio-Portrait Anti-Âge ne facture pas de bilan à part : c'est la première
+    séance d'Advance Lift qui se règle, 85 €.
+  */
+  verifie('le Crès facture un bilan anti-âge', bilanAntiAgeFacturable('le-cres'));
+  verifie('Sérignan aussi', bilanAntiAgeFacturable('serignan'));
+  verifie('le Grau-du-Roi, non', !bilanAntiAgeFacturable('grau-du-roi'));
+  verifie('ni Pollestres', !bilanAntiAgeFacturable('cabestany'));
+  verifie('ni Avignon', !bilanAntiAgeFacturable('avignon'));
+  verifie('et sans centre, on ne propose rien', !bilanAntiAgeFacturable(null));
 }

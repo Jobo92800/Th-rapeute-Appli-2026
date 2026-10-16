@@ -58,6 +58,7 @@ export async function lireGrilleTarifaire(): Promise<GrilleTarifaire> {
     radiofrequence_decollete: vus.get('radiofrequence_decollete') ?? 139,
     bilan_signature: vus.get('bilan_signature') ?? 89,
     psio: vus.get('psio') ?? 58.5,
+    hydroporation: vus.get('hydroporation') ?? 179,
     complement: vus.get('complement') ?? 37,
   };
 }
@@ -224,6 +225,14 @@ export interface NouveauProgramme {
   tenue: boolean;
   prixGuide: number;
   prixTenue: number;
+  /**
+   * Le bilan facturé avec cette cure, zéro le plus souvent. Il est dans
+   * `montantTotal` ; on le range aussi à part pour que la composition d'une
+   * cure se reconstitue — séances + guide + tenue + boîtes + bilan doit
+   * retomber sur le montant, et un écart que rien n'explique se découvre
+   * six mois plus tard sans pouvoir être tranché.
+   */
+  prixBilan?: number;
   montantTotal: number;
   modeReglement: Programme['mode_reglement'];
   fraisFinancement: number;
@@ -294,6 +303,7 @@ export async function creerProgramme(n: NouveauProgramme): Promise<Programme> {
       tenue: n.tenue,
       prix_guide: n.guide ? n.prixGuide : 0,
       prix_tenue: n.tenue ? n.prixTenue : 0,
+      prix_bilan: n.prixBilan ?? 0,
       montant_total: n.montantTotal,
       mode_reglement: n.modeReglement,
       frais_financement: n.fraisFinancement,

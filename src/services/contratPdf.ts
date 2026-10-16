@@ -213,6 +213,10 @@ export async function generateSignedContractPdf(
       SMALL_LINE_H,
     );
   }
+  // Le bilan facturé avec la cure : le montant total le contient aussi.
+  if (data.bilanLabel) {
+    y = paragraph(doc, `Le montant comprend également ${data.bilanLabel}.`, y, SMALL_LINE_H);
+  }
   y = paragraph(doc, 'Les modalités précises de la cure (fréquence, organisation, durée estimée) sont définies lors du bilan préalable.', y, SMALL_LINE_H);
   y += 2;
 

@@ -77,6 +77,16 @@ export interface ContractData {
    * est le document itemisé, et le montant total les contient.
    */
   supplementsLabel: string;
+  /**
+   * Le bilan facturé avec la cure — « le bilan anti-âge (89 €) » —, vide le
+   * plus souvent.
+   *
+   * Il est dans le montant total et dans la première échéance, donc le
+   * contrat doit le nommer : un document itemisé dont le grand chiffre
+   * contient 89 € que rien n'explique est un document qu'une cliente a
+   * raison de contester. Même raison que les boîtes de compléments.
+   */
+  bilanLabel: string;
   /** Technologies réellement prescrites : elles pilotent les consentements. */
   activeServiceIds: string[];
   totalAmount: string;
@@ -125,6 +135,8 @@ const LIGNES_CONTRAT: Array<{ label: string; technologies: Technologie[] }> = [
   { label: 'Advance Lift', technologies: ['advance_lift'] },
   /* Le soin du Profil Signature : radiofréquence Mesojet, au Crès et à Sérignan. */
   { label: 'Radiofréquence visage (Mesojet)', technologies: ['radiofrequence'] },
+  /* Le second soin anti-âge de Sérignan. Pas de consentement : voir la 081. */
+  { label: 'Hydroporation', technologies: ['hydroporation'] },
 ];
 
 /** Technologie → consentement à faire signer. Le Dôme n'en a pas. */
@@ -194,6 +206,14 @@ export function construireContrat(args: {
           .map((v) => `${(args.nomProduit ?? ((c) => c))(v.produit)} ×${v.quantite}`)
           .join(', ')})`
       : '';
+
+  /*
+    Le bilan facturé avec cette cure (081). Il n'existe que sur une cure
+    d'anti-âge composée sans repasser par un bilan : la cliente refait son
+    Profil Signature le jour même, et il se règle avec le reste.
+  */
+  const prixBilan = Number(programme.prix_bilan ?? 0);
+  const bilanLabel = prixBilan > 0 ? `le bilan anti-âge (${euros(prixBilan)})` : '';
 
   const parTechno = new Map(lignes.map((l) => [l.technologie, l.seances_prevues]));
 
@@ -270,6 +290,7 @@ export function construireContrat(args: {
     offeredSessions,
     offeredLabel,
     supplementsLabel: pourPdf(supplementsLabel),
+    bilanLabel: pourPdf(bilanLabel),
     activeServiceIds: [...new Set(activeServiceIds)],
     /*
       LE CONTRAT DIT LE PRIX DE LA CURE, PAS LE COÛT DU CRÉDIT.

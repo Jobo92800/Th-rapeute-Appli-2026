@@ -160,21 +160,46 @@ export function demandeUneVenue(t: Technologie): boolean {
 /**
  * Les soins anti-âge que ce centre tient.
  *
- * L'Advance Lift n'est qu'au Grau-du-Roi, la radiofréquence Mesojet qu'au
- * Crès et à Sérignan, et Pollestres comme Avignon n'ont pas d'anti-âge.
+ * L'Advance Lift n'est qu'au Grau-du-Roi ; la radiofréquence Mesojet est au
+ * Crès et à Sérignan, et **Sérignan tient en plus l'hydroporation**
+ * (Jonathan, 16 octobre 2026). Pollestres et Avignon n'ont pas d'anti-âge.
  * **Proposer un soin qu'un centre ne tient pas, c'est le vendre** : la
  * cliente signe, et personne ne peut le lui donner. La règle vit donc ici,
  * au même endroit que les bilans qui prescrivent ces soins, et le banc
  * d'essai la tient.
  *
- * Jamais les deux à la fois : aucun centre ne fait l'Advance Lift et la
- * radiofréquence.
+ * CE QUI RESTE VRAI : aucun centre ne fait l'Advance Lift **et** la
+ * radiofréquence — ce sont deux façons concurrentes de traiter la même
+ * chose. Un centre peut en revanche tenir plusieurs soins, et Sérignan en
+ * tient deux : l'hydroporation ne remplace pas la radiofréquence, elle s'y
+ * ajoute. Aucun bilan ne la préconise, la thérapeute l'ajoute à la main.
  */
+export const CENTRES_AVEC_HYDROPORATION = ['serignan'];
+
+export function hydroporationDisponible(centreId: string | null | undefined): boolean {
+  return Boolean(centreId) && CENTRES_AVEC_HYDROPORATION.includes(centreId!);
+}
+
 export function soinsAntiAgeDuCentre(centreId: string | null | undefined): Technologie[] {
   if (!centreId) return [];
   if (centreId === CENTRE_ANTI_AGE) return ['advance_lift'];
-  if (signatureDisponible(centreId)) return ['radiofrequence'];
-  return [];
+  const soins: Technologie[] = [];
+  if (signatureDisponible(centreId)) soins.push('radiofrequence');
+  if (hydroporationDisponible(centreId)) soins.push('hydroporation');
+  return soins;
+}
+
+/**
+ * Les centres où un bilan anti-âge se facture 89 € à part.
+ *
+ * C'est le premier rendez-vous du Profil Signature (tarif `bilan_signature`,
+ * migration 071), au Crès et à Sérignan. **Le Grau-du-Roi n'en a pas** : son
+ * Bio-Portrait Anti-Âge ne facture pas de bilan, c'est la première séance
+ * d'Advance Lift qui se règle, 85 €. La case du formulaire de cure ne
+ * s'affiche donc que là où ces 89 € existent.
+ */
+export function bilanAntiAgeFacturable(centreId: string | null | undefined): boolean {
+  return Boolean(centreId) && signatureDisponible(centreId!);
 }
 
 export interface CouleurSoin {
@@ -268,6 +293,19 @@ export const COULEURS_SOIN: Record<Technologie, CouleurSoin> = {
     carte: 'border-indigo-300 bg-indigo-50',
     entete: 'border-indigo-200 bg-indigo-100',
     bouton: 'border-indigo-300 bg-indigo-50 hover:bg-indigo-100',
+  },
+  /*
+    L'hydroporation, le second soin anti-âge de Sérignan : fuchsia. Elle
+    côtoie le violet de la radiofréquence et l'indigo du Psio dans ce
+    centre — d'où un rose franc, qui ne se confond avec ni l'un ni l'autre.
+  */
+  hydroporation: {
+    texte: 'text-fuchsia-700',
+    bord: 'border-l-fuchsia-500',
+    pastille: 'bg-fuchsia-100 text-fuchsia-800',
+    carte: 'border-fuchsia-300 bg-fuchsia-50',
+    entete: 'border-fuchsia-200 bg-fuchsia-100',
+    bouton: 'border-fuchsia-300 bg-fuchsia-50 hover:bg-fuchsia-100',
   },
   /* Le Dôme n'est plus prescrit : il reste lisible sur les cures passées. */
   dome: {
