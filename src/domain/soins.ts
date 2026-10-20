@@ -210,6 +210,43 @@ export function bilanAntiAgeFacturable(centreId: string | null | undefined): boo
   return Boolean(centreId) && signatureDisponible(centreId!);
 }
 
+/**
+ * L'ORDRE DES SOINS À L'ÉCRAN — l'I-Shape d'abord (Jonathan, 20 octobre 2026).
+ *
+ * Il ne dit rien du métier, il dit dans quel ordre la thérapeute regarde :
+ * l'I-Shape en premier, puis la Luxothérapie perte de poids, puis la
+ * Relaxation, puis le reste. C'est l'ordre dans lequel les séances
+ * s'enchaînent au comptoir, et la liste doit se lire comme la journée se
+ * déroule.
+ *
+ * **Écrit une seule fois.** L'onglet Séances s'en sert à deux endroits — les
+ * boutons « Démarrer une séance » et les blocs de séances réalisées — et ils
+ * sont l'un au-dessus de l'autre sur le même écran : deux ordres différents
+ * se liraient comme une erreur.
+ *
+ * Un soin absent de cette liste passe à la fin plutôt que de disparaître.
+ */
+export const ORDRE_DES_SOINS: readonly Technologie[] = [
+  'ishape',
+  'luxo',
+  'relax',
+  'presso',
+  'psio',
+  'dome',
+  'advance_lift',
+  'radiofrequence',
+  'hydroporation',
+];
+
+/** Classe deux soins dans l'ordre d'affichage. Un inconnu va à la fin. */
+export function parOrdreDesSoins(a: Technologie, b: Technologie): number {
+  const rang = (t: Technologie) => {
+    const i = ORDRE_DES_SOINS.indexOf(t);
+    return i === -1 ? ORDRE_DES_SOINS.length : i;
+  };
+  return rang(a) - rang(b);
+}
+
 export interface CouleurSoin {
   /** Le nom du soin, dans sa teinte. */
   texte: string;

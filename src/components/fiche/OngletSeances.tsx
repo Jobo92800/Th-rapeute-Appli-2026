@@ -20,11 +20,13 @@ import {
   supprimerSeance,
 } from '../../services/metier';
 import {
+  ORDRE_DES_SOINS,
   aUnProgrammeAppareil,
   aUnRessentiSepare,
   aUnePesee,
   aUneMissionDeclic,
   couleurSoin,
+  parOrdreDesSoins,
 } from '../../domain/soins';
 import { LIBELLES_TECHNOLOGIE } from '../../domain/tarification';
 import CourbePoids, { libelleDelta } from './CourbePoids';
@@ -123,18 +125,7 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
     manque sur une cure reprise du CRM.
   */
   const blocsParSoin = useMemo(() => {
-    const ordre: Technologie[] = [
-      'luxo',
-      'relax',
-      'ishape',
-      'presso',
-      'psio',
-      'dome',
-      'advance_lift',
-      'radiofrequence',
-      'hydroporation',
-    ];
-    return ordre
+    return ORDRE_DES_SOINS
       .map((technologie) => ({
         technologie,
         liste: faites
@@ -244,6 +235,13 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
         return { technologie: t, seances_restantes: suivi ? suivi.seances_restantes : null };
       })
     : actif.suivi.filter((s) => s.seances_restantes > 0);
+
+  /*
+    Les boutons suivent le même ordre que les blocs plus bas. Sans ça, la
+    même page proposerait l'I-Shape en premier d'un côté et la luxo de
+    l'autre : on lirait une erreur là où il n'y a qu'un écran.
+  */
+  restantes.sort((a, b) => parOrdreDesSoins(a.technologie, b.technologie));
 
   return (
     <div className="space-y-5">

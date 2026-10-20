@@ -16,9 +16,11 @@ import {
 import { finDeCure, libelleFinDeCure, niveauStock } from '../src/domain/stock.ts';
 import { facturationDuBilan } from '../src/domain/facturationDuBilan.ts';
 import {
+  ORDRE_DES_SOINS,
   ajusterSeancesDuSoin,
   bilanAntiAgeFacturable,
   demandeUneVenue,
+  parOrdreDesSoins,
   psioDisponible,
 } from '../src/domain/soins.ts';
 import { ajusterSeances, prestationsAjoutables, seancesALAjout } from '../src/domain/prescription.ts';
@@ -819,4 +821,32 @@ export function controlerMetier() {
   verifie('ni Pollestres', !bilanAntiAgeFacturable('cabestany'));
   verifie('ni Avignon', !bilanAntiAgeFacturable('avignon'));
   verifie('et sans centre, on ne propose rien', !bilanAntiAgeFacturable(null));
+
+  section('L’ordre des soins à l’écran');
+
+  /*
+    L'I-Shape d'abord, puis la luxo, puis la Relaxation (Jonathan, 20 octobre
+    2026). C'est l'ordre dans lequel les séances s'enchaînent au comptoir.
+    Les boutons « Démarrer une séance » et les blocs de séances réalisées
+    sont l'un au-dessus de l'autre sur le même écran : deux ordres
+    différents se liraient comme une erreur.
+  */
+  egal('l’I-Shape vient en premier', ORDRE_DES_SOINS[0], 'ishape');
+  egal('puis la Luxothérapie perte de poids', ORDRE_DES_SOINS[1], 'luxo');
+  egal('puis la Relaxation', ORDRE_DES_SOINS[2], 'relax');
+
+  verifie(
+    'tous les soins y figurent, une fois chacun',
+    new Set(ORDRE_DES_SOINS).size === ORDRE_DES_SOINS.length &&
+      (['luxo', 'relax', 'ishape', 'presso', 'dome', 'advance_lift',
+        'radiofrequence', 'psio', 'hydroporation'] as const).every((t) =>
+        ORDRE_DES_SOINS.includes(t),
+      ),
+  );
+
+  egal(
+    'une liste mélangée se remet dans l’ordre',
+    (['presso', 'relax', 'ishape', 'luxo'] as const).slice().sort(parOrdreDesSoins).join(' '),
+    'ishape luxo relax presso',
+  );
 }
