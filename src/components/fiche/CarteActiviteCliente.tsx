@@ -71,6 +71,22 @@ export default function CarteActiviteCliente({ cliente }: { cliente: Cliente }) 
   if (!data) return null;
 
   const a: ActiviteCliente = data;
+
+  /*
+    TANT QUE LES CLIENTES SONT SUR MON PARCOURS, ON NE DIT RIEN DE CELLE-CI
+    (Jonathan, 21 octobre 2026).
+
+    Cette carte lit l'application nutrition, qui n'est pas encore ouverte au
+    public : aucune cliente n'y va, et toutes auraient donc eu le bandeau
+    « elle n'a encore jamais ouvert l'application ». Il est exact — et il se
+    lit pourtant comme « elle n'a rien ouvert du tout », juste à côté de son
+    avancement sur Mon Parcours, où elle écoute vraiment. Reprocher au
+    comptoir une absence qui n'en est pas une, c'est pire que de se taire.
+
+    On le remettra le jour de la bascule : il redeviendra vrai au sens où on
+    l'entend.
+  */
+  if (a.jamaisVenue) return null;
   const silencieuse = a.jamaisVenue || (a.joursDepuisOuverture ?? 0) > JOURS_SANS_NOUVELLES;
 
   return (

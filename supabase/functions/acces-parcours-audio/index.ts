@@ -44,8 +44,32 @@ Deno.serve(async (req: Request) => {
       headers: { ...enTetesCors, 'Content-Type': 'application/json' },
     });
 
+  /*
+    DEUX ADRESSES, ET C'EST VOULU (21 octobre 2026).
+
+    `PODCAST_API_URL` est le **relais de la nutrition** : il crée le compte
+    des deux côtés avec le même mot de passe, le temps de la bascule. C'est
+    ce qu'il faut pour ÉCRIRE — créer un accès, changer un mot de passe.
+
+    Mais il ne faut pas y LIRE. Les clientes écoutent leurs podcasts sur Mon
+    Parcours, pas sur la nutrition : le relais répond avec le compte nutrition
+    de la cliente, qui n'a jamais rien écouté, et la fiche annonçait « 0 / 24 »
+    à quelqu'un qui en avait fait deux. Quarante-quatre clientes étaient dans
+    ce cas, pour cent trois étapes terminées invisibles.
+
+    `PARCOURS_API_URL` pointe donc **directement sur Mon Parcours**, et sert
+    à tout ce qui se lit : l'avancement, et l'adresse d'écoute d'un podcast —
+    celle-ci aussi, sinon la thérapeute écouterait la copie de la nutrition,
+    qui peut diverger de l'épisode réellement servi à la cliente.
+
+    Si le secret n'est pas posé, on retombe sur l'ancien comportement plutôt
+    que de ne rien afficher : une fiche sans avancement vaut mieux qu'une
+    fiche en erreur.
+  */
   const api = Deno.env.get('PODCAST_API_URL');
   const code = Deno.env.get('PODCAST_ADMIN_CODE');
+  const apiParcours = Deno.env.get('PARCOURS_API_URL') ?? api;
+  const codeAdminParcours = Deno.env.get('PARCOURS_ADMIN_CODE') ?? code;
   const apiNutrition = Deno.env.get('NUTRITION_API_URL');
   const codeNutrition = Deno.env.get('NUTRITION_ADMIN_CODE');
 
@@ -101,6 +125,20 @@ Deno.serve(async (req: Request) => {
     return { statut: r.status, ok: r.ok, corps: await r.json().catch(() => ({})) };
   }
 
+  /**
+   * Mon Parcours, en direct, pour tout ce qui se LIT : l'avancement d'une
+   * cliente et l'adresse d'écoute d'un podcast. Jamais pour écrire — la
+   * création de compte passe par le relais, qui écrit des deux côtés.
+   */
+  async function monParcours(corps: Record<string, unknown>) {
+    const r = await fetch(apiParcours!, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-mbp-code': codeAdminParcours! },
+      body: JSON.stringify(corps),
+    });
+    return { statut: r.status, ok: r.ok, corps: await r.json().catch(() => ({})) };
+  }
+
   /** L'application nutrition, pour la seule lecture de l'activité. */
   async function nutrition(corps: Record<string, unknown>) {
     if (!apiNutrition || !codeNutrition) return { ok: false, corps: {} as Record<string, unknown> };
@@ -123,7 +161,7 @@ Deno.serve(async (req: Request) => {
    * acceptable pour une action ponctuelle, pas pour un appel fréquent.
    */
   async function chercherParEmail(email: string) {
-    const r = await podcast({ action: 'liste' });
+    const r = await monParcours({ action: 'liste' });
     if (!r.ok) return null;
     const liste = (r.corps?.clientes ?? []) as Array<{
       id: string;
@@ -154,7 +192,7 @@ Deno.serve(async (req: Request) => {
       if (!['B', 'C'].includes(codeParcours) || !Number.isInteger(numero) || numero < 1) {
         return json({ error: 'parcours (B ou C) et etape manquants.' }, 400);
       }
-      const liste = await podcast({ action: 'parcours' });
+      const liste = await monParcours({ action: 'parcours' });
       if (!liste.ok) return json({ error: 'Mon Parcours ne répond pas.' }, 502);
       const etapes = (liste.corps?.etapes ?? []) as Array<{
         id: string; parcours_code: string; numero: number; titre: string; fichier: string | null; actif: boolean;
@@ -163,7 +201,7 @@ Deno.serve(async (req: Request) => {
       if (!trouvee) return json({ error: 'Cette étape n’est pas encore en ligne dans Mon Parcours.' }, 404);
       if (!trouvee.fichier) return json({ error: 'Cette étape n’a pas encore de fichier audio.' }, 404);
 
-      const r = await podcast({ action: 'ecouter', id: trouvee.id });
+      const r = await monParcours({ action: 'ecouter', id: trouvee.id });
       if (!r.ok || !r.corps?.url) {
         return json({ error: r.corps?.erreur === 'audio-absent' ? 'Pas de fichier audio pour cette étape.' : 'Mon Parcours refuse l’écoute.' }, 502);
       }
@@ -231,7 +269,13 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      const r = await podcast({ action: 'renvoyer-invitation', id: trouvee.id });
+      /*
+        Mon Parcours, et pas le relais : l'identifiant vient de sa liste à
+        lui. Les deux applications numérotent leurs comptes séparément, et
+        envoyer un identifiant de Mon Parcours au relais ne désignerait
+        personne.
+      */
+      const r = await monParcours({ action: 'renvoyer-invitation', id: trouvee.id });
       if (!r.ok) {
         return json(
           {

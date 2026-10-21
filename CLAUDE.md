@@ -654,6 +654,40 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   c'est le renvoi d'invitation qui se fait refuser à la troisième, sans
   que rien ne l'annonce. À poser le jour où l'invitation redeviendra le
   chemin courant.
+- **L'avancement du parcours lu dans la mauvaise application** (Jonathan,
+  21 octobre 2026). La fiche d'Emmanuelle Pinna annonçait « 0 / 24 étapes
+  écoutées » alors que l'espace d'administration de Mon Parcours en montrait
+  deux. L'application ne mentait pas : elle répétait fidèlement ce qu'on lui
+  répondait. **`PODCAST_API_URL` et `NUTRITION_API_URL` avaient exactement la
+  même valeur** — posées toutes deux le 5 octobre, empreintes identiques dans
+  `supabase secrets list` —, si bien que la lecture de l'avancement
+  interrogeait le relais de la nutrition. Celui-ci répond avec le compte
+  **nutrition** de la cliente (un autre identifiant, une autre base), où elle
+  n'a jamais rien écouté puisque les clientes sont encore sur Mon Parcours.
+  **Quarante-quatre clientes étaient dans ce cas, pour cent trois étapes
+  terminées invisibles.** L'écoute d'un podcast partait du même mauvais
+  endroit : le fichier venait du stockage de la nutrition, qui peut diverger
+  de l'épisode réellement servi à la cliente.
+  **Le relais reste nécessaire** : Jonathan veut toujours que le compte se
+  crée des deux côtés pour ses essais. On a donc séparé les deux rôles, comme
+  on l'avait fait pour la carte d'activité : **`PODCAST_API_URL` pour ce qui
+  s'écrit** (créer un accès, changer un mot de passe — le relais écrit des
+  deux côtés), **`PARCOURS_API_URL` pour tout ce qui se lit** (l'avancement,
+  l'adresse d'écoute, le renvoi d'invitation — Mon Parcours en direct, car
+  l'identifiant du compte vient de sa liste à lui et ne désignerait personne
+  chez le relais). Les deux nouveaux secrets retombent sur les anciens quand
+  ils sont absents : une fiche sans avancement vaut mieux qu'une fiche en
+  erreur. **La leçon** : deux secrets qui portent la même valeur ne se voient
+  pas, et c'est `supabase secrets list` qui le dit — les empreintes y sont
+  identiques quand les valeurs le sont.
+- **Le bandeau « elle n'a jamais ouvert l'application » parlait de la
+  nutrition** (21 octobre 2026). Exact, et trompeur : il s'affichait pour
+  toutes les clientes — aucune ne va encore sur la nutrition — juste à côté
+  de leur avancement sur Mon Parcours, où elles écoutent vraiment. Il se
+  lisait comme « elle n'a rien ouvert du tout » au moment précis où on décide
+  d'appeler quelqu'un. `CarteActiviteCliente` ne rend plus rien dans ce cas ;
+  à remettre le jour de la bascule, où il redeviendra vrai au sens où on
+  l'entend.
 - **Doublons Airtable.** Le parcours du bilan enchaîne trois écritures ;
   sans verrou, trois synchros parallèles créaient trois fiches. Réglé par
   `reclamer_taches_airtable` (SKIP LOCKED), un verrou par cliente et un
@@ -777,7 +811,10 @@ partir de `public/guide.html`, qui fait seule référence. Le garder en double
 dans le dépôt, c'est se garantir qu'un jour les deux diffèrent.
 
 Secrets posés côté Supabase V2 : `AIRTABLE_TOKEN`, `AIRTABLE_BASE`,
-`AIRTABLE_TABLE`, `PODCAST_API_URL`, `PODCAST_ADMIN_CODE`,
+`AIRTABLE_TABLE`, `PODCAST_API_URL` et `PODCAST_ADMIN_CODE` (le relais de la
+nutrition — **ce qui s'écrit**), `PARCOURS_API_URL` et `PARCOURS_ADMIN_CODE`
+(Mon Parcours en direct — **ce qui se lit**, posés le 21 octobre 2026),
+`NUTRITION_API_URL` et `NUTRITION_ADMIN_CODE` (la carte d'activité),
 `FIREBASE_SERVICE_ACCOUNT`.
 
 Migrations passées **jusqu'à la 081 incluse** — la 078 appliquée et vérifiée le 14 octobre 2026 (le centre répond « Pollestres », 66450) ; les précédentes vérifiées le 25 septembre 2026 depuis l'extérieur, objet par objet (voir `supabase/diagnostics/migrations_passees.sql`) ; la seule inconnue reste la **041**, qui ne se voit pas. Fonction Edge `gerer-les-comptes` déployée et vérifiée de bout en bout, `synchro-airtable` redéployée,
