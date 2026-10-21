@@ -688,6 +688,31 @@ lui, n'a été vu que sur des données factices : il attend la migration 015.
   d'appeler quelqu'un. `CarteActiviteCliente` ne rend plus rien dans ce cas ;
   à remettre le jour de la bascule, où il redeviendra vrai au sens où on
   l'entend.
+- **Le devis du bilan facturait toutes les séances au prix de la
+  luxothérapie** (Jonathan, 21 octobre 2026). Une cure de 10 luxo, 5
+  relaxations et 8 Psio annonçait **1 386 € au lieu de 1 382** : le Psio y
+  passait à 59 € la séance au lieu de 58,50. L'écran multipliait le nombre
+  TOTAL de séances par `grille.seance` — juste tant que tous les soins
+  valaient 59 €, faux depuis que **le Dôme en vaut 49** (16 septembre) et le
+  **Psio 58,50** (16 octobre). Quatre euros de trop annoncés devant la
+  cliente, portés au contrat et réclamés dans le CRM. Le domaine, lui,
+  prévoyait le cas depuis le début : `construireEcheancierCure` accepte un
+  `montantSeances` « quand tous les soins n'ont pas le même prix — le Dôme
+  est moins cher », et le formulaire de cure suivante le passait déjà. **Ce
+  devis-ci était le seul à l'ignorer.** Chaque ligne lit désormais son prix
+  avec `prixUnitaireParDefaut`, et le montant des séances est leur somme.
+  Règle : **un écran qui additionne de l'argent ne suppose jamais un prix
+  unique** — il demande son prix à chaque ligne.
+- **Et les chèques se sont mis à avoir des virgules.** Conséquence directe
+  du correctif ci-dessus : avec deux prix dans la même cure, la part
+  proportionnelle tombait à 734,91 €, et « personne n'écrit un chèque à
+  virgule devant une cliente » (règle de la maison, déjà tenue par le
+  redécoupage `reechelonner`, mais pas par le découpage à la signature).
+  `decouperLaCure` garde le partage par séances — il s'explique en une
+  phrase — puis **ramène chaque chèque à l'euro**, le reste rejoignant le
+  reliquat sur la première échéance avec le guide et la tenue. 1 382 € en
+  3 fois font 501 · 470 · 411, et la cure de référence (1 209 € en 4) donne
+  toujours 324 · 295 · 295 · 295.
 - **Doublons Airtable.** Le parcours du bilan enchaîne trois écritures ;
   sans verrou, trois synchros parallèles créaient trois fiches. Réglé par
   `reclamer_taches_airtable` (SKIP LOCKED), un verrou par cliente et un
@@ -709,7 +734,7 @@ doit rester vert après toute modification.
 
 ## Banc d'essai
 
-`npm test` — **850 contrôles, à garder verts.** Ils couvrent ce qui décide
+`npm test` — **857 contrôles, à garder verts.** Ils couvrent ce qui décide
 de ce qu'une cliente paie, reçoit et se voit refuser pour raison de santé :
 tarification et échéanciers (centre et Alma), prescription et
 contre-indications, planchers des formules, BioPortrait, parrainage, stock,

@@ -41,6 +41,8 @@ import {
   echeancesCentrePossibles,
   montantAcompte,
   tauxFraisAlma,
+  arrondir,
+  prixUnitaireParDefaut,
   LIBELLES_TECHNOLOGIE,
   construireEcheancierCure,
   formaterEuros,
@@ -260,6 +262,28 @@ export default function CureEtDevis({
 
   const retenues = lignesRetenues(cure);
   const totalSeances = retenues.reduce((n, l) => n + l.seances, 0);
+
+  /*
+    CHAQUE SOIN À SON PRIX (21 octobre 2026).
+
+    Cet écran multipliait le nombre total de séances par le prix de la
+    luxothérapie, et c'était juste tant que tous les soins valaient 59 €. Ils
+    ne valent plus tous 59 € : le Dôme en vaut 49 depuis le 16 septembre, le
+    Psio 58,50 depuis le 16 octobre. Une cure de huit Psio sortait à 472 €
+    au lieu de 468 — quatre euros de trop annoncés, portés au contrat et
+    réclamés dans le CRM.
+
+    Le prix de chaque ligne se lit donc dans la grille, par son soin, et le
+    montant des séances est la somme de ces lignes. C'est ce que le
+    formulaire de cure suivante fait depuis toujours ; ce devis-ci était le
+    seul à l'ignorer.
+  */
+  const lignesCure = retenues.map((l) => ({
+    technologie: TECHNO[l.presta],
+    seances: l.seances,
+    prixUnitaire: prixUnitaireParDefaut(TECHNO[l.presta], grille),
+  }));
+  const montantSeances = lignesCure.reduce((n, l) => n + l.seances * l.prixUnitaire, 0);
   const luxo = retenues.some((l) => l.presta === 'LUXO' || l.presta === 'RELAX');
   const electro = retenues.some((l) => l.presta === 'ISHAPE');
   const complements = useMemo(
@@ -315,6 +339,8 @@ export default function CureEtDevis({
   const echeancier = construireEcheancierCure({
     seances: totalSeances,
     prixSeance: grille.seance,
+    // Les soins n'ont pas tous le même prix : on donne la somme réelle.
+    montantSeances,
     options,
     methode,
     n: nRetenu,
@@ -351,18 +377,14 @@ export default function CureEtDevis({
   */
   function propositionCourante(): PrescriptionValidee {
     return {
-      lignes: retenues.map((l) => ({
-        technologie: TECHNO[l.presta],
-        seances: l.seances,
-        prixUnitaire: grille.seance,
-      })),
+      lignes: lignesCure,
       electro,
       guide: luxo,
       tenue: electro,
       complements,
       // Le prix de la cure ne bouge pas : le bilan déjà réglé en fait
       // partie, il est simplement encaissé avant les autres.
-      montantTotal: totalSeances * grille.seance + options,
+      montantTotal: arrondir(montantSeances + options),
       bilanDejaRegle: dejaRegle,
       modeReglement: echeancier.mode,
       frais: echeancier.frais,
@@ -860,7 +882,7 @@ export default function CureEtDevis({
                   : montantBoites > 0
                     ? 'Par chèques au centre. Le guide, la tenue et les compléments sont sur la première échéance.'
                     : 'Par chèques au centre. Le guide et la tenue sont sur la première échéance.'
-                : `Frais Alma de ${String(tauxFraisAlma(echeancier.n, totalSeances * grille.seance + options)).replace('.', ',')} %, à sa charge${
+                : `Frais Alma de ${String(tauxFraisAlma(echeancier.n, arrondir(montantSeances + options))).replace('.', ',')} %, à sa charge${
                     mensualitesEgales
                       ? ', répartis sur les mensualités.'
                       : ', pris en totalité sur le premier versement.'

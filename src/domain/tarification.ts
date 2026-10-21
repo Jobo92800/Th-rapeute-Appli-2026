@@ -470,7 +470,11 @@ export function tauxAffichealma10x(total: number): number {
 
 // ---------------------------------------------------------------------------
 
-function arrondir(n: number): number {
+/**
+ * Au centime. Tout ce qui s'additionne en euros passe par là : un montant
+ * qui traîne trois décimales finit par s'écrire sur un contrat.
+ */
+export function arrondir(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
@@ -539,9 +543,27 @@ function decouperLaCure(
 
   const parts = repartirSeances(seances, n);
   const parPart = parts.map((s) => arrondir((montantDesSeances * s) / Math.max(1, seances)));
-  const ecart = arrondir(montantDesSeances - parPart.reduce((a, b) => a + b, 0));
 
-  return parPart.map((m, i) => arrondir(m + (i === 0 ? options + ecart : 0)));
+  /*
+    JAMAIS UN CHÈQUE À VIRGULE (21 octobre 2026).
+
+    Tant qu'une cure n'avait qu'un prix de séance, répartir les séances
+    donnait des montants ronds tout seuls. Avec deux prix dans la même cure
+    — dix luxothérapies à 59 € et huit Psio à 58,50 —, la part
+    proportionnelle tombe à 734,91 €, et personne n'écrit ça devant une
+    cliente.
+
+    On garde donc le découpage par séances, qui est la règle de la maison et
+    qui s'explique en une phrase (« vous réglez vos huit premières séances »),
+    puis on ramène chaque chèque à l'euro. Ce que l'arrondi laisse tomber
+    rejoint le reliquat sur la première échéance, avec le guide et la tenue :
+    la somme retombe au centime sur le montant annoncé, sinon le contrat
+    serait faux.
+  */
+  const entiers = parPart.map((m) => Math.floor(m));
+  const ecart = arrondir(montantDesSeances - entiers.reduce((a, b) => a + b, 0));
+
+  return entiers.map((m, i) => arrondir(m + (i === 0 ? options + ecart : 0)));
 }
 
 /**

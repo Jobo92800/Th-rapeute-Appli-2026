@@ -849,4 +849,70 @@ export function controlerMetier() {
     (['presso', 'relax', 'ishape', 'luxo'] as const).slice().sort(parOrdreDesSoins).join(' '),
     'ishape luxo relax presso',
   );
+
+  section('Une cure où les soins n’ont pas le même prix');
+
+  /*
+    LE CAS DE JONATHAN, 21 OCTOBRE 2026. Un devis de 10 luxo + 5 relaxation +
+    8 Psio + le guide annonçait 1 386 € au lieu de 1 382 : le Psio y était
+    facturé 59 € la séance comme la luxothérapie, au lieu de 58,50.
+
+    L'écran multipliait le nombre TOTAL de séances par le prix de la
+    luxothérapie — juste tant que tous les soins valaient 59 €, faux depuis
+    que le Dôme en vaut 49 et le Psio 58,50. Quatre euros de trop annoncés
+    devant la cliente, portés au contrat et réclamés dans le CRM.
+  */
+  const grilleMixte = {
+    seance: 59, guide: 29, tenue: 60, bilan: 129, dome: 49,
+    advance_lift: 85, radiofrequence: 79, radiofrequence_decollete: 139,
+    bilan_signature: 89, complement: 37, psio: 58.5, hydroporation: 179,
+  };
+
+  const cureDeJonathan = calculerMontant(
+    [
+      { technologie: 'luxo', seances: 10, prixUnitaire: prixUnitaireParDefaut('luxo', grilleMixte) },
+      { technologie: 'relax', seances: 5, prixUnitaire: prixUnitaireParDefaut('relax', grilleMixte) },
+      { technologie: 'psio', seances: 8, prixUnitaire: prixUnitaireParDefaut('psio', grilleMixte) },
+    ],
+    { guide: true, tenue: false },
+    grilleMixte,
+  );
+
+  egalEuros('dix luxothérapies font 590 €', 10 * prixUnitaireParDefaut('luxo', grilleMixte), 590);
+  egalEuros('cinq relaxations font 295 €', 5 * prixUnitaireParDefaut('relax', grilleMixte), 295);
+  egalEuros('huit Psio font 468 €', 8 * prixUnitaireParDefaut('psio', grilleMixte), 468);
+  egalEuros('et le tout, guide compris, 1 382 €', cureDeJonathan.total, 1382);
+
+  /* Le Dôme a le même défaut, et depuis plus longtemps : 49 € et non 59. */
+  egalEuros('le Dôme se facture 49 €', prixUnitaireParDefaut('dome', grilleMixte), 49);
+  egalEuros(
+    'dix luxo et six Dômes font 884 €, pas 944',
+    calculerMontant(
+      [
+        { technologie: 'luxo', seances: 10, prixUnitaire: prixUnitaireParDefaut('luxo', grilleMixte) },
+        { technologie: 'dome', seances: 6, prixUnitaire: prixUnitaireParDefaut('dome', grilleMixte) },
+      ],
+      { guide: false, tenue: false },
+      grilleMixte,
+    ).total,
+    884,
+  );
+
+  /*
+    L'échéancier doit retomber sur le même montant : un total annoncé que la
+    somme des chèques ne retrouve pas est un contrat faux.
+  */
+  const echeancierMixte = construireEcheancierCure({
+    seances: 23,
+    prixSeance: 59,
+    montantSeances: 1353,
+    options: 29,
+    methode: 'centre',
+    n: 3,
+  });
+  egalEuros(
+    'la somme des chèques retrouve le total',
+    echeancierMixte.echeances.reduce((s, e) => s + e.montant, 0),
+    1382,
+  );
 }
