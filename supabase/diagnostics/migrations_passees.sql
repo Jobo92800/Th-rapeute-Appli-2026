@@ -126,7 +126,11 @@ WITH controles(numero, objet, present) AS (
     ('081', 'L''hydroporation et le bilan anti-âge — tarif, technologie et colonne',
      EXISTS (SELECT 1 FROM tarifs WHERE code = 'hydroporation')
      AND EXISTS (SELECT 1 FROM information_schema.columns
-                  WHERE table_name = 'programmes' AND column_name = 'prix_bilan'))
+                  WHERE table_name = 'programmes' AND column_name = 'prix_bilan')),
+
+    ('082', 'Basculer des séances d''un soin à un autre — la commande',
+     EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+              WHERE n.nspname = 'public' AND p.proname = 'basculer_les_seances'))
 )
 SELECT
   numero,

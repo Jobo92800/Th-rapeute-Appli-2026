@@ -30,6 +30,7 @@ import {
 } from '../../domain/soins';
 import { LIBELLES_TECHNOLOGIE } from '../../domain/tarification';
 import CourbePoids, { libelleDelta } from './CourbePoids';
+import BasculeDeSoin from './BasculeDeSoin';
 import ModaleSeance from './ModaleSeance';
 import EquipementIShape from './EquipementIShape';
 import { LIBELLES_PHASE, choisirJeu } from '../../domain/jeuDuJour';
@@ -355,6 +356,19 @@ export default function OngletSeances({ clienteId, centreId, profilDominant }: P
               {restantes.some((s) => s.technologie === 'ishape') && (
                 <EquipementIShape clienteId={clienteId} tailleTenue={tailleTenue} />
               )}
+
+              {/*
+                Changer de soin en cours de cure. Rangé sous les boutons : ce
+                n'est pas le geste du quotidien, et il se décide avec la
+                cliente devant soi.
+              */}
+              <BasculeDeSoin
+                programmeId={actif.programme.id}
+                clienteId={clienteId}
+                centreId={centreId}
+                suivi={actif.suivi}
+                cureArretee={actif.programme.statut === 'abandonne'}
+              />
             </div>
           )}
 

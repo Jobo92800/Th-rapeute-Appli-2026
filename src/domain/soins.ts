@@ -206,6 +206,25 @@ export function soinsAntiAgeDuCentre(centreId: string | null | undefined): Techn
  * d'Advance Lift qui se règle, 85 €. La case du formulaire de cure ne
  * s'affiche donc que là où ces 89 € existent.
  */
+/**
+ * Tous les soins que ce centre tient, dans l'ordre d'affichage.
+ *
+ * Sert à savoir **où l'on peut basculer des séances** quand une cliente
+ * change de soin en cours de cure : on ne propose que ce que son centre sait
+ * faire. Proposer ailleurs reviendrait à promettre un soin que personne ne
+ * pourra lui donner.
+ *
+ * Le Dôme et le Psio n'y sont que là où ils se tiennent, les anti-âge aussi.
+ * Les quatre soins de la perte de poids sont partout.
+ */
+export function soinsDuCentre(centreId: string | null | undefined): Technologie[] {
+  const soins: Technologie[] = ['luxo', 'relax', 'ishape', 'presso'];
+  if (domeDisponible(centreId)) soins.push('dome');
+  if (psioDisponible(centreId)) soins.push('psio');
+  soins.push(...soinsAntiAgeDuCentre(centreId));
+  return [...soins].sort(parOrdreDesSoins);
+}
+
 export function bilanAntiAgeFacturable(centreId: string | null | undefined): boolean {
   return Boolean(centreId) && signatureDisponible(centreId!);
 }

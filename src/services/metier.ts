@@ -481,6 +481,29 @@ export async function situationsDuCentre(centreId: string | null): Promise<Situa
  * Une seule requête pour les deux : la liste des clientes en lance déjà
  * plusieurs, et deux appels pour un même filtre seraient deux de trop.
  */
+/**
+ * Déplace des séances restant à faire d'un soin vers un autre.
+ *
+ * Le montant de la cure ne bouge pas : on échange des séances, pas de
+ * l'argent. La base refait tous les contrôles — ce qu'une cliente a droit de
+ * recevoir ne se décide pas à l'affichage.
+ */
+export async function basculerLesSeances(args: {
+  programmeId: string;
+  de: Technologie;
+  vers: Technologie;
+  nombre: number;
+}): Promise<void> {
+  const { error } = await supabase.rpc('basculer_les_seances', {
+    p_programme_id: args.programmeId,
+    p_de: args.de,
+    p_vers: args.vers,
+    p_nombre: args.nombre,
+  });
+  if (error) throw error;
+  declencherSynchro();
+}
+
 export async function clientesAvecBilanSansCure(
   centreId: string | null,
 ): Promise<{ regle: Set<string>; offert: Set<string> }> {

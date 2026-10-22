@@ -15,6 +15,7 @@ import {
 } from '../src/domain/parrainage.ts';
 import { finDeCure, libelleFinDeCure, niveauStock } from '../src/domain/stock.ts';
 import { facturationDuBilan } from '../src/domain/facturationDuBilan.ts';
+import { maximumBasculable, refusDeBasculer } from '../src/domain/basculeDeSeances.ts';
 import {
   ORDRE_DES_SOINS,
   ajusterSeancesDuSoin,
@@ -22,6 +23,7 @@ import {
   demandeUneVenue,
   parOrdreDesSoins,
   psioDisponible,
+  soinsDuCentre,
 } from '../src/domain/soins.ts';
 import { ajusterSeances, prestationsAjoutables, seancesALAjout } from '../src/domain/prescription.ts';
 import {
@@ -914,5 +916,72 @@ export function controlerMetier() {
     'la somme des chèques retrouve le total',
     echeancierMixte.echeances.reduce((s, e) => s + e.montant, 0),
     1382,
+  );
+
+  section('Changer de soin en cours de cure');
+
+  /*
+    Une cliente arrête la relaxation et veut de l'I-Shape. On déplace ce qui
+    RESTE À FAIRE, jamais ce qui est fait — les séances réalisées racontent
+    ce qui s'est passé — et jamais les séances offertes par parrainage, qui
+    ont été posées sur un soin à la vente.
+  */
+  const relax5 = { technologie: 'relax' as const, restantes: 4, vendues: 5 };
+  const luxoFinie = { technologie: 'luxo' as const, restantes: 0, vendues: 10 };
+  const queDuParrainage = { technologie: 'ishape' as const, restantes: 2, vendues: 0 };
+  const plusDeVendues = { technologie: 'presso' as const, restantes: 4, vendues: 2 };
+
+  egal('on déplace ce qui reste', maximumBasculable(relax5), 4);
+  egal('rien quand tout est fait', maximumBasculable(luxoFinie), 0);
+  egal('rien quand le restant est offert', maximumBasculable(queDuParrainage), 0);
+  egal('et jamais plus que les séances vendues', maximumBasculable(plusDeVendues), 2);
+
+  const bascule = (p: Partial<Parameters<typeof refusDeBasculer>[0]>) =>
+    refusDeBasculer({
+      source: relax5,
+      vers: 'ishape',
+      nombre: 2,
+      cureArretee: false,
+      ...p,
+    });
+
+  verifie('deux séances de relaxation vers l’I-Shape : d’accord', bascule({}) === null);
+  verifie('le même soin des deux côtés, non', (bascule({ vers: 'relax' }) ?? '').includes('différents'));
+  verifie('zéro séance, non', (bascule({ nombre: 0 }) ?? '').includes('au moins une'));
+  verifie(
+    'plus qu’il n’en reste, non',
+    (bascule({ nombre: 9 }) ?? '').includes('4'),
+  );
+  verifie(
+    'un soin terminé n’a rien à céder',
+    (bascule({ source: luxoFinie }) ?? '').includes('réalisées'),
+  );
+  verifie(
+    'les séances offertes ne se déplacent pas',
+    (bascule({ source: queDuParrainage, vers: 'luxo' }) ?? '').includes('offertes'),
+  );
+  verifie(
+    'et une cure arrêtée ne se touche pas',
+    (bascule({ cureArretee: true }) ?? '').includes('arrêtée'),
+  );
+
+  /*
+    On ne bascule que vers un soin que le centre tient : promettre ailleurs,
+    c'est promettre un soin que personne ne pourra lui donner.
+  */
+  egal(
+    'au Grau-du-Roi : les quatre soins, le Dôme et l’Advance Lift',
+    soinsDuCentre('grau-du-roi').join(' '),
+    'ishape luxo relax presso dome advance_lift',
+  );
+  egal(
+    'à Sérignan : les quatre soins, le Psio, la radiofréquence et l’hydroporation',
+    soinsDuCentre('serignan').join(' '),
+    'ishape luxo relax presso psio radiofrequence hydroporation',
+  );
+  egal(
+    'à Pollestres : les quatre soins de la perte de poids, et rien d’autre',
+    soinsDuCentre('cabestany').join(' '),
+    'ishape luxo relax presso',
   );
 }
