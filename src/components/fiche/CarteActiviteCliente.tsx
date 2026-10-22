@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Activity, CalendarCheck, CheckCircle2, Headphones, Loader2, Scale, Smartphone } from 'lucide-react';
-import { activiteCliente, type ActiviteCliente } from '../../services/metier';
+import { activiteCliente, etatParcours, type ActiviteCliente } from '../../services/metier';
 import { laCliente, pronom } from '../../domain/civilite';
 import type { Cliente } from '../../types/db';
 
@@ -48,6 +48,12 @@ function Chiffre({
   );
 }
 
+/** Jours écoulés depuis une date ISO ; 0 si elle manque — on n'alerte pas sur du vide. */
+function joursDepuis(iso: string | null): number {
+  if (!iso) return 0;
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+}
+
 const ilYA = (jours: number | null) =>
   jours == null ? '—' : jours === 0 ? "aujourd'hui" : jours === 1 ? 'hier' : `il y a ${jours} jours`;
 
@@ -57,6 +63,26 @@ export default function CarteActiviteCliente({ cliente }: { cliente: Cliente }) 
     queryFn: () => activiteCliente(cliente.id),
     staleTime: 5 * 60 * 1000,
     retry: false,
+  });
+
+  /*
+    L'AVANCEMENT SE LIT SUR MON PARCOURS, PAS ICI.
+
+    Cette tuile affichait le compteur de l'application nutrition, qui tient sa
+    propre copie de l'avancement. La fiche annonçait donc deux nombres pour la
+    même question — « 3 / 24 » en haut, « 1 / 24 » dans les deux blocs du
+    dessous — et la thérapeute ne pouvait pas savoir lequel croire.
+
+    Les clientes écoutent aujourd'hui sur Mon Parcours : c'est lui qui fait
+    foi. On lit donc la même source que `SuiviPodcasts` et
+    `CarteParcoursAudio`, sous la **même clé de cache** — react-query sert la
+    réponse déjà chargée, cette lecture ne coûte aucun appel de plus.
+  */
+  const { data: compte } = useQuery({
+    queryKey: ['parcours-audio', cliente.id],
+    queryFn: () => etatParcours(cliente.id),
+    enabled: Boolean(cliente.acces_audio_le),
+    staleTime: 60_000,
   });
 
   if (isLoading) {
@@ -111,17 +137,17 @@ export default function CarteActiviteCliente({ cliente }: { cliente: Cliente }) 
         </p>
       ) : (
         <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {a.parcours && (
+          {compte && (
             <Chiffre
               icone={Headphones}
               libelle="Parcours"
-              valeur={`${a.parcours.terminees} / ${a.parcours.total}`}
+              valeur={`${compte.terminees} / ${compte.total}`}
               detail={
-                a.parcours.titreEnCours
-                  ? `${a.parcours.titreEnCours} · ${a.parcours.tauxEnCours} % écouté`
-                  : undefined
+                compte.derniereActivite
+                  ? `dernière écoute le ${format(new Date(compte.derniereActivite), 'd MMM', { locale: fr })}`
+                  : "pas encore d'écoute"
               }
-              alerte={(a.parcours.joursDepuisEcoute ?? 0) > JOURS_SANS_NOUVELLES}
+              alerte={joursDepuis(compte.derniereActivite) > JOURS_SANS_NOUVELLES}
             />
           )}
 
