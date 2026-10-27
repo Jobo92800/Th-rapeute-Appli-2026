@@ -78,8 +78,21 @@ export default function DevisSignature({
   const preconisation = useMemo(() => preconiserLaCure(bareme, carte), [bareme, carte]);
   const [choisie, setChoisie] = useState<string | null>(null);
   const [avecDecollete, setAvecDecollete] = useState(false);
-  const [methode, setMethode] = useState<'centre' | 'alma'>('centre');
-  const [n, setN] = useState(1);
+  /*
+    ALMA EST PROPOSÉ EN PREMIER (Jonathan, 27 octobre 2026).
+
+    Le centre est payé tout de suite et ne porte pas le risque, alors que
+    les chèques l'étalent sur plusieurs mois. Les chèques restent à un clic
+    — le bouton est juste à côté —, et les deux calculs sont inchangés :
+    seul l'ordre de la proposition change.
+  */
+  const [methode, setMethode] = useState<'centre' | 'alma'>('alma');
+  /*
+    Quatre fois, et non une : « comptant » n'existe pas chez Alma, et un
+    nombre absent de sa liste n'aurait surligné aucun bouton. En repassant
+    aux chèques, l'écran revient à comptant comme avant.
+  */
+  const [n, setN] = useState(4);
   const [boites, setBoites] = useState<Record<string, number>>({});
   const [reponsesOuvertes, setReponsesOuvertes] = useState(false);
   /*

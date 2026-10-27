@@ -147,7 +147,15 @@ export default function CompositionCure({
     radiofrequence: seancesInitiales?.radiofrequence ?? 0,
     hydroporation: seancesInitiales?.hydroporation ?? 0,
   });
-  const [methode, setMethode] = useState<'centre' | 'alma'>('centre');
+  /*
+    ALMA EST PROPOSÉ EN PREMIER (Jonathan, 27 octobre 2026).
+
+    Le centre est payé tout de suite et ne porte pas le risque, alors que
+    les chèques l'étalent sur plusieurs mois. Les chèques restent à un clic
+    — le bouton est juste à côté —, et les deux calculs sont inchangés :
+    seul l'ordre de la proposition change.
+  */
+  const [methode, setMethode] = useState<'centre' | 'alma'>('alma');
   const [nEcheances, setNEcheances] = useState(4);
   const [guide, setGuide] = useState(true);
   // Tant que la thérapeute n'a pas décidé elle-même, la tenue suit la
