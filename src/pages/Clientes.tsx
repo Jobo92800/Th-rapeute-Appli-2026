@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Search, X, Sparkles, AlertTriangle, AlertOctagon, MessageSquare, Pin, Archive, Undo2, Trash2 } from 'lucide-react';
+import { Search, X, Sparkles, UserPlus, AlertTriangle, AlertOctagon, MessageSquare, Pin, Archive, Undo2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -204,18 +204,27 @@ export default function Clientes() {
         </div>
         <div className="flex flex-wrap gap-2">
           {/*
-            « Fiche seule » a été retiré ici aussi, après l'accueil.
+            DEUX CHEMINS, ET UN SEUL QUI SE VOIT EN PREMIER.
 
-            Une nouvelle cliente arrive par un bilan, et sa fiche naît à
-            l'écran des coordonnées : c'est le seul chemin, et c'est celui
-            que le guide enseigne. Un bouton qui en ouvrait un autre laissait
-            croire qu'il y avait un choix à faire — et fabriquait des fiches
-            sans bilan, donc sans BioPortrait, sans cure et sans contrat.
+            « Fiche seule » avait été retiré d'ici en septembre 2026 : une
+            nouvelle cliente arrive par un bilan, et un second bouton de même
+            poids laissait croire à un choix — il fabriquait des fiches sans
+            BioPortrait, donc sans cure ni contrat.
 
-            La page existe toujours (`/clientes/nouvelle`) : rien ne la
-            supprime, et l'import du CRM continue de créer des fiches sans
-            bilan. Elle n'est simplement plus proposée.
+            Jonathan le redemande le 27 octobre 2026 : au comptoir, on note
+            parfois quelqu'un avant de lui faire son bilan. La page n'avait
+            jamais disparu (`/clientes/nouvelle`), elle n'était plus
+            proposée ; c'est donc le bouton qui revient, et rien d'autre.
+
+            Il revient **en second et en discret**, à gauche du rose : le
+            bilan reste le geste qui engage et le chemin que le guide
+            enseigne. Les deux ne se ressemblent pas, et c'est ce qui évite
+            de retomber dans le défaut d'avant.
           */}
+          <Link to="/clientes/nouvelle" className="bouton-discret">
+            <UserPlus className="h-4 w-4" />
+            Nouveau client
+          </Link>
           <Link to="/bilan" className="bouton-fort">
             <Sparkles className="h-4 w-4" />
             Nouveau bilan
