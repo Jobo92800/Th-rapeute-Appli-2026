@@ -190,7 +190,18 @@ export default function CureEtDevis({
     comptoir, sous « Modifier ».
   */
   const [boites, setBoites] = useState<Record<string, number>>({});
-  const [methode, setMethode] = useState<'centre' | 'alma'>('centre');
+  /*
+    ALMA EST PROPOSÉ EN PREMIER (Jonathan, 27 octobre 2026).
+
+    C'est le mode de règlement qu'on met en avant devant la cliente : le
+    centre est payé tout de suite, elle étale sans que le centre porte le
+    risque. Les chèques restent à un clic — le bouton est juste à côté.
+
+    Ça ne change que ce qui est proposé : les deux calculs sont les mêmes
+    qu'avant, et les frais Alma restent à la charge de la cliente, annoncés
+    en clair sous l'échéancier.
+  */
+  const [methode, setMethode] = useState<'centre' | 'alma'>('alma');
   const [nEcheances, setNEcheances] = useState(4);
   /*
     L'acompte : pour la cliente qui dit oui mais ne peut pas tout régler
