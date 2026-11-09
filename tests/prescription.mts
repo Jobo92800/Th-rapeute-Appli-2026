@@ -133,6 +133,64 @@ export function controlerPrescription() {
     'l’I-Shape ne se rajoute pas à la main non plus',
     !prestationsAjoutables(eventration, prescrire(bareme, eventration)).includes('ISHAPE'),
   );
+
+  /*
+    POURQUOI UN SOIN EST ÉCARTÉ (Jonathan, 9 novembre 2026). Le devis
+    affiche la réponse qui l'a fait, derrière un petit « i ». Sans elle, la
+    thérapeute devait rouvrir le questionnaire devant la cliente — et en
+    sortir perdait la cure en cours.
+  */
+  egal('l’éventration donne une raison, et une seule', eventration.raisons.ISHAPE?.length, 1);
+  verifie(
+    'et c’est bien la réponse cochée',
+    (eventration.raisons.ISHAPE?.[0]?.reponse ?? '').toLowerCase().includes('éventration'),
+  );
+  verifie(
+    'la question est gardée avec elle',
+    (eventration.raisons.ISHAPE?.[0]?.question ?? '').length > 0,
+  );
+  verifie(
+    'un soin non contre-indiqué n’a aucune raison',
+    (eventration.raisons.LUXO ?? []).length === 0,
+  );
+
+  /*
+    DEUX RÉPONSES QUI ÉCARTENT LE MÊME SOIN EN DONNENT DEUX : n'en montrer
+    qu'une laisserait croire qu'il suffit de la retirer pour débloquer le
+    soin.
+  */
+  const deuxRaisons = depouiller(bareme, { [iSante]: [iPacemaker, iCancer] });
+  egal('pacemaker et cancer : deux raisons sur la presso', deuxRaisons.raisons.PRESSO?.length, 2);
+
+  /*
+    « Oui » ne veut rien dire seul : la question de la grossesse doit
+    voyager avec sa réponse.
+  */
+  const iGrossesse = bareme.STEPS.findIndex(
+    (e) => (e.t ?? '').toLowerCase().includes('enceinte'),
+  );
+  const grossesse = depouiller(bareme, { [iGrossesse]: [0] });
+  verifie(
+    'la grossesse retire les trois soins',
+    grossesse.contreIndications.LUXO === 'rem' &&
+      grossesse.contreIndications.ISHAPE === 'rem' &&
+      grossesse.contreIndications.PRESSO === 'rem',
+  );
+  verifie(
+    'et sa question est rappelée, puisque la réponse est « Oui »',
+    (grossesse.raisons.LUXO?.[0]?.question ?? '').toLowerCase().includes('enceinte'),
+  );
+
+  /*
+    Un avis médical se justifie aussi : la thérapeute doit pouvoir dire
+    pourquoi elle demande un accord au médecin.
+  */
+  const sousAvis = depouiller(bareme, { [iSante]: [iDiabete] });
+  egal('le diabète met la presso sous avis médical', sousAvis.contreIndications.PRESSO, 'med');
+  verifie(
+    'et la raison est là aussi',
+    (sousAvis.raisons.PRESSO?.[0]?.reponse ?? '').toLowerCase().includes('diabète'),
+  );
   egal('« Aucune » reste la dernière réponse', options[options.length - 1][0], 'Aucune de ces situations');
 
   const diabete = depouiller(bareme, { [iSante]: [iDiabete] });

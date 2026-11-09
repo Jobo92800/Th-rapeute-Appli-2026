@@ -47,11 +47,32 @@ export interface LignePrescrite {
   ajoute?: boolean;
 }
 
+export interface RaisonContreIndication {
+  /** La question telle qu'elle a été posée. */
+  question: string;
+  /** Ce que la cliente a coché. */
+  reponse: string;
+}
+
 export interface Depouillement {
   /** Points cumulés par prestation. */
   points: Record<Prestation, number>;
   /** Ce que les réponses de santé interdisent ou signalent. */
   contreIndications: Partial<Record<Prestation, ContreIndication>>;
+  /**
+   * POURQUOI un soin est écarté : les réponses qui l'ont fait, dans l'ordre
+   * où elles ont été posées.
+   *
+   * Le devis disait « contre-indiqué par une réponse de santé » sans dire
+   * laquelle (Jonathan, 9 novembre 2026). Devant une cliente qui demande
+   * pourquoi elle n'a pas de pressodynamie, la thérapeute devait rouvrir le
+   * questionnaire — et en sortir perdait la cure en cours.
+   *
+   * On garde **la question avec la réponse** : « Oui » ne veut rien dire
+   * seul, il ne prend son sens qu'à côté de « Êtes-vous enceinte ou en
+   * projet de grossesse ? ».
+   */
+  raisons: Partial<Record<Prestation, RaisonContreIndication[]>>;
   /** Engagement déclaré : LOW, MID, HIGH. Oriente le discours, pas le prix. */
   engagement: 'LOW' | 'MID' | 'HIGH';
   /** Index de la réponse au score InBody, quand il a été saisi. */
@@ -98,6 +119,7 @@ export function depouiller(bareme: Bareme, reponses: Reponses): Depouillement {
     number
   >;
   const contreIndications: Partial<Record<Prestation, ContreIndication>> = {};
+  const raisons: Partial<Record<Prestation, RaisonContreIndication[]>> = {};
   let engagement: Depouillement['engagement'] = 'MID';
   let scoreInbody: number | null = null;
 
@@ -120,6 +142,15 @@ export function depouiller(bareme: Bareme, reponses: Reponses): Depouillement {
         for (const [presta, etat] of Object.entries(drapeau)) {
           const p = presta as Prestation;
           if (!contreIndications[p] || etat === 'rem') contreIndications[p] = etat as ContreIndication;
+          /*
+            Toutes les réponses qui écartent ce soin, pas seulement la plus
+            forte : une cliente peut en cocher deux, et n'en montrer qu'une
+            laisserait croire qu'il suffit de la retirer.
+          */
+          (raisons[p] ??= []).push({
+            question: String(etape.t ?? ''),
+            reponse: String(option[0] ?? ''),
+          });
         }
       }
 
@@ -127,7 +158,7 @@ export function depouiller(bareme: Bareme, reponses: Reponses): Depouillement {
     }
   });
 
-  return { points, contreIndications, engagement, scoreInbody };
+  return { points, contreIndications, raisons, engagement, scoreInbody };
 }
 
 /** Le palier atteint pour un nombre de points donné. */

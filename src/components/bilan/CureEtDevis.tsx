@@ -227,6 +227,20 @@ export default function CureEtDevis({
   */
   const [edition, setEdition] = useState(false);
   const [reponsesOuvertes, setReponsesOuvertes] = useState(false);
+  /*
+    LA RAISON D'UN SOIN ÉCARTÉ, À LA DEMANDE (Jonathan, 9 novembre 2026).
+
+    La ligne disait « contre-indiqué par une réponse de santé » sans dire
+    laquelle. Devant une cliente qui demande pourquoi elle n'a pas de
+    pressodynamie, la thérapeute devait rouvrir le questionnaire — et en
+    sortir perdait la cure en cours.
+
+    Un petit « i » entouré au bout de la ligne, et la réponse s'affiche
+    dessous. Repliée par défaut : c'est un écran qu'on tourne vers la
+    cliente, et son dossier de santé n'a pas à s'étaler tant que personne
+    n'a posé la question.
+  */
+  const [raisonOuverte, setRaisonOuverte] = useState<Prestation | null>(null);
 
   /** Les couleurs des thèmes du questionnaire, pour la carte des réponses. */
   const couleursDuTheme = (cle: string) => {
@@ -525,6 +539,30 @@ export default function CureEtDevis({
                       {LIBELLES_NIVEAU[l.niveau]}
                     </span>
                   )}
+
+                  {/*
+                    Le « i » n'apparaît que là où il y a quelque chose à
+                    expliquer : un soin écarté ou sous avis médical, et
+                    seulement si le bilan sait pourquoi.
+                  */}
+                  {(retire || surveille) && (depouillement.raisons[l.presta]?.length ?? 0) > 0 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setRaisonOuverte((p) => (p === l.presta ? null : l.presta))
+                      }
+                      aria-expanded={raisonOuverte === l.presta}
+                      title="Pourquoi ce soin est-il écarté ?"
+                      className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold transition-colors ${
+                        raisonOuverte === l.presta
+                          ? 'border-marine-600 bg-marine-600 text-white'
+                          : 'border-ardoise-300 bg-white text-ardoise-500 hover:border-marine-400 hover:text-marine-700'
+                      }`}
+                    >
+                      i
+                      <span className="sr-only">Pourquoi ce soin est-il écarté ?</span>
+                    </button>
+                  )}
                 </div>
 
                 <p className="mt-0.5 text-xs text-ardoise-500">
@@ -538,6 +576,40 @@ export default function CureEtDevis({
                         ? 'Possible après avis médical. Le soin reste au programme.'
                         : (bareme.PRESTA?.[l.presta]?.d ?? '')}
                 </p>
+
+                {/*
+                  Ce qu'elle a coché, dans ses mots. La question est rappelée
+                  en dessous parce qu'une réponse ne se suffit pas toujours :
+                  « Oui » ne veut rien dire sans « Êtes-vous enceinte ou en
+                  projet de grossesse ? ».
+                */}
+                {raisonOuverte === l.presta && (
+                  <div
+                    className={`mt-2 rounded-xl border px-3 py-2 ${
+                      retire ? 'border-ardoise-300 bg-white' : 'border-amber-300 bg-white'
+                    }`}
+                  >
+                    <p className="text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
+                      {(depouillement.raisons[l.presta]?.length ?? 0) > 1
+                        ? 'Vos réponses'
+                        : 'Votre réponse'}
+                    </p>
+                    <ul className="mt-1 space-y-1.5">
+                      {depouillement.raisons[l.presta]!.map((r, i) => (
+                        <li key={`${r.question}-${r.reponse}-${i}`}>
+                          <span className="text-[13px] font-semibold text-ardoise-900">
+                            {r.reponse}
+                          </span>
+                          {r.question && (
+                            <span className="block text-[11px] leading-snug text-ardoise-500">
+                              {r.question}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               {retireMain && edition && (
