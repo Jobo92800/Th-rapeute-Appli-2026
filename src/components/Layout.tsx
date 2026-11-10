@@ -10,6 +10,8 @@ import {
   BookOpen,
   MessageSquare,
   KeyRound,
+  Phone,
+  ExternalLink,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -18,6 +20,16 @@ import { TOUS_LES_CENTRES, useSession } from '../lib/session';
 import MonMotDePasse from './MonMotDePasse';
 import { CENTRE_ANTI_AGE } from '../domain/antiAge';
 import { CENTRES_SIGNATURE } from '../domain/profilSignature';
+
+/*
+  L'ESPACE D'APPELS, l'autre application. La pile des prospects que le
+  bureau ouvre au centre vit ailleurs (dépôt CRM2MB, site crmnews) avec sa
+  propre entrée : prénom + code du centre. Le code n'est pas ici et ne doit
+  pas y venir — il est ce qui décide, côté serveur, des fiches qu'une
+  thérapeute a le droit de voir. Elle le saisit une fois, son navigateur le
+  retient ensuite.
+*/
+const ESPACE_APPELS = 'https://crmnews.netlify.app/therapeutes.html';
 
 const LIENS = [
   { to: '/', libelle: 'Accueil', icone: LayoutDashboard, exact: true, direction: false },
@@ -126,11 +138,28 @@ export default function Layout({ children }: { children: ReactNode }) {
             Il s'ouvre à côté pour ne pas faire perdre à la thérapeute ce
             qu'elle était en train de saisir.
           */}
+          {/*
+            Les deux sorties, au bas du menu : la pile d'appels et le guide.
+            Elles s'ouvrent à côté pour ne pas faire perdre à la thérapeute
+            ce qu'elle était en train de saisir. La flèche dit que ça part
+            ailleurs — sinon le retour par la croix de l'onglet surprend.
+          */}
+          <a
+            href={ESPACE_APPELS}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-auto flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-ardoise-600 transition-colors hover:bg-ardoise-50 hover:text-ardoise-900"
+          >
+            <Phone className="h-4 w-4" />
+            Appels prospects
+            <ExternalLink className="ml-auto h-3 w-3 text-ardoise-400" />
+          </a>
+
           <a
             href="/guide.html"
             target="_blank"
             rel="noreferrer"
-            className="mt-auto flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-ardoise-500 transition-colors hover:bg-ardoise-50 hover:text-ardoise-900"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-ardoise-500 transition-colors hover:bg-ardoise-50 hover:text-ardoise-900"
           >
             <BookOpen className="h-4 w-4" />
             Tuto
@@ -255,10 +284,18 @@ export default function Layout({ children }: { children: ReactNode }) {
             </NavLink>
           ))}
           <a
+            href={ESPACE_APPELS}
+            target="_blank"
+            rel="noreferrer"
+            className="ml-auto rounded-lg px-3 py-1.5 text-sm font-medium text-ardoise-600"
+          >
+            Appels
+          </a>
+          <a
             href="/guide.html"
             target="_blank"
             rel="noreferrer"
-            className="ml-auto rounded-lg px-3 py-1.5 text-sm font-medium text-ardoise-500"
+            className="rounded-lg px-3 py-1.5 text-sm font-medium text-ardoise-500"
           >
             Tuto
           </a>
