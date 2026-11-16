@@ -12,6 +12,7 @@ import {
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ChevronDown, Printer } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useSession } from '../lib/session';
 import { lireTicketZ } from '../services/caisse';
 import {
@@ -88,6 +89,7 @@ function libelleDeLEntree(e: EntreeDeCaisse): string {
   if (e.rang === 1 && e.nbEcheances <= 1) return `cure de ${euros(e.montantCure)}`;
   return `échéance ${e.rang} sur ${e.nbEcheances} · cure de ${euros(e.montantCure)}`;
 }
+
 
 
 export default function TicketZ() {
@@ -345,9 +347,20 @@ export default function TicketZ() {
                         {t.entrees.map((e, i) => (
                           <li key={`${e.cliente}-${e.date}-${i}`} className="py-2">
                             <div className="flex items-baseline gap-2">
-                              <span className="flex-1 text-sm font-semibold text-ardoise-900">
+                              {/*
+                                Le nom ouvre la fiche dans un nouvel onglet :
+                                on vient vérifier une ligne, on revient au
+                                ticket sans avoir perdu sa période ni ses
+                                caisses.
+                              */}
+                              <Link
+                                to={`/clientes/${e.clienteId}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex-1 text-sm font-semibold text-ardoise-900 transition-colors hover:text-marine-700 hover:underline"
+                              >
                                 {e.cliente}
-                              </span>
+                              </Link>
                               <span className="tabular-nums text-sm text-ardoise-900">
                                 {euros(e.montant)}
                               </span>

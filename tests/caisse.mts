@@ -89,6 +89,7 @@ export function controlerCaisse() {
     egal('une cure Alma ne fait qu’une entrée', entrees.length, 1);
     egal('et elle dit combien d’échéances elle rassemble', entrees[0]!.echeances, 12);
     egal('au nom de la cliente', entrees[0]!.cliente, 'Sylvie ROCA');
+    egal('et sait où mène son nom', entrees[0]!.clienteId, 'c1');
   }
 
   {
@@ -97,6 +98,7 @@ export function controlerCaisse() {
       ligne({ cliente: 'Alexia SWINNEN', montant: 561, programme_id: 'p2' }),
     ]);
     egal('deux règlements en carte restent deux lignes', entrees.length, 2);
+    egal('chacun garde sa cliente', entrees.map((e) => e.clienteId), ['c1', 'c1']);
   }
 
   {

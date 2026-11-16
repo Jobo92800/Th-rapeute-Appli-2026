@@ -44,6 +44,8 @@ export interface LigneDeReglement {
 /** Une entrée de caisse : ce qu'on lit sur le ticket, une ligne par règlement. */
 export interface EntreeDeCaisse {
   cliente: string;
+  /** Pour ouvrir sa fiche depuis le ticket. */
+  clienteId: string;
   date: string;
   moyen: MoyenDeReglement | null;
   /** Ce qui est entré, frais du crédit compris. */
@@ -121,6 +123,7 @@ export function regrouperLesReglements(lignes: LigneDeReglement[]): EntreeDeCais
     if (l.moyen !== 'alma') {
       entrees.push({
         cliente: l.cliente,
+        clienteId: l.cliente_id,
         date: l.date_reglement,
         moyen: l.moyen,
         montant: l.montant,
@@ -145,6 +148,7 @@ export function regrouperLesReglements(lignes: LigneDeReglement[]): EntreeDeCais
 
     const neuve = {
       cliente: l.cliente,
+      clienteId: l.cliente_id,
       date: l.date_reglement,
       moyen: l.moyen,
       montant: l.montant,
