@@ -10,7 +10,14 @@
   rattraper si personne ne l'a fait.
 */
 
-export type CategorieDeFourniture = 'hygiene' | 'entretien' | 'accueil' | 'bureau' | 'autre';
+export type CategorieDeFourniture =
+  | 'hygiene'
+  | 'entretien'
+  /* Les consommables des appareils : crèmes, gels. */
+  | 'soin'
+  | 'accueil'
+  | 'bureau'
+  | 'autre';
 
 export interface Fourniture {
   id: string;
@@ -30,6 +37,7 @@ export interface Fourniture {
 export const CATEGORIES: Array<{ id: CategorieDeFourniture; libelle: string }> = [
   { id: 'hygiene', libelle: 'Hygiène' },
   { id: 'entretien', libelle: 'Entretien' },
+  { id: 'soin', libelle: 'Soins' },
   { id: 'accueil', libelle: 'Accueil' },
   { id: 'bureau', libelle: 'Bureau' },
   { id: 'autre', libelle: 'Autre' },
