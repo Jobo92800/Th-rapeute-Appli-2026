@@ -3,7 +3,17 @@ import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Check, ExternalLink, Minus, Plus, Settings2, ShoppingCart, Trash2 } from 'lucide-react';
+import {
+  Check,
+  ExternalLink,
+  Minus,
+  PackageCheck,
+  Plus,
+  RotateCcw,
+  Settings2,
+  ShoppingCart,
+  Trash2,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSession } from '../lib/session';
 import { texteErreur } from '../lib/erreurs';
@@ -12,7 +22,9 @@ import {
   cocher,
   lireLaListe,
   marquerCommandee,
+  marquerLesCoursesFaites,
   retirer,
+  rouvrirLaCourse,
   valider,
 } from '../services/courses';
 import {
@@ -71,6 +83,23 @@ export default function Courses() {
 
   const mRetirer = useMutation({
     mutationFn: retirer,
+    onSuccess: rafraichir,
+    onError: alerter,
+  });
+
+  const mFaites = useMutation({
+    mutationFn: () => marquerLesCoursesFaites(centreId!),
+    onSuccess: (combien) => {
+      toast.success(
+        combien > 1 ? `${combien} courses rapportées.` : 'Course rapportée.',
+      );
+      rafraichir();
+    },
+    onError: alerter,
+  });
+
+  const mRouvrir = useMutation({
+    mutationFn: rouvrirLaCourse,
     onSuccess: rafraichir,
     onError: alerter,
   });
@@ -151,7 +180,7 @@ export default function Courses() {
                 <div className="text-sm font-semibold text-ardoise-900">
                   {total === 0
                     ? 'Rien de coché pour le moment'
-                    : `${total} article${total > 1 ? 's' : ''} à acheter`}
+                    : `${total} produit${total > 1 ? 's' : ''} à acheter`}
                 </div>
                 <div className="text-2xs text-ardoise-500">
                   {data.commandee_le
@@ -161,6 +190,20 @@ export default function Courses() {
                       : 'Les thérapeutes du centre cochent, la direction valide'}
                 </div>
               </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {modifiable && total > 0 && (
+                <button
+                  type="button"
+                  onClick={() => mFaites.mutate()}
+                  disabled={mFaites.isPending}
+                  className="bouton-discret"
+                >
+                  <PackageCheck className="h-4 w-4" />
+                  Courses faites
+                </button>
+              )}
             </div>
 
             {role === 'direction' && (
@@ -260,6 +303,42 @@ export default function Courses() {
                         className="text-ardoise-400 hover:text-rose-600"
                       >
                         <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* Ce qui a été rapporté : rien ne disparaît sans recours */}
+          {data.faites.length > 0 && (
+            <section className="rounded-2xl border border-ardoise-200 bg-ardoise-50 p-5">
+              <h2 className="text-2xs font-semibold uppercase tracking-widest text-ardoise-400">
+                Rapporté cette semaine
+              </h2>
+              <ul className="mt-3 flex flex-col divide-y divide-dotted divide-ardoise-200">
+                {data.faites.map((f) => (
+                  <li key={f.id} className="flex items-baseline gap-3 py-2 text-sm">
+                    <span className="tabular-nums font-semibold text-ardoise-400">{f.quantite}</span>
+                    <span className="flex-1 text-ardoise-600">
+                      {f.libelle}
+                      {f.unite && <span className="ml-1.5 text-2xs text-ardoise-400">{f.unite}</span>}
+                      <span className="ml-1.5 text-2xs text-ardoise-400">
+                        {f.faite_par ? `par ${f.faite_par}, ` : ''}
+                        {format(new Date(f.faite_le), 'EEEE', { locale: fr })}
+                      </span>
+                    </span>
+                    {modifiable && (
+                      <button
+                        type="button"
+                        onClick={() => mRouvrir.mutate(f.id)}
+                        disabled={mRouvrir.isPending}
+                        title="Remettre à acheter"
+                        aria-label={`Remettre ${f.libelle} à acheter`}
+                        className="rounded-full p-1.5 text-ardoise-400 transition-colors hover:bg-white hover:text-marine-700"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
                       </button>
                     )}
                   </li>

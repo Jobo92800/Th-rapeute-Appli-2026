@@ -28,6 +28,7 @@ import { controlerRestitution } from './restitution.mts';
 import { controlerCaisse } from './caisse.mts';
 import { controlerCourses } from './courses.mts';
 import { controlerFournitures } from './fournitures.mts';
+import { controlerCourrierDesCourses } from './courrierDesCourses.mts';
 
 console.log('\n  MAbeautyplus V2 — contrôle des règles métier');
 
@@ -49,5 +50,6 @@ controlerRestitution();
 controlerCaisse();
 controlerCourses();
 controlerFournitures();
+controlerCourrierDesCourses();
 
 process.exit(bilan());

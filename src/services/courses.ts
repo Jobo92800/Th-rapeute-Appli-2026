@@ -9,6 +9,16 @@ export interface CourseLibre {
   demandee_par: string | null;
 }
 
+/** Une course rapportée : elle reste, pour que l'habitude du centre s'en souvienne. */
+export interface CourseFaite {
+  id: string;
+  libelle: string;
+  unite: string | null;
+  quantite: number;
+  faite_le: string;
+  faite_par: string | null;
+}
+
 export interface ListeDeCourses {
   centre_id: string;
   semaine: string;
@@ -18,6 +28,7 @@ export interface ListeDeCourses {
   commandee_le: string | null;
   catalogue: Fourniture[];
   libres: CourseLibre[];
+  faites: CourseFaite[];
 }
 
 export async function lireLaListe(centreId: string, semaine?: string): Promise<ListeDeCourses> {
@@ -68,5 +79,24 @@ export async function marquerCommandee(centreId: string, semaine: string) {
     p_centre_id: centreId,
     p_semaine: semaine,
   });
+  if (error) throw error;
+}
+
+/**
+ * Les courses sont faites : tout ce qui était coché quitte la liste. Les
+ * lignes ne sont pas effacées — elles sont datées, pour que le catalogue
+ * garde la mémoire de ce que le centre demande.
+ */
+export async function marquerLesCoursesFaites(centreId: string): Promise<number> {
+  const { data, error } = await supabase.rpc('marquer_les_courses_faites', {
+    p_centre_id: centreId,
+  });
+  if (error) throw error;
+  return (data as number) ?? 0;
+}
+
+/** Le rattrapage d'un clic malheureux : la course repasse à acheter. */
+export async function rouvrirLaCourse(ligneId: string) {
+  const { error } = await supabase.rpc('rouvrir_la_course', { p_ligne_id: ligneId });
   if (error) throw error;
 }
