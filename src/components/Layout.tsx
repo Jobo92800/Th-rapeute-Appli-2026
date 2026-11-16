@@ -11,6 +11,7 @@ import {
   MessageSquare,
   KeyRound,
   ReceiptText,
+  ShoppingCart,
   Phone,
   ExternalLink,
 } from 'lucide-react';
@@ -54,6 +55,12 @@ const LIENS = [
     centre: id,
   })),
   { to: '/stock', libelle: 'Stock', icone: Package, exact: false, direction: true },
+  /*
+    LA LISTE DE COURSES. Ce qu'on achète pour faire tourner le centre, à
+    ne pas confondre avec le stock, qui porte ce qu'on vend. Toutes les
+    thérapeutes du centre cochent la même liste ; la direction valide.
+  */
+  { to: '/courses', libelle: 'Courses', icone: ShoppingCart, exact: false, direction: false },
   { to: '/messages', libelle: 'Messages', icone: MessageSquare, exact: false, direction: false },
   // Les chiffres ne concernent pas les thérapeutes : le lien ne leur est
   // même pas montré, et la base refuserait de répondre.
