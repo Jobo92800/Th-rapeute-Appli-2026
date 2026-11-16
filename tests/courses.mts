@@ -23,7 +23,7 @@ function f(p: Partial<Fourniture> = {}): Fourniture {
     nom: 'Papier toilette',
     categorie: 'hygiene',
     unite: 'paquet',
-    lien_amazon: null,
+    liens: [],
     quantite: 0,
     demandee_par: null,
     habitude: 0,

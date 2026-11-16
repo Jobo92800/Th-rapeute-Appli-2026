@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Check, ExternalLink, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
+import { Check, ExternalLink, Minus, Plus, Settings2, ShoppingCart, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSession } from '../lib/session';
 import {
@@ -120,11 +121,19 @@ export default function Courses() {
             {tousCentres && centreChoisi && ` · ${centresAccessibles.find((c) => c.id === centreChoisi)?.nom ?? ''}`}
           </p>
         </div>
-        {tousCentres && (
-          <button type="button" onClick={() => setCentreChoisi(null)} className="bouton-discret">
-            Changer de centre
-          </button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {tousCentres && (
+            <button type="button" onClick={() => setCentreChoisi(null)} className="bouton-discret">
+              Changer de centre
+            </button>
+          )}
+          {role === 'direction' && (
+            <Link to="/courses/catalogue" className="bouton-discret">
+              <Settings2 className="h-4 w-4" />
+              Gérer le catalogue
+            </Link>
+          )}
+        </div>
       </div>
 
       {isLoading && <div className="carte p-6 text-sm text-ardoise-500">Lecture de la liste…</div>}
@@ -201,16 +210,31 @@ export default function Courses() {
                       {f.nom}
                       <span className="ml-1.5 text-2xs text-ardoise-400">{f.unite}</span>
                     </span>
-                    {f.lien_amazon && (
-                      <a
-                        href={f.lien_amazon}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-1 text-2xs font-medium text-marine-700 hover:underline"
-                      >
-                        Amazon
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
+                    {f.liens.length > 0 && (
+                      <span className="flex items-center gap-2">
+                        <a
+                          href={f.liens[0]}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 text-2xs font-medium text-marine-700 hover:underline"
+                        >
+                          Acheter
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                        {/* Les replis, pour le jour où le premier est en rupture. */}
+                        {f.liens.slice(1).map((lien, i) => (
+                          <a
+                            key={lien}
+                            href={lien}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="Autre adresse, si le premier est en rupture"
+                            className="text-2xs text-ardoise-400 hover:text-marine-700 hover:underline"
+                          >
+                            {i + 2}
+                          </a>
+                        ))}
+                      </span>
                     )}
                   </li>
                 ))}

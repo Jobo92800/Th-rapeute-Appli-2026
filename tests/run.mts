@@ -27,6 +27,7 @@ import { controlerProfilSignature, controlerReglementSignature } from './profilS
 import { controlerRestitution } from './restitution.mts';
 import { controlerCaisse } from './caisse.mts';
 import { controlerCourses } from './courses.mts';
+import { controlerFournitures } from './fournitures.mts';
 
 console.log('\n  MAbeautyplus V2 — contrôle des règles métier');
 
@@ -47,5 +48,6 @@ controlerReglementSignature();
 controlerRestitution();
 controlerCaisse();
 controlerCourses();
+controlerFournitures();
 
 process.exit(bilan());

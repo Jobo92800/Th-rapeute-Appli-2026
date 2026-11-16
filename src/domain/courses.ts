@@ -17,7 +17,8 @@ export interface Fourniture {
   nom: string;
   categorie: CategorieDeFourniture;
   unite: string;
-  lien_amazon: string | null;
+  /** Où acheter, par ordre de préférence. Vide = à acheter à la main. */
+  liens: string[];
   /** Combien on en veut cette semaine. Zéro = pas cochée. */
   quantite: number;
   demandee_par: string | null;
