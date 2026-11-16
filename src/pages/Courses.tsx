@@ -6,6 +6,7 @@ import { fr } from 'date-fns/locale';
 import { Check, ExternalLink, Minus, Plus, Settings2, ShoppingCart, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSession } from '../lib/session';
+import { texteErreur } from '../lib/erreurs';
 import {
   ajouter,
   cocher,
@@ -48,7 +49,9 @@ export default function Courses() {
 
   const rafraichir = () => client.invalidateQueries({ queryKey: ['liste-de-courses'] });
   const alerter = (e: unknown) =>
-    toast.error(e instanceof Error ? e.message : "L'enregistrement n'est pas passé.");
+    /* `texteErreur` sait lire une erreur Supabase, qui n'est pas un `Error` :
+       sans elle, la cause réelle était remplacée par une phrase creuse. */
+    toast.error(texteErreur(e));
 
   const mCocher = useMutation({
     mutationFn: ({ id, quantite }: { id: string; quantite: number }) =>

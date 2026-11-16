@@ -13,6 +13,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ExternalLink, Link2Off, Plus, Sparkles, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSession } from '../lib/session';
+import { texteErreur } from '../lib/erreurs';
 import { CATEGORIES } from '../domain/courses';
 import {
   nettoyerLesLiens,
@@ -80,7 +81,9 @@ export default function CatalogueDeFournitures() {
     client.invalidateQueries({ queryKey: ['liste-de-courses'] });
   };
   const alerter = (e: unknown) =>
-    toast.error(e instanceof Error ? e.message : "L'enregistrement n'est pas passé.");
+    /* `texteErreur` sait lire une erreur Supabase, qui n'est pas un `Error` :
+       sans elle, la cause réelle était remplacée par une phrase creuse. */
+    toast.error(texteErreur(e));
 
   const mEnregistrer = useMutation({
     mutationFn: (b: Brouillon) =>
