@@ -21,6 +21,7 @@ import {
   regrouperLesReglements,
   totauxParMoyen,
   type EntreeDeCaisse,
+  type MoyenDeReglement,
 } from '../domain/caisse';
 
 /*
@@ -75,6 +76,57 @@ function bornes(p: Periode, perso: { du: string; au: string }): { du: string; au
   }
 }
 
+/*
+  UNE COULEUR PAR MOYEN DE RÈGLEMENT.
+
+  Les quatre premières viennent de la charte : les deux teals pour l'argent
+  qui dort en caisse, le violet pour la carte, le gris pour le virement.
+  L'ambre est à part, pour Alma — c'est la seule rentrée qui vient de
+  l'extérieur et dont une part repart aussitôt. Le magenta reste ce qu'il
+  est partout ailleurs dans l'application : ce qu'il faut aller corriger.
+*/
+const COULEUR_DU_MOYEN: Record<string, string> = {
+  especes: 'bg-marine-800',
+  cheque: 'bg-marine-500',
+  cb: 'bg-violet-500',
+  virement: 'bg-ardoise-400',
+  alma: 'bg-amber-500',
+  sans: 'bg-rose-500',
+};
+
+function Pastille({ moyen }: { moyen: MoyenDeReglement | null }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${COULEUR_DU_MOYEN[moyen ?? 'sans']}`}
+    />
+  );
+}
+
+/* La légende : les six moyens, toujours tous, même à zéro. Une colonne qui
+   disparaît d'un ticket à l'autre ne se retient pas. */
+const TOUS_LES_MOYENS: Array<MoyenDeReglement | null> = [
+  'especes',
+  'cheque',
+  'cb',
+  'virement',
+  'alma',
+  null,
+];
+
+function Legende() {
+  return (
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+      {TOUS_LES_MOYENS.map((m) => (
+        <span key={m ?? 'sans'} className="flex items-center gap-1.5 text-2xs text-ardoise-600">
+          <Pastille moyen={m} />
+          {libelleDuMoyen(m)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 const euros = (n: number) =>
   n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 
@@ -89,6 +141,7 @@ function libelleDeLEntree(e: EntreeDeCaisse): string {
   if (e.rang === 1 && e.nbEcheances <= 1) return `cure de ${euros(e.montantCure)}`;
   return `échéance ${e.rang} sur ${e.nbEcheances} · cure de ${euros(e.montantCure)}`;
 }
+
 
 
 
@@ -266,6 +319,9 @@ export default function TicketZ() {
             {retenus.length === 0 && (
               <p className="mt-3 text-sm text-ardoise-500">Aucune caisse retenue.</p>
             )}
+            <div className="mt-4 border-t border-ardoise-200 pt-3">
+              <Legende />
+            </div>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2">
@@ -293,6 +349,7 @@ export default function TicketZ() {
                     <div className="flex flex-col gap-1.5">
                       {t.moyens.map((m) => (
                         <div key={m.moyen ?? 'sans'} className="flex items-baseline gap-2 text-sm">
+                          <Pastille moyen={m.moyen} />
                           <span className={m.moyen ? 'text-ardoise-700' : 'font-medium text-rose-600'}>
                             {libelleDuMoyen(m.moyen)}
                           </span>
@@ -365,10 +422,13 @@ export default function TicketZ() {
                                 {euros(e.montant)}
                               </span>
                             </div>
-                            <div className="text-2xs text-ardoise-500">
+                            <div className="flex items-baseline gap-1.5 text-2xs text-ardoise-500">
+                              <Pastille moyen={e.moyen} />
+                              <span>
                               {leJourCourt(e.date)} · {libelleDuMoyen(e.moyen)} ·{' '}
                               {libelleDeLEntree(e)}
                               {e.frais > 0 && ` · dont ${euros(e.frais)} de frais`}
+                              </span>
                             </div>
                           </li>
                         ))}
