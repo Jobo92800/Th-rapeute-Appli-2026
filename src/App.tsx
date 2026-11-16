@@ -10,6 +10,7 @@ import Accueil from './pages/Accueil';
 import Stock from './pages/Stock';
 import Messages from './pages/Messages';
 import TableauDeBord from './pages/TableauDeBord';
+import TicketZ from './pages/TicketZ';
 import Comptes from './pages/Comptes';
 import ImportAirtable from './pages/ImportAirtable';
 import ImportFirebase from './pages/ImportFirebase';
@@ -73,6 +74,7 @@ where lower(u.email) = lower(t.email)
         <Route path="/stock" element={<Stock />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/tableau-de-bord" element={<TableauDeBord />} />
+        <Route path="/tickets-z" element={<TicketZ />} />
         <Route path="/comptes" element={<Comptes />} />
         <Route path="/reprise-crm" element={<ImportAirtable />} />
         <Route path="/reprise-historique" element={<ImportFirebase />} />

@@ -25,6 +25,7 @@ import { controlerPodcasts } from './podcasts.mts';
 import { controlerComplements, controlerCureSansSeance } from './complements.mts';
 import { controlerProfilSignature, controlerReglementSignature } from './profilSignature.mts';
 import { controlerRestitution } from './restitution.mts';
+import { controlerCaisse } from './caisse.mts';
 
 console.log('\n  MAbeautyplus V2 — contrôle des règles métier');
 
@@ -43,5 +44,6 @@ controlerCureSansSeance();
 controlerProfilSignature();
 controlerReglementSignature();
 controlerRestitution();
+controlerCaisse();
 
 process.exit(bilan());

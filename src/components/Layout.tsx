@@ -10,6 +10,7 @@ import {
   BookOpen,
   MessageSquare,
   KeyRound,
+  ReceiptText,
   Phone,
   ExternalLink,
 } from 'lucide-react';
@@ -57,6 +58,12 @@ const LIENS = [
   // Les chiffres ne concernent pas les thérapeutes : le lien ne leur est
   // même pas montré, et la base refuserait de répondre.
   { to: '/tableau-de-bord', libelle: 'Tableau de bord', icone: BarChart3, exact: false, direction: true },
+  /*
+    L'ARRÊTÉ DE CAISSE. Ce que le tableau de bord ne dit pas : qui a payé
+    quoi, quel jour, par quel moyen. C'est ce qu'on emporte à la banque et
+    chez le comptable, et c'est le seul écran qui le sait.
+  */
+  { to: '/tickets-z', libelle: 'Tickets Z', icone: ReceiptText, exact: false, direction: true },
   // Les comptes de connexion : qui peut entrer, et le mot de passe à
   // redonner quand une thérapeute est bloquée devant l'écran.
   { to: '/comptes', libelle: 'Comptes', icone: KeyRound, exact: false, direction: true },
