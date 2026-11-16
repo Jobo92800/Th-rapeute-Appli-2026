@@ -6,6 +6,7 @@ import { fr } from 'date-fns/locale';
 import {
   Check,
   ExternalLink,
+  Link2Off,
   Minus,
   PackageCheck,
   Plus,
@@ -220,23 +221,25 @@ export default function Courses() {
                   </button>
                 )}
                 {data.validee_le && !data.commandee_le && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => mCommandee.mutate()}
-                      disabled={mCommandee.isPending}
-                      className="bouton-fort"
-                    >
-                      Marquer commandée
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => mValider.mutate(false)}
-                      className="bouton-discret"
-                    >
-                      Rouvrir
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    onClick={() => mCommandee.mutate()}
+                    disabled={mCommandee.isPending}
+                    className="bouton-fort"
+                  >
+                    Marquer commandée
+                  </button>
+                )}
+                {/* Rouvrir reste possible même après « commandée » : une
+                    liste close par erreur n'était plus récupérable. */}
+                {data.validee_le && (
+                  <button
+                    type="button"
+                    onClick={() => mValider.mutate(false)}
+                    className="bouton-discret"
+                  >
+                    Rouvrir
+                  </button>
                 )}
               </div>
             )}
@@ -256,32 +259,49 @@ export default function Courses() {
                       {f.nom}
                       <span className="ml-1.5 text-2xs text-ardoise-400">{f.unite}</span>
                     </span>
-                    {f.liens.length > 0 && (
-                      <span className="flex items-center gap-2">
-                        <a
-                          href={f.liens[0]}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-1 text-2xs font-medium text-marine-700 hover:underline"
-                        >
-                          Acheter
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                        {/* Les replis, pour le jour où le premier est en rupture. */}
-                        {f.liens.slice(1).map((lien, i) => (
+                    {/*
+                      L'achat appartient à la direction : c'est elle qui a
+                      les comptes et les cartes. Une thérapeute qui
+                      cliquerait ouvrirait Amazon sur le sien.
+                    */}
+                    {role === 'direction' &&
+                      (f.liens.length > 0 ? (
+                        <span className="flex items-center gap-2">
                           <a
-                            key={lien}
-                            href={lien}
+                            href={f.liens[0]}
                             target="_blank"
                             rel="noreferrer"
-                            title="Autre adresse, si le premier est en rupture"
-                            className="text-2xs text-ardoise-400 hover:text-marine-700 hover:underline"
+                            className="flex items-center gap-1.5 rounded-full bg-marine-600 px-3 py-1.5 text-2xs font-semibold text-white transition-colors hover:bg-marine-700"
                           >
-                            {i + 2}
+                            Acheter
+                            <ExternalLink className="h-3 w-3" />
                           </a>
-                        ))}
-                      </span>
-                    )}
+                          {/* Les replis, pour le jour où le premier est en rupture. */}
+                          {f.liens.slice(1).map((lien, i) => (
+                            <a
+                              key={lien}
+                              href={lien}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="Autre adresse, si la première est en rupture"
+                              className="text-2xs text-ardoise-400 hover:text-marine-700 hover:underline"
+                            >
+                              {i + 2}
+                            </a>
+                          ))}
+                        </span>
+                      ) : (
+                        /* L'absence de bouton doit se comprendre, et se réparer
+                           d'un clic : le lien mène droit à la fiche du produit. */
+                        <Link
+                          to="/courses/catalogue"
+                          title="Donner une adresse d'achat à ce produit"
+                          className="flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-2xs font-medium text-amber-700 transition-colors hover:border-amber-400"
+                        >
+                          <Link2Off className="h-3 w-3" />
+                          sans adresse
+                        </Link>
+                      ))}
                   </li>
                 ))}
                 {data.libres.map((l) => (

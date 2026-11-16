@@ -18,6 +18,7 @@ import {
 import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { messagesEnAttente } from '../services/messages';
+import { coursesAFaire } from '../services/courses';
 import { TOUS_LES_CENTRES, useSession } from '../lib/session';
 import MonMotDePasse from './MonMotDePasse';
 import { CENTRE_ANTI_AGE } from '../domain/antiAge';
@@ -97,6 +98,28 @@ export default function Layout({ children }: { children: ReactNode }) {
   });
   const aLire =
     (enAttente?.annonces_non_lues ?? 0) + (enAttente?.signalements_a_traiter ?? 0);
+
+  /*
+    Les courses qui attendent la direction. Quand elle regarde les cinq
+    centres, la pastille compte les CENTRES à servir — c'est la décision
+    qu'elle a à prendre. Quand elle en regarde un seul, elle compte les
+    produits de ce centre. La base rend une liste vide aux autres comptes,
+    donc rien ne s'allume pour une thérapeute.
+  */
+  const { data: centresAServir } = useQuery({
+    queryKey: ['courses-a-faire'],
+    queryFn: coursesAFaire,
+    enabled: role === 'direction',
+    refetchInterval: 60_000,
+  });
+
+  const courses = centresAServir ?? [];
+  const aAcheter = tousCentres
+    ? courses.length
+    : (courses.find((c) => c.centre_id === centre?.id)?.produits ?? 0);
+  const detailDesCourses = tousCentres
+    ? courses.map((c) => `${c.nom} (${c.produits})`).join(', ')
+    : `${aAcheter} produit${aAcheter > 1 ? 's' : ''} à acheter`;
   const liens = LIENS.filter(
     (l) =>
       (!l.direction || role === 'direction') &&
@@ -141,6 +164,14 @@ export default function Layout({ children }: { children: ReactNode }) {
               {to === '/messages' && aLire > 0 && (
                 <span className="ml-auto rounded-full bg-rose-600 px-1.5 py-0.5 text-2xs font-bold text-white">
                   {aLire}
+                </span>
+              )}
+              {to === '/courses' && aAcheter > 0 && (
+                <span
+                  title={detailDesCourses}
+                  className="ml-auto rounded-full bg-rose-600 px-1.5 py-0.5 text-2xs font-bold text-white"
+                >
+                  {aAcheter}
                 </span>
               )}
             </NavLink>
@@ -293,6 +324,11 @@ export default function Layout({ children }: { children: ReactNode }) {
               {to === '/messages' && aLire > 0 && (
                 <span className="ml-1 rounded-full bg-rose-600 px-1.5 text-2xs font-bold text-white">
                   {aLire}
+                </span>
+              )}
+              {to === '/courses' && aAcheter > 0 && (
+                <span className="ml-1 rounded-full bg-rose-600 px-1.5 text-2xs font-bold text-white">
+                  {aAcheter}
                 </span>
               )}
             </NavLink>

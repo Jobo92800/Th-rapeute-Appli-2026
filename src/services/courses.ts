@@ -100,3 +100,22 @@ export async function rouvrirLaCourse(ligneId: string) {
   const { error } = await supabase.rpc('rouvrir_la_course', { p_ligne_id: ligneId });
   if (error) throw error;
 }
+
+/** Un centre dont la liste de la semaine porte encore des produits à acheter. */
+export interface CentreAvecDesCourses {
+  centre_id: string;
+  nom: string;
+  produits: number;
+}
+
+/**
+ * Ce qui attend la direction, pour la pastille du menu. Rend une liste
+ * vide pour un compte qui n'est pas la direction : cette fonction est
+ * interrogée toute seule chaque minute, elle n'a personne à qui expliquer
+ * un refus.
+ */
+export async function coursesAFaire(): Promise<CentreAvecDesCourses[]> {
+  const { data, error } = await supabase.rpc('courses_a_faire');
+  if (error) throw error;
+  return ((data as { centres?: CentreAvecDesCourses[] } | null)?.centres ?? []);
+}
