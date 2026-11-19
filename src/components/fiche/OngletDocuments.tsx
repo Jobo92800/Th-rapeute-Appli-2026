@@ -331,6 +331,20 @@ function EnvoyerAuCrm({
         toast.error(r.erreurs[0]?.message ?? "Le CRM n'a pas accepté l'envoi.");
         return;
       }
+      /*
+        « Déjà à jour » ne vaut que si rien n'avait à partir. Quand des
+        éléments ont été reposés en file et que rien n'en sort, la file est
+        bloquée — l'annoncer comme un succès a laissé une fiche hors du CRM
+        pendant qu'on croyait l'avoir envoyée (Jonathan, 19 novembre 2026).
+      */
+      if (r.reprises > 0 && r.traitees === 0) {
+        toast.error(
+          `${r.reprises} élément${r.reprises > 1 ? 's ont' : ' a'} été reposé${
+            r.reprises > 1 ? 's' : ''
+          } en file, mais rien n'est parti : la file est bloquée. Relancez la synchro depuis le tableau de bord.`,
+        );
+        return;
+      }
       toast.success(
         r.traitees === 0
           ? 'Le CRM était déjà à jour.'
